@@ -67,7 +67,7 @@ Versions below were checked against the public npm registry or the official Node
 | Map | MapLibre GL JS `6.7.0`, lazy-loaded with a non-map fallback |
 | PWA | `vite-plugin-pwa` `1.3.0` with an explicit service worker policy |
 | Cloudflare CLI | Wrangler `4.129.0` |
-| Worker tests | Vitest `5.0.0`, `@cloudflare/vitest-pool-workers` `0.22.0` |
+| Worker tests | Vitest `4.1.11`, `@cloudflare/vitest-pool-workers` `0.22.0` |
 | Browser tests | Playwright `1.62.1`, `@axe-core/playwright` `4.13.0` |
 | UI tests | Testing Library React `16.3.3`, MSW `2.15.0` |
 | Formatting/linting | Biome `2.5.12` plus TypeScript compiler checks |
