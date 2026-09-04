@@ -1,0 +1,23 @@
+{
+  "name": "maharashtra-sachet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Maharashtra civic relay of official NDMA SACHET CAP and allied government alerts, presented like a US Wireless Emergency Alert.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mangeshraut712/maharashtra-sachet.git"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "start": "node server/index.mjs",
+    "dev": "node --watch server/index.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.3.3"
+  }
+}

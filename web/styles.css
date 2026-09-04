@@ -1,0 +1,75 @@
+:root {
+  --bg: #070b14;
+  --panel: #10182a;
+  --ink: #e8eefc;
+  --muted: #93a0bd;
+  --line: #243049;
+  --red: #c81e1e;
+  --amber: #c47a00;
+  --blue: #1d4ed8;
+  --green: #15803d;
+  --radius: 18px;
+  font-family: ui-sans-serif, system-ui, "Noto Sans", "Noto Sans Devanagari", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); min-height: 100%; }
+.app { max-width: 1280px; margin: 0 auto; padding: 16px 16px 48px; }
+.top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.brand { display: flex; gap: 12px; align-items: center; }
+.mark {
+  width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center;
+  background: #facc15; color: #111; font-size: 26px; font-weight: 800;
+}
+h1 { margin: 0; font-size: 1.35rem; letter-spacing: -0.03em; }
+.tag { margin: 4px 0 0; color: var(--muted); font-size: 0.85rem; }
+.top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+button, select {
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 999px; padding: 8px 14px; font: inherit;
+}
+button { cursor: pointer; }
+button.ghost:hover { border-color: #64748b; }
+.banner {
+  margin-top: 14px; padding: 12px 14px; border-radius: 12px;
+  background: #3f1d0f; border: 1px solid #9a3412; color: #fed7aa; font-size: 0.92rem;
+}
+.banner strong { display: block; margin-bottom: 4px; color: #ffedd5; }
+.controls {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; margin-top: 16px; align-items: end;
+}
+label span { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+label select { width: 100%; border-radius: 12px; }
+.helplines { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.helplines a {
+  color: #bfdbfe; text-decoration: none; border: 1px solid var(--line);
+  padding: 6px 10px; border-radius: 999px; font-size: 0.85rem; background: #0f172a;
+}
+.status-row { margin-top: 14px; color: var(--muted); font-size: 0.85rem; }
+.layout { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px; margin-top: 16px; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } #map { min-height: 280px; } }
+.feed { display: grid; gap: 14px; }
+.map-wrap { position: sticky; top: 12px; height: fit-content; }
+#map { height: 520px; border-radius: var(--radius); border: 1px solid var(--line); }
+.map-note { color: var(--muted); font-size: 0.8rem; }
+
+.wea {
+  background: var(--panel); border-radius: var(--radius); overflow: hidden;
+  border: 1px solid var(--line); box-shadow: 0 16px 40px rgba(0,0,0,.35);
+}
+.wea .bar { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; letter-spacing: 0.08em; font-size: 0.78rem; }
+.wea.IMMINENT_THREAT .bar, .wea.PRESIDENTIAL .bar { background: var(--red); color: #fff; }
+.wea.AMBER .bar { background: var(--amber); color: #111; }
+.wea.PUBLIC_SAFETY .bar { background: var(--blue); color: #fff; }
+.wea.WEATHER_ADVISORY .bar { background: #334155; color: #e2e8f0; }
+.wea.TEST .bar { background: var(--green); color: #fff; }
+.wea .body { padding: 16px 16px 18px; }
+.wea h2 { margin: 0 0 8px; font-size: 1.55rem; line-height: 1.15; }
+.wea .meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 10px; }
+.wea .desc { white-space: pre-wrap; line-height: 1.45; }
+.wea .instr { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #0b1220; border: 1px solid var(--line); }
+.wea .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.wea .actions a, .wea .actions button {
+  background: #0b1220; text-decoration: none; color: var(--ink);
+}
+.empty { padding: 40px 16px; text-align: center; color: var(--muted); }

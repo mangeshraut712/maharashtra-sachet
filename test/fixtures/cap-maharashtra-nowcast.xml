@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+  <identifier>1788442682082029</identifier>
+  <sender>Maharashtra-SDMA</sender>
+  <sent>2026-09-04T06:00:00+05:30</sent>
+  <status>Actual</status>
+  <msgType>Alert</msgType>
+  <scope>Public</scope>
+  <info>
+    <language>en-IN</language>
+    <category>Met</category>
+    <event>Thunderstorm</event>
+    <urgency>Expected</urgency>
+    <severity>Moderate</severity>
+    <certainty>Likely</certainty>
+    <effective>2026-09-04T06:00:00+05:30</effective>
+    <expires>2026-09-04T12:00:00+05:30</expires>
+    <headline>Light rain and lightning likely over Pune and Thane</headline>
+    <description>IMD Mumbai nowcast relayed by Maharashtra SDMA. Isolated thunderstorm with lightning is likely.</description>
+    <instruction>Please follow SDMA guidelines.</instruction>
+    <area>
+      <areaDesc>Pune, Thane</areaDesc>
+      <geocode>
+        <valueName>LGD</valueName>
+        <value>490</value>
+      </geocode>
+      <geocode>
+        <valueName>LGD</valueName>
+        <value>497</value>
+      </geocode>
+    </area>
+  </info>
+  <info>
+    <language>hi-IN</language>
+    <category>Met</category>
+    <event>वादळ</event>
+    <urgency>Expected</urgency>
+    <severity>Moderate</severity>
+    <certainty>Likely</certainty>
+    <headline>पुणे आणि ठाणे जिल्ह्यात हलका पाऊस व विज</headline>
+    <description>आयएमडी मुंबई नाऊकास्ट.</description>
+    <instruction>एसडीएमए मार्गदर्शनाचे पालन करा.</instruction>
+    <area>
+      <areaDesc>पुणे, ठाणे</areaDesc>
+    </area>
+  </info>
+</alert>

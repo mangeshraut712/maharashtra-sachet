@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1220" />
+    <meta name="description" content="Unofficial Maharashtra civic relay of NDMA SACHET CAP, IMD, INCOIS and CPCB public feeds. Not a government website." />
+    <title>Maharashtra Civic Alert Relay — unofficial</title>
+    <link rel="icon" href="/icon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <div class="brand">
+          <span class="mark" aria-hidden="true">⚠</span>
+          <div>
+            <h1 id="title">Maharashtra Civic Alert Relay</h1>
+            <p class="tag" id="tag">Unofficial public-feed relay · not NDMA / MSDMA / IMD</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button type="button" id="langBtn" class="ghost">मराठी</button>
+          <button type="button" id="notifyBtn" class="ghost">Enable alerts</button>
+          <button type="button" id="sirenBtn" class="ghost">Siren: on</button>
+        </div>
+      </header>
+
+      <aside class="banner" role="note">
+        <strong id="bannerTitle">This is not a government website.</strong>
+        <span id="bannerBody">
+          It only republishes public Common Alerting Protocol and allied feeds. It cannot send Wireless Emergency Alerts or cell broadcasts. For life-threatening events call 112.
+        </span>
+      </aside>
+
+      <section class="controls">
+        <label>
+          <span id="lblDistrict">District</span>
+          <select id="district"></select>
+        </label>
+        <label>
+          <span id="lblClass">WEA class</span>
+          <select id="weaClass">
+            <option value="">All</option>
+            <option value="PRESIDENTIAL">Presidential / national</option>
+            <option value="IMMINENT_THREAT">Imminent Threat</option>
+            <option value="AMBER">AMBER / missing child</option>
+            <option value="PUBLIC_SAFETY">Public Safety</option>
+            <option value="WEATHER_ADVISORY">Weather advisory</option>
+            <option value="TEST">Test</option>
+          </select>
+        </label>
+        <label>
+          <span id="lblKind">Situation</span>
+          <select id="kind">
+            <option value="">All situations</option>
+          </select>
+        </label>
+        <div class="helplines" id="helplines"></div>
+      </section>
+
+      <section class="status-row" id="statusRow"></section>
+
+      <main class="layout">
+        <div class="feed" id="feed"></div>
+        <div class="map-wrap">
+          <div id="map" role="img" aria-label="Alert polygons"></div>
+          <p class="map-note" id="mapNote">Polygons come from NDMA SACHET CAP when the feed includes them. Light rain nowcasts often have no polygon.</p>
+        </div>
+      </main>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
