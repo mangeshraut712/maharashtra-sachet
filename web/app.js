@@ -380,10 +380,13 @@ function renderCoverage() {
   }
   const hot = Object.values(counts).filter((n) => n > 0).length
   $('coverageTitle').textContent = `${t().coverageTitle} · ${hot}/36`
+  const region = $('region')?.value
+  const allowed = region ? new Set((state.meta.regions || []).find((r) => r.id === region)?.districtIds || []) : null
   grid.innerHTML = ''
   for (const d of state.meta.districts) {
     const chip = document.createElement('div')
     chip.className = counts[d.id] ? 'chip hot' : 'chip'
+    if (allowed) chip.classList.add(allowed.has(d.id) ? 'in-region' : 'out-region')
     chip.title = d.division
     chip.textContent = `${state.lang === 'mr' ? d.mr : d.en}${counts[d.id] ? ` (${counts[d.id]})` : ''}`
     grid.appendChild(chip)
