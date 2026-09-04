@@ -8,14 +8,14 @@ import { collectIncois } from './incois.mjs'
 import { collectCpcb } from './cpcb.mjs'
 import { collectCwc } from './cwc.mjs'
 import { mergeAlerts, snapshotStats } from './merge.mjs'
-import { DISTRICTS, HELPLINES, OFFICIAL_LINKS } from './districts.mjs'
+import { DISTRICTS, HELPLINES, OFFICIAL_LINKS, REGIONS, AQI_CITIES_DEFAULT, coverageFromAlerts, districtsInRegion } from './districts.mjs'
 import { SITUATION_KINDS, WEA_CLASSES } from './wea.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const WEB = join(__dirname, '..', 'web')
 const PORT = Number(process.env.PORT || 8787)
 const POLL_MS = Number(process.env.POLL_MS || 45_000)
-const AQI_CITIES = String(process.env.AQI_CITIES || 'Mumbai,Pune,Nagpur,Nashik,Thane,Aurangabad,Kolhapur,Solapur')
+const AQI_CITIES = String(process.env.AQI_CITIES || AQI_CITIES_DEFAULT.join(','))
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean)
@@ -173,6 +173,7 @@ const server = createServer(async (req, res) => {
         division: d.division,
         lgd: d.lgd,
       })),
+      regions: REGIONS.map((r) => ({ id: r.id, en: r.en, mr: r.mr, districtIds: r.districtIds })),
       weaClasses: Object.values(WEA_CLASSES).map((c) => ({ id: c.id, en: c.en, mr: c.mr, hint: c.hint })),
       situationKinds: SITUATION_KINDS.map(([id, en]) => ({ id, en })),
     })
@@ -180,12 +181,17 @@ const server = createServer(async (req, res) => {
   }
 
   if (path === '/api/alerts') {
+    const region = url.searchParams.get('region')?.toLowerCase()
     const district = url.searchParams.get('district')?.toLowerCase()
     const weaClass = url.searchParams.get('class')?.toUpperCase()
     const kind = url.searchParams.get('kind')
     const source = url.searchParams.get('source')
     const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit') || 200)))
     let alerts = snapshot.alerts
+    if (region && region !== 'all') {
+      const allowed = new Set(districtsInRegion(region).map((d) => d.id))
+      alerts = alerts.filter((a) => (a.districts || []).some((d) => allowed.has(d.id)))
+    }
     if (district) alerts = alerts.filter((a) => (a.districts || []).some((d) => d.id === district))
     if (weaClass) alerts = alerts.filter((a) => a.weaClass === weaClass)
     if (kind) alerts = alerts.filter((a) => a.kind === kind)
@@ -197,6 +203,14 @@ const server = createServer(async (req, res) => {
       errors: snapshot.errors,
       count: alerts.length,
       alerts: alerts.slice(0, limit),
+    })
+    return
+  }
+
+  if (path === '/api/coverage') {
+    json(res, 200, {
+      generatedAt: snapshot.generatedAt,
+      ...coverageFromAlerts(snapshot.alerts),
     })
     return
   }

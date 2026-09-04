@@ -37,6 +37,12 @@
 
       <section class="controls">
         <label>
+          <span id="lblRegion">Region</span>
+          <select id="region">
+            <option value="">All regions</option>
+          </select>
+        </label>
+        <label>
           <span id="lblDistrict">District</span>
           <select id="district"></select>
         </label>
@@ -62,6 +68,13 @@
       </section>
 
       <section class="status-row" id="statusRow"></section>
+      <section class="coverage" aria-label="District coverage">
+        <div class="coverage-head">
+          <strong id="coverageTitle">All 36 districts</strong>
+          <span id="coverageNote">Quiet cells are still in the state map. Goa state is excluded; Sindhudurg / Kolhapur border gaons stay in Maharashtra.</span>
+        </div>
+        <div class="coverage-grid" id="coverageGrid"></div>
+      </section>
 
       <main class="layout">
         <div class="feed" id="feed"></div>

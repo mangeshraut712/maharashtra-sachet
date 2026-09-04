@@ -36,7 +36,9 @@ npm start              # http://127.0.0.1:8787
 
 - Lock-screen style cards: **EMERGENCY ALERT**, class, source, until-when, instruction, **Call 112** (and **1098** on AMBER-style copy).
 - Marathi / English toggle. SACHET already ships `hi` and `en-IN` CAP `info` blocks.
-- All **36 districts**, grouped by revenue division, including renamed Ahilyanagar, Dharashiv, and Chhatrapati Sambhajinagar.
+- All **36 districts**, grouped by revenue division, including renamed Ahilyanagar, Dharashiv, and Chhatrapati Sambhajinagar. Konkan includes **Sindhudurg** (Sawantwadi, Dodamarg, Tillari) and Kolhapur includes **Chandgad** — Maharashtra border gaons. **Goa state is not in this map** (North/South Goa LGD 551/552 are ignored).
+- Region filters: Konkan, Vidarbha, Marathwada, Khandesh, Western Maharashtra, heat-vulnerable belt.
+- Coverage grid on the home page: every district stays listed even when the live feed is quiet there.
 - Situation filter (flood, chemical, missing child, heat, …), not a weather-only list.
 - Leaflet map of CAP polygons when SACHET publishes them (`lat,lon` rings).
 - Browser notifications + optional siren for Presidential / Imminent Threat / AMBER.
@@ -47,7 +49,8 @@ npm start              # http://127.0.0.1:8787
 
 - `GET /api/health`
 - `GET /api/meta` — districts, helplines, WEA classes
-- `GET /api/alerts?district=pune&class=IMMINENT_THREAT&kind=flood`
+- `GET /api/coverage` — all 36 districts, live vs quiet, Goa exclusion note
+- `GET /api/alerts?district=pune&region=konkan&class=IMMINENT_THREAT&kind=flood`
 - `GET /api/alerts/live` — SSE
 
 ## Contribute alertness, not a parallel government

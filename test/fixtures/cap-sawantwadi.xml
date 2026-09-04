@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+  <identifier>sawantwadi-001</identifier>
+  <sender>Maharashtra-SDMA</sender>
+  <sent>2026-09-04T08:00:00+05:30</sent>
+  <status>Actual</status>
+  <msgType>Alert</msgType>
+  <scope>Public</scope>
+  <info>
+    <language>en-IN</language>
+    <category>Met</category>
+    <event>Landslide</event>
+    <urgency>Immediate</urgency>
+    <severity>Severe</severity>
+    <certainty>Observed</certainty>
+    <headline>Landslide risk at Sawantwadi, Dodamarg and Tillari</headline>
+    <description>Maharashtra villages on the Goa border inside Sindhudurg district.</description>
+    <area>
+      <areaDesc>Sawantwadi; Dodamarg</areaDesc>
+    </area>
+  </info>
+</alert>

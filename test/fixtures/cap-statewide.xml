@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+  <identifier>statewide-mh-001</identifier>
+  <sender>Maharashtra-SDMA</sender>
+  <sent>2026-09-04T08:00:00+05:30</sent>
+  <status>Actual</status>
+  <msgType>Alert</msgType>
+  <scope>Public</scope>
+  <info>
+    <language>en-IN</language>
+    <category>Met</category>
+    <event>Cyclone</event>
+    <urgency>Immediate</urgency>
+    <severity>Severe</severity>
+    <certainty>Likely</certainty>
+    <headline>Cyclone watch throughout Maharashtra</headline>
+    <description>Statewide warning. Entire state under watch.</description>
+    <instruction>Follow SDMA guidelines. Call 112.</instruction>
+    <area>
+      <areaDesc>Maharashtra</areaDesc>
+    </area>
+  </info>
+</alert>

@@ -78,7 +78,7 @@ export function classifyWea(alert) {
   }
   if (
     (category === 'Security' && SEVERITY_RANK[severity] >= 3) ||
-    /national emergency|war|hostile|civil defence|operation abhyas/i.test(event)
+    /national emergency|\bwar\b|hostile|civil defence|operation abhyas/i.test(event)
   ) {
     return 'PRESIDENTIAL'
   }
@@ -126,7 +126,7 @@ export function situationKind(alert) {
     ['lightning', /lightning|thunderstorm|विज/],
     ['heat', /heatwave|heat wave|उष्णतेची/],
     ['cold', /cold wave|शीत लहर|थंडी/],
-    ['chemical', /chemical|gas leak|cbrne|industrial|midc|विषारी/],
+    ['chemical', /chemical|gas leak|cbrne|midc|विषारी|industrial (?:accident|leak|hazard)/],
     ['fire', /fire|आग/],
     ['health', /outbreak|pandemic|dengue|cholera|health/],
     ['child', /missing|abduct|child|बाल/],

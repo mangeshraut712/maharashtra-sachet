@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+  <identifier>goa-only-001</identifier>
+  <sender>Goa-SDMA</sender>
+  <sent>2026-09-04T08:00:00+05:30</sent>
+  <status>Actual</status>
+  <msgType>Alert</msgType>
+  <scope>Public</scope>
+  <info>
+    <language>en-IN</language>
+    <category>Met</category>
+    <event>Rain</event>
+    <urgency>Expected</urgency>
+    <severity>Moderate</severity>
+    <certainty>Likely</certainty>
+    <headline>Heavy rain over North Goa and Panaji</headline>
+    <description>Goa state only.</description>
+    <area>
+      <areaDesc>North Goa</areaDesc>
+      <geocode>
+        <valueName>LGD</valueName>
+        <value>551</value>
+      </geocode>
+    </area>
+  </info>
+</alert>

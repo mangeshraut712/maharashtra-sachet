@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser'
-import { DISTRICT_BY_LGD, matchDistricts } from './districts.mjs'
+import { DISTRICT_BY_LGD, matchDistricts, isGoaLgd } from './districts.mjs'
 import { sachetGet } from './http.mjs'
 import { classifyWea, situationKind } from './wea.mjs'
 
@@ -60,14 +60,19 @@ export function parseCapAlert(xml, meta = {}) {
   if (!cap) return null
   const en = pickInfo(cap.info, 'en')
   const mr = pickInfo(cap.info, 'hi') || pickInfo(cap.info, 'mr')
-  const codes = [...new Set([...geocodes(en), ...geocodes(mr)])]
-  const districtsFromCodes = codes.map(c => DISTRICT_BY_LGD.get(c)).filter(Boolean)
-  const districts =
-    districtsFromCodes.length > 0
-      ? districtsFromCodes
-      : matchDistricts(`${en.headline || ''} ${mr.headline || ''} ${en.areaDesc || ''}`)
-
-  const areaDesc = asArray(en.area)[0]?.areaDesc || asArray(mr.area)[0]?.areaDesc || ''
+  const codes = [...new Set([...geocodes(en), ...geocodes(mr)])].filter((c) => !isGoaLgd(c))
+  const areaDesc = asArray(en.area)
+    .concat(asArray(mr.area))
+    .map((a) => a?.areaDesc)
+    .filter(Boolean)
+    .join('; ')
+  const districtsFromCodes = codes.map((c) => DISTRICT_BY_LGD.get(c)).filter(Boolean)
+  const named = matchDistricts(
+    `${en.headline || ''} ${mr.headline || ''} ${en.description || ''} ${mr.description || ''} ${areaDesc}`,
+  )
+  const merged = new Map()
+  for (const row of [...districtsFromCodes, ...named]) merged.set(row.id, row)
+  const districts = [...merged.values()]
   const polygonUrl = asArray(en.parameter)
     .concat(asArray(mr.parameter))
     .find(p => /polygon/i.test(p.valueName || ''))?.value

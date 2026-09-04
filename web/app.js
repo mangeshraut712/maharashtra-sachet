@@ -11,11 +11,16 @@ const LANG = {
     bannerBody:
       'It only republishes public Common Alerting Protocol and allied feeds. It cannot send Wireless Emergency Alerts or cell broadcasts. For life-threatening events call 112.',
     district: 'District',
+    region: 'Region',
     weaClass: 'WEA class',
     situation: 'Situation',
     allDistricts: 'All 36 districts',
+    allRegions: 'All regions',
     allClasses: 'All classes',
     allKinds: 'All situations',
+    coverageTitle: 'All 36 Maharashtra districts',
+    coverageNote:
+      'Every district stays on the map even with no live card. Goa state is excluded. Sindhudurg and Kolhapur still cover the border gaons (Sawantwadi, Dodamarg, Chandgad, Tillari).',
     mapNote:
       'Polygons come from NDMA SACHET CAP when the feed includes them. Light rain nowcasts often have no polygon.',
     empty: 'No matching alerts right now. Keep this page open — the relay polls official feeds about every 45 seconds.',
@@ -41,11 +46,16 @@ const LANG = {
     bannerBody:
       'येथे फक्त सार्वजनिक CAP आणि संबंधित शासकीय फीड परत दाखवले जातात. वायरलेस इमर्जन्सी अलर्ट किंवा सेल ब्रॉडकास्ट पाठवता येत नाहीत. जीवाची भीती असेल तर ११२ वर कॉल करा.',
     district: 'जिल्हा',
+    region: 'प्रदेश',
     weaClass: 'WEA वर्ग',
     situation: 'परिस्थिती',
     allDistricts: 'सर्व ३६ जिल्हे',
+    allRegions: 'सर्व प्रदेश',
     allClasses: 'सर्व वर्ग',
     allKinds: 'सर्व परिस्थिती',
+    coverageTitle: 'महाराष्ट्राचे सर्व ३६ जिल्हे',
+    coverageNote:
+      'लाईव्ह कार्ड नसला तरी जिल्हा नकाशात राहतो. गोवा राज्य नाही. सिंधुदुर्ग / कोल्हापूर सीमा गावे (सावंतवाडी, दोडामार्ग, चंदगड, तिल्लारी) महाराष्ट्रात आहेत.',
     mapNote:
       'बहुभुजे NDMA SACHET CAP मध्ये असतील तेव्हा दिसतात. हलका पाऊस नाऊकास्ट बहुतेकदा बहुभुज नसतो.',
     empty: 'सध्या जुळणारे अलर्ट नाहीत. पृष्ठ उघडे ठेवा — रिले सुमारे ४५ सेकंदांनी अधिकृत फीड तपासतो.',
@@ -105,8 +115,11 @@ function applyLang() {
   $('bannerTitle').textContent = L.bannerTitle
   $('bannerBody').textContent = L.bannerBody
   $('lblDistrict').textContent = L.district
+  $('lblRegion').textContent = L.region
   $('lblClass').textContent = L.weaClass
   $('lblKind').textContent = L.situation
+  $('coverageTitle').textContent = L.coverageTitle
+  $('coverageNote').textContent = L.coverageNote
   $('mapNote').textContent = L.mapNote
   $('sirenBtn').textContent = state.siren ? L.sirenOn : L.sirenOff
   $('notifyBtn').textContent = Notification?.permission === 'granted' ? L.notifyOn : L.notify
@@ -126,8 +139,10 @@ function weaLabel(id) {
 function fillSelects() {
   const prevDistrict = $('district').value
   const prevKind = $('kind').value
+  const prevRegion = $('region').value
   const district = $('district')
   const kind = $('kind')
+  const region = $('region')
   district.innerHTML = `<option value="">${t().allDistricts}</option>`
   const byDiv = new Map()
   for (const d of state.meta.districts) {
@@ -146,6 +161,14 @@ function fillSelects() {
     district.appendChild(group)
   }
   district.value = prevDistrict
+  region.innerHTML = `<option value="">${t().allRegions}</option>`
+  for (const r of state.meta.regions || []) {
+    const opt = document.createElement('option')
+    opt.value = r.id
+    opt.textContent = `${state.lang === 'mr' ? r.mr : r.en} (${r.districtIds.length})`
+    region.appendChild(opt)
+  }
+  region.value = prevRegion
   kind.innerHTML = `<option value="">${t().allKinds}</option>`
   for (const k of state.meta.situationKinds) {
     const opt = document.createElement('option')
@@ -162,8 +185,11 @@ function filtered() {
   const district = $('district').value
   const weaClass = $('weaClass').value
   const kind = $('kind').value
+  const region = $('region').value
+  const allowed = region ? new Set((state.meta.regions || []).find((r) => r.id === region)?.districtIds || []) : null
   return state.alerts.filter((a) => {
     if (district && !(a.districts || []).some((d) => d.id === district)) return false
+    if (allowed && !(a.districts || []).some((d) => allowed.has(d.id))) return false
     if (weaClass && a.weaClass !== weaClass) return false
     if (kind && a.kind !== kind) return false
     return true
@@ -249,6 +275,8 @@ function colorFor(weaClass) {
       return '#c47a00'
     case 'PUBLIC_SAFETY':
       return '#1d4ed8'
+    case 'WEATHER_ADVISORY':
+      return '#64748b'
     case 'TEST':
       return '#15803d'
     default:
@@ -337,7 +365,29 @@ function render() {
     )
   }
   $('statusRow').textContent = bits.join('  ·  ')
+  renderCoverage()
   drawMap(alerts)
+}
+
+function renderCoverage() {
+  const grid = $('coverageGrid')
+  if (!grid || !state.meta?.districts) return
+  const counts = Object.fromEntries(state.meta.districts.map((d) => [d.id, 0]))
+  for (const a of state.alerts) {
+    for (const d of a.districts || []) {
+      if (counts[d.id] != null) counts[d.id] += 1
+    }
+  }
+  const hot = Object.values(counts).filter((n) => n > 0).length
+  $('coverageTitle').textContent = `${t().coverageTitle} · ${hot}/36`
+  grid.innerHTML = ''
+  for (const d of state.meta.districts) {
+    const chip = document.createElement('div')
+    chip.className = counts[d.id] ? 'chip hot' : 'chip'
+    chip.title = d.division
+    chip.textContent = `${state.lang === 'mr' ? d.mr : d.en}${counts[d.id] ? ` (${counts[d.id]})` : ''}`
+    grid.appendChild(chip)
+  }
 }
 
 async function loadMeta() {
@@ -383,6 +433,7 @@ function bind() {
     applyLang()
   })
   $('district').addEventListener('change', render)
+  $('region').addEventListener('change', render)
   $('weaClass').addEventListener('change', render)
   $('kind').addEventListener('change', render)
 }

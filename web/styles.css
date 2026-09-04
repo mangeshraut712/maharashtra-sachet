@@ -46,6 +46,16 @@ label select { width: 100%; border-radius: 12px; }
   padding: 6px 10px; border-radius: 999px; font-size: 0.85rem; background: #0f172a;
 }
 .status-row { margin-top: 14px; color: var(--muted); font-size: 0.85rem; }
+.coverage { margin-top: 14px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.coverage-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.coverage-head strong { font-size: 0.92rem; }
+.coverage-head span { color: var(--muted); font-size: 0.8rem; }
+.coverage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+.chip {
+  font-size: 0.75rem; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--line);
+  background: #0b1220; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chip.hot { color: #bbf7d0; border-color: #166534; background: #052e16; }
 .layout { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px; margin-top: 16px; }
 @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } #map { min-height: 280px; } }
 .feed { display: grid; gap: 14px; }

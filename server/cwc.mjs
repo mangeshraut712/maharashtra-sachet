@@ -23,6 +23,7 @@ function fromJsonRecords(json) {
       continue
     }
     const districts = matchDistricts(blob)
+    if (districts.length === 0) continue
     const body = {
       id: `cwc-${row.id || row.stationCode || title}-${row.issuedOn || row.date || ''}`,
       source: 'cwc',
