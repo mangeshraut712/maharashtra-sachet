@@ -40,6 +40,7 @@ The migration must combine three outcomes:
 - Strict input/output validation, security headers, bounded upstream fetches, and dependency scanning.
 - Automated unit, contract, integration, end-to-end, accessibility, offline, and deployment checks.
 - Cloudflare staging and production configurations, observability, rollback instructions, and GitHub Actions.
+- A post-deployment production website audit, remediation pass, redeployment when needed, and evidence-backed final re-audit.
 
 ### 3.2 Excluded
 
@@ -348,7 +349,22 @@ Add division-sharded hibernating WebSockets, opt-in Web Push, delivery queues, D
 
 Add GitHub Actions, CodeQL, dependency updates, full verification, staging deployment, browser smoke checks, production runbook, and release documentation. Production deployment occurs only after an explicit deployment authorization and a successful staging review.
 
-The old Node server remains available until Phases 1-4 meet API and user-flow parity. Removal happens in its own reviewed change after rollback evidence exists.
+### Phase 7: Production Website Audit and Stabilization
+
+After the verified production deployment, audit the live Cloudflare URL rather than assuming local or staging evidence proves production behavior. The production audit covers:
+
+- DNS, TLS, redirects, canonical URL, HTTP status, caching, compression, and security headers;
+- `/api/v1/health`, source freshness, current ingestion state, compatibility routes, malformed requests, and public error redaction;
+- desktop and mobile layouts, English and Marathi, filters, alert details, coverage, source status, helplines, map fallback, and external official-source links;
+- keyboard navigation, visible focus, 200% zoom, automated accessibility checks, contrast, target sizing, reduced motion, and screen-reader landmarks/status behavior;
+- service-worker installation and update behavior, offline reload, stale-data disclosure, manifest validity, notification denial, opt-in foreground alerts, WebSocket fallback, and Web Push when production VAPID secrets are configured;
+- Core Web Vitals and supporting loading/runtime measurements on the deployed build, including cold and repeat navigation;
+- browser console errors, failed network requests, Cloudflare Worker exceptions, ingestion failures, queue/DLQ state, and sampled production logs; and
+- provenance checks confirming that displayed live alerts preserve official text, source attribution, time, geography, severity, expiry, and lifecycle state.
+
+Findings are recorded in a dated repository audit report with severity, reproduction evidence, affected URL/viewport, fix, and re-test result. Critical and high-severity findings block completion. Confirmed in-scope findings are fixed, verified locally and in staging, redeployed, and re-audited in production. Environmental or upstream-source limitations are documented explicitly rather than marked as passed.
+
+The old Node server remains available until Phases 1-4 meet API and user-flow parity. Removal happens in its own reviewed change after rollback evidence exists. The migration is not complete until Phase 7 has produced a clean final audit or an explicit list of accepted residual limitations.
 
 ## 15. Success Criteria
 
@@ -368,6 +384,9 @@ The modernization is complete only when all of the following are true:
 12. Staging displays current source health, correct commit metadata, all security headers, and successful end-to-end smoke evidence.
 13. The README, architecture notes, API documentation, privacy notice, source-attribution policy, incident runbook, and deployment instructions match the verified implementation.
 14. Production is deployed only after explicit authorization, and rollback to the prior version is documented and tested.
+15. The deployed production website passes the Phase 7 audit with no unresolved critical or high-severity findings.
+16. Every confirmed production finding has red-to-green local or staging evidence plus a successful live production re-test after redeployment.
+17. The final dated audit report distinguishes verified behavior, unavailable external integrations, upstream outages, skipped checks, and accepted residual risks.
 
 ## 16. Known Constraints and Decisions
 
@@ -382,3 +401,5 @@ The modernization is complete only when all of the following are true:
 ## 17. Release Gate
 
 Before production deployment, the implementation must provide a verification matrix containing the exact command or browser check, initial result, applied fix, final result, and evidence for every area in this specification. Any item not verified is reported as remaining work; it is not inferred from unrelated green checks.
+
+After production deployment, the same evidence standard applies to the live website audit. Deployment success, HTTP 200, green CI, or one browser smoke test cannot independently satisfy the release gate. Completion requires the dated production audit report and its final re-audit results.
