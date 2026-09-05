@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { once } from 'node:events'
 import { createRelay, createRelayServer, boundedInteger } from '../server/index.mjs'
-import { collectSnapshot, emptyState, handleApi, publicSnapshot, retainLifecycle, SOURCE_IDS, sourceCollectors, STALE_MS, MAX_SOURCE_BYTES, classifySourceError } from '../server/service.mjs'
+import { collectSnapshot, emptyState, handleApi, publicSnapshot, retainLifecycle, snapshotNeedsIngest, SOURCE_IDS, sourceCollectors, STALE_MS, MAX_SOURCE_BYTES, classifySourceError } from '../server/service.mjs'
 
 const NOW = Date.parse('2026-09-05T10:00:00Z')
 const alert = (id, extra = {}) => ({ id, source: 'sachet', sender: 'official', sent: new Date(NOW - 1000).toISOString(), effective: new Date(NOW - 1000).toISOString(), expires: new Date(NOW + 600_000).toISOString(), status: 'Actual', scope: 'Public', msgType: 'Alert', districts: [{ id: 'pune' }], weaClass: 'WEATHER_ADVISORY', kind: 'rain', ...extra })
@@ -38,9 +38,28 @@ test('source failure persists safe diagnostic codes and logs no raw errors', asy
 test('startup is uninitialized, never false-green', async () => {
   const response = handleApi(new Request('http://localhost/api/health'), emptyState(), { now: NOW })
   assert.equal(response.status, 503)
-  const result = await response.json()
-  assert.equal(result.ok, false)
-  assert.equal(result.status, 'uninitialized')
+  assert.equal((await response.json()).status, 'uninitialized')
+  assert.equal(snapshotNeedsIngest(emptyState(), NOW), true)
+  const fresh = await collectSnapshot(emptyState(), success([]), { now: NOW })
+  assert.equal(snapshotNeedsIngest(fresh, NOW), false)
+  assert.equal(snapshotNeedsIngest(fresh, NOW + STALE_MS + 1), true)
+
+  const attempted = structuredClone(fresh)
+  attempted.sources.sachet.lastSuccessAt = new Date(NOW).toISOString()
+  attempted.sources.sachet.lastAttemptAt = new Date(NOW + STALE_MS).toISOString()
+  attempted.sources.sachet.state = 'degraded'
+  assert.equal(snapshotNeedsIngest(attempted, NOW + STALE_MS + 59_999), false)
+  assert.equal(snapshotNeedsIngest(attempted, NOW + STALE_MS + 60_000), true)
+
+  const disabled = {
+    generatedAt: new Date(NOW - STALE_MS - 1).toISOString(),
+    sources: Object.fromEntries(SOURCE_IDS.map(id => [id, {
+      state: 'disabled',
+      lastSuccessAt: null,
+      lastAttemptAt: null,
+    }])),
+  }
+  assert.equal(snapshotNeedsIngest(disabled, NOW), false)
 })
 
 test('per-source failures retain last good records and freshness ages without refresh', async () => {

@@ -25,11 +25,12 @@ export function createRelay({ collectors = sourceCollectors(), initialState = em
   return { pollOnce, getState: () => state }
 }
 
-export function createRelayServer({ relay = createRelay(), webRoot = WEB } = {}) {
+export function createRelayServer({ relay = createRelay(), webRoot = WEB, environment = 'local', controlHandler = null, now = () => Date.now() } = {}) {
   return createServer(async (req, res) => {
     try {
       const request = new Request(new URL(req.url || '/', 'http://localhost'), { method: req.method || 'GET' })
-      let response = handleApi(request, relay.getState())
+      let response = controlHandler ? await controlHandler(request) : null
+      if (!response) response = handleApi(request, relay.getState(), { environment, now: now() })
       if (!response) {
         if (!['GET', 'HEAD'].includes(request.method)) response = jsonResponse(405, { error: 'Method not allowed' }, { allow: 'GET, HEAD' })
         else {
@@ -62,7 +63,8 @@ export function startServer(env = process.env) {
   const interval = boundedInteger(env.POLL_MS, 60_000, 10_000, 3_600_000)
   const collectors = sourceCollectors({ apiKey: env.DATA_GOV_IN_API_KEY, cpcbEnabled: env.CPCB_ENABLED ? env.CPCB_ENABLED === 'true' : Boolean(env.DATA_GOV_IN_API_KEY), aqiCities: env.AQI_CITIES?.split(',').map(s => s.trim()).filter(Boolean) })
   const relay = createRelay({ collectors })
-  const server = createRelayServer({ relay })
+  const environment = env.DEMO === '1' || env.ENVIRONMENT === 'demo' ? 'demo' : env.ENVIRONMENT || 'local'
+  const server = createRelayServer({ relay, environment })
   let timer
   const poll = async () => {
     try { await relay.pollOnce() } catch { console.error(JSON.stringify({ event: 'ingestion_failed' })) }

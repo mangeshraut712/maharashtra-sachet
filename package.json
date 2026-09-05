@@ -18,6 +18,7 @@
     "test": "node --test test/*.test.mjs",
     "test:live": "RUN_LIVE_TESTS=1 node --test test/relay.test.mjs",
     "test:e2e": "playwright test",
+    "demo": "node demo/server.mjs",
     "typecheck": "tsc --noEmit",
     "types": "wrangler types",
     "build": "wrangler deploy --env staging --dry-run --outdir dist",
@@ -25,7 +26,8 @@
     "dev:worker": "wrangler dev --test-scheduled",
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:production": "wrangler deploy --env production",
-    "docs:screenshots": "node scripts/capture-docs-screenshots.mjs"
+    "docs:screenshots": "node scripts/capture-docs-screenshots.mjs",
+    "verify:realtime": "node scripts/verify-realtime.mjs"
   },
   "dependencies": {
     "fast-xml-parser": "5.11.1"

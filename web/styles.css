@@ -810,6 +810,31 @@ footer.container {
   padding: 14px;
   background: #fff4df;
 }
+.demo-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.demo-banner[hidden] {
+  display: none;
+}
+.demo-banner > strong {
+  flex: 1 1 420px;
+}
+.demo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.demo-actions button {
+  border-color: #9b5d16;
+  background: #fff;
+}
+#demoStatus {
+  flex: 0 0 100%;
+  font-size: 0.78rem;
+}
 .expired-note {
   color: #8e442c;
   font-weight: 650;

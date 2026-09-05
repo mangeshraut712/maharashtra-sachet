@@ -1,4 +1,4 @@
-import { collectSnapshot, emptyState, handleApi, jsonResponse, SECURITY_HEADERS, sourceCollectors } from '../server/service.mjs'
+import { collectSnapshot, emptyState, handleApi, jsonResponse, SECURITY_HEADERS, snapshotNeedsIngest, sourceCollectors } from '../server/service.mjs'
 import { acquireLease, readState, releaseLease, saveState } from './storage'
 
 export async function ingest(env: Env, collectors?: ReturnType<typeof sourceCollectors>): Promise<{ status: string }> {
@@ -16,14 +16,29 @@ export async function ingest(env: Env, collectors?: ReturnType<typeof sourceColl
   }
 }
 
+export function maybeScheduleRecovery(
+  env: Env,
+  state: Parameters<typeof snapshotNeedsIngest>[0],
+  ctx: ExecutionContext,
+  runIngest: (target: Env) => Promise<{ status: string }> = ingest,
+): boolean {
+  if (!['production', 'staging'].includes(env.ENVIRONMENT) || !snapshotNeedsIngest(state)) return false
+  ctx.waitUntil(runIngest(env).then(
+    () => undefined,
+    () => console.error(JSON.stringify({ event: 'recovery_ingestion_failed' })),
+  ))
+  return true
+}
+
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     try {
       const path = new URL(request.url).pathname
       if (path === '/api' || path.startsWith('/api/')) {
         if (request.method !== 'GET' && request.method !== 'HEAD') return jsonResponse(405, { error: 'Method not allowed' }, { allow: 'GET, HEAD', ...(new URL(request.url).protocol === 'https:' ? { 'strict-transport-security': 'max-age=31536000' } : {}) })
         const staticApi = /^\/api(?:\/v1)?\/(?:meta|locations)$/.test(path)
         const state = staticApi ? emptyState() : await readState(env.DB)
+        if (!staticApi) maybeScheduleRecovery(env, state, ctx)
         const response = handleApi(request, state, { environment: env.ENVIRONMENT }) || jsonResponse(404, { error: 'Not found' })
         if (new URL(request.url).protocol === 'https:') response.headers.set('strict-transport-security', 'max-age=31536000')
         return response

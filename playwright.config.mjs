@@ -7,10 +7,10 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: 'list',
-  use: { baseURL: process.env.LIVE_URL || 'http://127.0.0.1:8799', channel: 'chromium', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
+  use: { baseURL: process.env.LIVE_URL || 'http://127.0.0.1:8800', channel: 'chromium', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', use: { ...devices['iPhone 13'], defaultBrowserType: 'chromium' } },
   ],
-  webServer: process.env.LIVE_URL ? undefined : { command: 'node test/browser-server.mjs', url: 'http://127.0.0.1:8799/api/meta', reuseExistingServer: false },
+  webServer: process.env.LIVE_URL ? undefined : { command: 'PORT=8800 node test/browser-server.mjs', url: 'http://127.0.0.1:8800/api/meta', reuseExistingServer: false },
 })

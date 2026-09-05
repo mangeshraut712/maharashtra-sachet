@@ -84,6 +84,14 @@
           Refresh
         </button>
       </div>
+      <div id="demoBanner" class="notice demo-banner" hidden>
+        <strong data-i18n="demoBanner">LABELLED DEMO · These records are test fixtures, not live emergencies.</strong>
+        <div class="demo-actions">
+          <button id="demoAdvance" type="button" data-i18n="demoAdvance">Advance demo step</button>
+          <button id="demoReset" type="button" data-i18n="demoReset">Reset demo</button>
+        </div>
+        <span id="demoStatus" role="status" aria-live="polite"></span>
+      </div>
       <noscript
         ><div class="notice">
           JavaScript is required for this live relay. For official alerts, visit

@@ -7,13 +7,23 @@ import { Miniflare } from 'miniflare'
 test('Worker D1 integration: startup, atomic snapshots, expired lease fencing, and persistence', async t => {
   // These fixture-only routes are bundled in memory, never in the deployed entry.
   const result = await build({ stdin: { contents: `
-    import worker, {ingest} from './src/index.ts';
+    import worker, {ingest, maybeScheduleRecovery} from './src/index.ts';
     import {acquireLease, saveState, readState} from './src/storage.ts';
+    let recoveryRuns = 0;
     export default {async fetch(request,env,ctx) {
       const url = new URL(request.url);
       if(url.pathname === '/fixture/lease') return Response.json(await acquireLease(env.DB,url.searchParams.get('token'),Number(url.searchParams.get('now'))));
       if(url.pathname === '/fixture/save') return Response.json(await saveState(env.DB,url.searchParams.get('token'),await request.json(),Number(url.searchParams.get('now'))));
       if(url.pathname === '/fixture/state') return Response.json(await readState(env.DB));
+      if(url.pathname === '/fixture/recovery') {
+        const now = Date.now();
+        const timestamp = new Date(now).toISOString();
+        const fresh = {generatedAt:timestamp,sources:Object.fromEntries(['sachet','imd','incois','cwc','cpcb'].map(id=>[id,{state:'healthy',records:[],lastSuccessAt:timestamp,lastAttemptAt:timestamp,error:null}]))};
+        const state = url.searchParams.has('fresh') ? fresh : {generatedAt:null,sources:{}};
+        const scheduled = maybeScheduleRecovery({...env,ENVIRONMENT:url.searchParams.get('environment')||'production'},state,ctx,async()=>{recoveryRuns++;return {status:'completed'}});
+        return Response.json({scheduled});
+      }
+      if(url.pathname === '/fixture/recovery-status') return Response.json({recoveryRuns});
       if(url.pathname === '/fixture/ingest') {
         const records = await request.json();
         return Response.json(await ingest(env,['sachet','imd','incois','cwc','cpcb'].map(id=>({id,collect:async()=>{
@@ -30,6 +40,11 @@ test('Worker D1 integration: startup, atomic snapshots, expired lease fencing, a
   for (const sql of migration.split(';').map(s => s.trim()).filter(Boolean)) await db.prepare(sql).run()
   const request = (path, options) => mf.dispatchFetch(`https://example.test${path}`, options)
   assert.equal((await request('/api/health')).status, 503)
+  assert.deepEqual(await (await request('/fixture/recovery')).json(), { scheduled: true })
+  assert.deepEqual(await (await request('/fixture/recovery-status')).json(), { recoveryRuns: 1 })
+  assert.deepEqual(await (await request('/fixture/recovery?fresh=1')).json(), { scheduled: false })
+  assert.deepEqual(await (await request('/fixture/recovery?environment=test')).json(), { scheduled: false })
+  assert.deepEqual(await (await request('/fixture/recovery-status')).json(), { recoveryRuns: 1 })
   const meta = await (await request('/api/v1/meta')).json()
   assert.equal(meta.districts.length, 36)
   assert.equal(await (await request('/fixture/lease?token=old&now=100')).json(), true)

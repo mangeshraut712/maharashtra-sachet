@@ -7,6 +7,7 @@ import {
   matchingAlerts,
   alertContent,
   snapshotFresh,
+  nextPollMs,
   alertKey,
   validSnapshot,
   validMeta,
@@ -123,6 +124,10 @@ test('freshness is based on the saved timestamp and rejects unknown or future da
   assert.equal(snapshotFresh('2026-09-05T11:55:00Z', now), false)
   assert.equal(snapshotFresh('2026-09-06T12:00:00Z', now), false)
   assert.equal(snapshotFresh(null, now), false)
+  assert.equal(nextPollMs('healthy'), 60_000)
+  assert.equal(nextPollMs('degraded'), 60_000)
+  assert.equal(nextPollMs('stale'), 15_000)
+  assert.equal(nextPollMs('loading'), 15_000)
 })
 
 test('malformed stored snapshots and metadata are rejected before state assignment', () => {

@@ -137,6 +137,24 @@ export function snapshotFresh(generatedAt, now = Date.now()) {
   )
 }
 
+export function nextPollMs(mode) {
+  switch (mode) {
+    case 'healthy':
+    case 'degraded':
+      return 60_000
+    case 'stale':
+    case 'loading':
+    case 'error':
+    case 'offline':
+      return 15_000
+    default: {
+      const unexpected = mode
+      void unexpected
+      return 60_000
+    }
+  }
+}
+
 export function alertKey(alert) {
   return `${alert.source || ''}:${alert.id}`
 }

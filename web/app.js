@@ -4,6 +4,7 @@ import {
   matchingAlerts,
   alertContent,
   snapshotFresh,
+  nextPollMs,
   alertKey,
   isCurrent,
   validSnapshot,
@@ -59,6 +60,10 @@ const MR = {
   heroAside:
     'महाराष्ट्रातील ३६ जिल्हे.\nस्थानिक माहिती. स्पष्ट स्रोत.',
   refresh: 'पुन्हा तपासा',
+  demoBanner:
+    'चिन्हांकित डेमो · या नोंदी चाचणी नमुने आहेत, लाइव्ह आपत्कालीन सूचना नाहीत.',
+  demoAdvance: 'पुढील डेमो टप्पा',
+  demoReset: 'डेमो पुन्हा सुरू करा',
   locationEyebrow: 'आपल्या परिसरासाठी',
   locationTitle: 'आपला परिसर निवडा',
   reset: 'फिल्टर हटवा',
@@ -301,12 +306,20 @@ function renderStatus() {
     `connection ${['offline', 'error'].includes(mode) ? 'offline' : mode !== 'healthy' ? 'warning' : ''}`
   $('snapshotTime').textContent =
     `${tx('Snapshot', 'माहितीची वेळ')}: ${date(state.generatedAt)}` +
+    (mode === 'stale' || mode === 'loading'
+      ? tx(
+          ' · Rechecking every 15 seconds.',
+          ' · दर १५ सेकंदाला पुन्हा तपासत आहोत.',
+        )
+      : '') +
     (state.saveFailed
       ? tx(
           ' · Offline snapshot storage is unavailable.',
           ' · ऑफलाइन माहिती जतन करता येत नाही.',
         )
       : '')
+  const demoBanner = $('demoBanner')
+  if (demoBanner) demoBanner.hidden = state.meta?.environment !== 'demo'
   $('feed').setAttribute('aria-busy', String(state.busy))
   return mode
 }
@@ -680,11 +693,12 @@ function render() {
   renderServices()
 }
 
-async function request(url) {
+async function request(url, { method = 'GET' } = {}) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 15_000)
   try {
     const response = await fetch(url, {
+      method,
       cache: 'no-store',
       signal: controller.signal,
       headers: { accept: 'application/json' },
@@ -830,7 +844,7 @@ async function refresh() {
     state.busy = false
     $('refreshBtn').disabled = false
     render()
-    refreshTimer = setTimeout(refresh, 60_000)
+    refreshTimer = setTimeout(refresh, nextPollMs(freshness()))
   }
 }
 let searchSequence = 0
@@ -912,6 +926,28 @@ $('langBtn').addEventListener('click', () => {
   render()
 })
 $('refreshBtn').addEventListener('click', refresh)
+async function runDemoControl(action) {
+  if (state.meta?.environment !== 'demo') return
+  const controls = [$('demoAdvance'), $('demoReset')]
+  controls.forEach(button => { button.disabled = true })
+  try {
+    const result = await request(`/__demo/${action}`, { method: 'POST' })
+    $('demoStatus').textContent = tx(
+      `Demo step ${result.step} loaded.`,
+      `डेमो टप्पा ${result.step} दाखवला आहे.`,
+    )
+    await refresh()
+  } catch {
+    $('demoStatus').textContent = tx(
+      'Demo control failed. Restart the local demo server.',
+      'डेमो नियंत्रण अयशस्वी. स्थानिक डेमो सर्व्हर पुन्हा सुरू करा.',
+    )
+  } finally {
+    controls.forEach(button => { button.disabled = false })
+  }
+}
+$('demoAdvance').addEventListener('click', () => runDemoControl('advance'))
+$('demoReset').addEventListener('click', () => runDemoControl('reset'))
 $('resetBtn').addEventListener('click', () => {
   for (const id of ['district', 'region', 'kind', 'weaClass']) $(id).value = ''
   $('place').value = ''

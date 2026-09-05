@@ -4,6 +4,8 @@ import AxeBuilder from '@axe-core/playwright'
 test('public-service design keeps independent identity and narrow layouts clear', async ({page}, testInfo) => {
   await page.goto('/')
   await expect(page.locator('#feed article')).toHaveCount(2)
+  await expect(page.locator('#demoBanner')).toBeVisible()
+  await expect(page.locator('#demoBanner')).toContainText('LABELLED DEMO')
   await expect(page.locator('.independent')).toContainText('Not a government website')
   await expect(page.locator('.brand-marathi')).toContainText('महाराष्ट्र')
   await expect(page.getByRole('navigation', {name:'Main navigation'}).getByRole('link')).toHaveCount(5)
@@ -17,6 +19,30 @@ test('public-service design keeps independent identity and narrow layouts clear'
       await expect(page.locator('.portal-nav')).toBeVisible()
     }
   }
+})
+
+test('demo lifecycle controls advance, cancel and reset labelled fixtures', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('#demoBanner')).toBeVisible()
+  await expect(page.locator('#demoAdvance')).toBeVisible()
+  await expect(page.locator('#demoReset')).toBeVisible()
+  await expect(page.locator('#feed article')).toHaveCount(2)
+  await expect(page.locator('#feed')).toContainText('Marunji water service notice')
+
+  await page.locator('#demoAdvance').click()
+  await expect(page.locator('#feed article')).toHaveCount(2)
+  await expect(page.locator('#feed')).toContainText('Marunji water notice revised')
+  await expect(page.locator('#feed')).not.toContainText('Marunji water service notice')
+
+  await page.locator('#demoAdvance').click()
+  await expect(page.locator('#feed article')).toHaveCount(1)
+  await expect(page.locator('#feed')).toContainText('Sindhudurg road advisory')
+  await expect(page.locator('#feed')).not.toContainText('Marunji water notice revised')
+
+  await page.locator('#demoReset').click()
+  await expect(page.locator('#feed article')).toHaveCount(2)
+  await page.locator('#langBtn').click()
+  await expect(page.locator('#feed')).toContainText('मारुंजी पाणीपुरवठा सूचना')
 })
 
 test('official fixture text is safe; filters, place search and Marathi work', async ({ page }) => {
@@ -39,7 +65,7 @@ test('official fixture text is safe; filters, place search and Marathi work', as
   await page.locator('#placeResults button').first().click()
   await expect(page.locator('#district')).toHaveValue('sindhudurg')
   await expect(page.locator('#feed article')).toHaveCount(1)
-  await expect(page.locator('#feed')).toContainText('border road notice')
+  await expect(page.locator('#feed')).toContainText('Sindhudurg road advisory')
   await expect(page.locator('#serviceGrid')).toContainText('Electricity')
   await expect(page.locator('#coverageGrid button')).toHaveCount(36)
   expect(errors).toEqual([])
@@ -96,7 +122,7 @@ test('pagination beyond 500 alerts remains complete', async ({ page }) => {
     const source = body.alerts[0]
     const offset = Number(url.searchParams.get('offset') || 0)
     const alerts = Array.from({ length: offset === 0 ? 500 : 1 }, (_, n) => ({ ...source, id: `page-fixture-${offset + n}` }))
-    await route.fulfill({ json: { ...body, alerts, count: 501, pagination: { total: 501, offset, nextOffset: offset === 0 ? 500 : null, snapshot: 'test-only' } } })
+    await route.fulfill({ json: { ...body, generatedAt: '2026-09-06T10:00:00Z', alerts, count: 501, pagination: { total: 501, offset, nextOffset: offset === 0 ? 500 : null, snapshot: 'test-only' } } })
   })
   await page.goto('/')
   await expect(page.locator('#feed article')).toHaveCount(501)

@@ -24,6 +24,23 @@ export function emptyState() {
   return { generatedAt: null, sources: {} }
 }
 
+export function snapshotNeedsIngest(state, now = Date.now(), cooldownMs = 60_000) {
+  if (!state?.generatedAt) return true
+  const enabled = SOURCE_IDS
+    .map((id) => state.sources?.[id])
+    .filter((source) => !source || !['disabled', 'misconfigured'].includes(source.state))
+  if (enabled.length === 0) return false
+  const attempts = enabled
+    .map((source) => Date.parse(source?.lastAttemptAt || ''))
+    .filter(Number.isFinite)
+  if (attempts.length > 0 && now - Math.max(...attempts) < cooldownMs) return false
+  return enabled.some((source) => {
+    if (!source) return true
+    const at = Date.parse(source.lastSuccessAt || '')
+    return !Number.isFinite(at) || now - at > STALE_MS
+  })
+}
+
 export function classifySourceError(error) {
   // Inspect only bounded error metadata; never return or log upstream strings.
   const tlsCodes = ['UNABLE_TO_VERIFY_LEAF_SIGNATURE', 'CERT_HAS_EXPIRED', 'ERR_TLS_CERT_ALTNAME_INVALID', 'DEPTH_ZERO_SELF_SIGNED_CERT', 'SELF_SIGNED_CERT_IN_CHAIN', 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY']
@@ -169,7 +186,7 @@ export function handleApi(request, state, { now = Date.now(), environment = 'loc
       response = jsonResponse(200, {
         unofficial: true, apiVersion: 1, environment,
         disclaimer: 'Independent civic relay of public government feeds. Not a government agency. Cannot send Wireless Emergency Alerts or cell broadcasts.',
-        delivery: { mode: 'polling', intervalMs: 60_000, webPush: 'unavailable', websocket: 'unavailable' },
+        delivery: { mode: 'polling', intervalMs: 60_000, staleIntervalMs: 15_000, webPush: 'unavailable', websocket: 'unavailable' },
         helplines: HELPLINES, links: OFFICIAL_LINKS,
         districts: DISTRICTS.map(({ id, en, mr, division, lgd }) => ({ id, en, mr, division, lgd })),
         regions: REGIONS.map(({ id, en, mr, districtIds }) => ({ id, en, mr, districtIds })),

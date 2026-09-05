@@ -15,6 +15,9 @@ test('deployed civic hub renders, filters and reports actual source coverage', a
   await expect(page.locator('#coverageGrid button')).toHaveCount(36)
   await expect(page.locator('#serviceGrid article')).toHaveCount(12)
   await expect(page.locator('#sourceList')).toContainText(/SACHET/i)
+  await expect(page.locator('#demoBanner')).toBeHidden()
+  await expect(page.locator('#demoAdvance')).toBeHidden()
+  await expect(page.locator('#demoReset')).toBeHidden()
   const metrics = await page.evaluate(() => {
     const nav = performance.getEntriesByType('navigation')[0]
     return { ...window.__metrics, ttfb: nav.responseStart, domContentLoaded: nav.domContentLoadedEventEnd, resources: performance.getEntriesByType('resource').map(r => ({ name: new URL(r.name).pathname, bytes: r.transferSize })) }
@@ -36,6 +39,7 @@ test('deployed civic hub renders, filters and reports actual source coverage', a
   expect((await locations.json()).locations.map(x => x.districtId).sort()).toEqual(['raigad','thane'])
   expect((await request.get('/api/alerts?limit=NaN')).status()).toBe(400)
   expect((await request.post('/api/alerts')).status()).toBe(405)
+  expect((await request.post('/__demo/advance')).status()).toBe(405)
   const sourceResponse = await request.get('/api/sources')
   const sources = await sourceResponse.json()
   expect(sources.generatedAt).not.toBeNull()
