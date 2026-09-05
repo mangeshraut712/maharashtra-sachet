@@ -164,6 +164,6 @@ Run `npm run deploy:staging`, the deployed Playwright suite, API method/filter c
 
 Run `npm run deploy:production`, then production Playwright, `/api/health`, `/api/sources`, Marunji search, invalid-input checks and generation observation. Record version ID and actual source states.
 
-- [ ] **Step 5: Commit and push reviewed changes**
+- [x] **Step 5: Commit and push reviewed changes**
 
 Stage only reviewed files, commit with an imperative subject under 72 characters, push `main`, then confirm local HEAD, `origin/main`, GitHub default-branch head and CI conclusion match.
