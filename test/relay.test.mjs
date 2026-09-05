@@ -32,9 +32,9 @@ const MH_IDS = DISTRICTS.map((d) => d.id).sort()
 
 test('LGD 497 is Thane, not a synthetic 517b code', () => {
   assert.equal(DISTRICT_BY_LGD.get('497')?.id, 'thane')
-  assert.equal(DISTRICT_BY_LGD.get('517')?.id, 'thane')
+  assert.equal(DISTRICT_BY_LGD.has('517'), false)
   assert.equal(DISTRICT_BY_LGD.get('490')?.id, 'pune')
-  assert.equal(DISTRICT_BY_LGD.get('521')?.id, 'pune')
+  assert.equal(DISTRICT_BY_LGD.has('521'), false)
   assert.equal(DISTRICT_BY_LGD.has('517b'), false)
 })
 
@@ -56,10 +56,11 @@ test('parseCapAlert maps LGD geocodes and bilingual copy', () => {
     alert.districts.map((d) => d.id).sort(),
     ['pune', 'thane'],
   )
-  assert.match(alert.headlineMr, /पुणे/)
+  assert.equal(alert.headlineMr, '')
+  assert.match(alert.headlineHi, /पुणे/)
 })
 
-test('WEA classes: weather stays advisory; severe immediate is imminent; rescue is AMBER', () => {
+test('WEA classes: weather stays advisory; severe immediate is imminent; missing-child stays public safety', () => {
   assert.equal(
     classifyWea({ status: 'Actual', category: 'Met', severity: 'Moderate', urgency: 'Expected', event: 'Light rain' }),
     'WEATHER_ADVISORY',
@@ -70,7 +71,7 @@ test('WEA classes: weather stays advisory; severe immediate is imminent; rescue 
   )
   assert.equal(
     classifyWea({ status: 'Actual', category: 'Rescue', severity: 'Moderate', urgency: 'Immediate', event: 'Missing child' }),
-    'AMBER',
+    'PUBLIC_SAFETY',
   )
   assert.equal(
     classifyWea({ status: 'Actual', category: 'CBRNE', severity: 'Severe', urgency: 'Immediate', event: 'MIDC gas leak' }),
@@ -106,10 +107,10 @@ test('INCOIS ignores Indonesia / Pacific quakes; keeps Makran–Arabian Sea sour
 test('mergeAlerts de-duplicates and ranks Imminent above advisory', () => {
   const merged = mergeAlerts([
     [
-      { id: 'a', weaClass: 'WEATHER_ADVISORY', severity: 'Moderate', urgency: 'Expected', sent: '2026-09-04T10:00:00+05:30' },
-      { id: 'a', weaClass: 'WEATHER_ADVISORY', severity: 'Moderate', urgency: 'Expected', sent: '2026-09-04T10:00:00+05:30' },
+      { source:'sachet', status:'Actual', scope:'Public', msgType:'Alert', id: 'a', weaClass: 'WEATHER_ADVISORY', severity: 'Moderate', urgency: 'Expected', sent: '2026-09-04T10:00:00+05:30' },
+      { source:'sachet', status:'Actual', scope:'Public', msgType:'Alert', id: 'a', weaClass: 'WEATHER_ADVISORY', severity: 'Moderate', urgency: 'Expected', sent: '2026-09-04T10:00:00+05:30' },
     ],
-    [{ id: 'b', weaClass: 'IMMINENT_THREAT', severity: 'Severe', urgency: 'Immediate', sent: '2026-09-04T09:00:00+05:30' }],
+    [{ source:'sachet', status:'Actual', scope:'Public', msgType:'Alert', id: 'b', weaClass: 'IMMINENT_THREAT', severity: 'Severe', urgency: 'Immediate', sent: '2026-09-04T09:00:00+05:30' }],
   ])
   assert.equal(merged.length, 2)
   assert.equal(merged[0].id, 'b')
@@ -250,6 +251,12 @@ test('every WEA situation kind still classifies', () => {
     air: { category: 'Env', event: 'Air quality very poor', severity: 'Severe', urgency: 'Expected' },
     rain: { category: 'Met', event: 'Light rain', severity: 'Moderate', urgency: 'Expected' },
     civil: { category: 'Security', event: 'Curfew law and order', severity: 'Moderate', urgency: 'Expected' },
+    transport: { category:'Transport', event:'Road closure' },
+    water: { category:'Infra', event:'Water supply interruption' },
+    power: { category:'Infra', event:'Power outage' },
+    infrastructure: { category:'Infra', event:'Bridge collapse' },
+    administration: { category:'Other', event:'Administrative notice' },
+    agriculture: { category:'Other', event:'Crop pest advisory' },
   }
   const seen = new Set()
   for (const [kind, alert] of Object.entries(samples)) {
@@ -271,13 +278,13 @@ function assertMaharashtraOnly(alerts, source) {
   }
 }
 
-test('live IMD nowcast only attaches Maharashtra districts', { timeout: 60_000 }, async () => {
+test('live IMD nowcast only attaches Maharashtra districts', { skip: process.env.RUN_LIVE_TESTS !== '1', timeout: 60_000 }, async () => {
   const alerts = await collectImdNowcast()
   assert.ok(Array.isArray(alerts))
   assertMaharashtraOnly(alerts, 'imd')
 })
 
-test('live INCOIS does not attach Pacific quakes as Konkan imminent', { timeout: 30_000 }, async () => {
+test('live INCOIS does not attach Pacific quakes as Konkan imminent', { skip: process.env.RUN_LIVE_TESTS !== '1', timeout: 30_000 }, async () => {
   const alerts = await collectIncois()
   assert.ok(Array.isArray(alerts))
   assertMaharashtraOnly(alerts, 'incois')
@@ -286,20 +293,17 @@ test('live INCOIS does not attach Pacific quakes as Konkan imminent', { timeout:
   }
 })
 
-test('live SACHET Maharashtra CAP stays inside the 36 districts', { timeout: 120_000 }, async () => {
+test('live SACHET Maharashtra CAP stays inside the 36 districts', { skip: process.env.RUN_LIVE_TESTS !== '1', timeout: 120_000 }, async () => {
   const result = await collectSachet()
   assert.equal(result.unchanged, false)
-  assert.ok(result.alerts.length > 0)
+  assert.ok(Array.isArray(result.alerts))
   assertMaharashtraOnly(result.alerts, 'sachet')
 })
 
-test('live CWC collector does not throw and stays in-state when it returns rows', { timeout: 20_000 }, async () => {
-  const alerts = await collectCwc()
-  assert.ok(Array.isArray(alerts))
-  assertMaharashtraOnly(alerts, 'cwc')
+test('unverified CWC collector reports disabled explicitly', async () => {
+  await assert.rejects(collectCwc(), {code:'SOURCE_DISABLED'})
 })
 
-test('CPCB without a data.gov.in key returns no rows', async () => {
-  assert.deepEqual(await collectCpcb('', ['Mumbai']), [])
+test('CPCB without a data.gov.in key reports misconfiguration', async () => {
+  await assert.rejects(collectCpcb('', ['Mumbai']), {code:'SOURCE_MISCONFIGURED'})
 })
-

@@ -3,21 +3,38 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Maharashtra civic relay of official NDMA SACHET CAP and allied government alerts, presented like a US Wireless Emergency Alert.",
+  "description": "Independent bilingual Maharashtra civic alert hub with official sources, district search and transparent coverage.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/mangeshraut712/maharashtra-sachet.git"
   },
   "engines": {
-    "node": ">=20.11.0"
+    "node": ">=24 <25"
   },
   "scripts": {
     "start": "node server/index.mjs",
     "dev": "node --watch server/index.mjs",
-    "test": "node --test"
+    "test": "node --test test/*.test.mjs",
+    "test:live": "RUN_LIVE_TESTS=1 node --test test/relay.test.mjs",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "types": "wrangler types",
+    "build": "wrangler deploy --env staging --dry-run --outdir dist",
+    "deploy:dry-run": "wrangler deploy --env staging --dry-run",
+    "dev:worker": "wrangler dev --test-scheduled",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.3.3"
+    "fast-xml-parser": "5.11.1"
+  },
+  "devDependencies": {
+    "wrangler": "4.129.0",
+    "typescript": "7.0.2",
+    "miniflare": "5.20260903.0-alpha",
+    "esbuild": "0.28.1",
+    "@playwright/test": "1.63.0",
+    "@axe-core/playwright": "4.13.0"
   }
 }

@@ -1,90 +1,305 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0b1220" />
-    <meta name="description" content="Unofficial Maharashtra civic relay of NDMA SACHET CAP, IMD, INCOIS and CPCB public feeds. Not a government website." />
-    <title>Maharashtra Civic Alert Relay — unofficial</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#173c39" />
+    <meta
+      name="description"
+      content="Independent Maharashtra civic alert relay. Check official public alerts, district coverage, source freshness and government service links in English or Marathi."
+    />
+    <title>Maharashtra Civic Alerts — Independent public-feed relay</title>
     <link rel="icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div class="app">
-      <header class="top">
-        <div class="brand">
-          <span class="mark" aria-hidden="true">⚠</span>
-          <div>
-            <h1 id="title">Maharashtra Civic Alert Relay</h1>
-            <p class="tag" id="tag">Unofficial public-feed relay · not NDMA / MSDMA / IMD</p>
-          </div>
-        </div>
-        <div class="top-actions">
-          <button type="button" id="langBtn" class="ghost">मराठी</button>
-          <button type="button" id="notifyBtn" class="ghost">Enable alerts</button>
-          <button type="button" id="sirenBtn" class="ghost">Siren: on</button>
-        </div>
-      </header>
-
-      <aside class="banner" role="note">
-        <strong id="bannerTitle">This is not a government website.</strong>
-        <span id="bannerBody">
-          It only republishes public Common Alerting Protocol and allied feeds. It cannot send Wireless Emergency Alerts or cell broadcasts. For life-threatening events call 112.
-        </span>
-      </aside>
-
-      <section class="controls">
-        <label>
-          <span id="lblRegion">Region</span>
-          <select id="region">
-            <option value="">All regions</option>
-          </select>
-        </label>
-        <label>
-          <span id="lblDistrict">District</span>
-          <select id="district"></select>
-        </label>
-        <label>
-          <span id="lblClass">WEA class</span>
-          <select id="weaClass">
-            <option value="">All</option>
-            <option value="PRESIDENTIAL">Presidential / national</option>
-            <option value="IMMINENT_THREAT">Imminent Threat</option>
-            <option value="AMBER">AMBER / missing child</option>
-            <option value="PUBLIC_SAFETY">Public Safety</option>
-            <option value="WEATHER_ADVISORY">Weather advisory</option>
-            <option value="TEST">Test</option>
-          </select>
-        </label>
-        <label>
-          <span id="lblKind">Situation</span>
-          <select id="kind">
-            <option value="">All situations</option>
-          </select>
-        </label>
-        <div class="helplines" id="helplines"></div>
-      </section>
-
-      <section class="status-row" id="statusRow"></section>
-      <section class="coverage" aria-label="District coverage">
-        <div class="coverage-head">
-          <strong id="coverageTitle">All 36 districts</strong>
-          <span id="coverageNote">Quiet cells are still in the state map. Goa state is excluded; Sindhudurg / Kolhapur border gaons stay in Maharashtra.</span>
-        </div>
-        <div class="coverage-grid" id="coverageGrid"></div>
-      </section>
-
-      <main class="layout">
-        <div class="feed" id="feed"></div>
-        <div class="map-wrap">
-          <div id="map" role="img" aria-label="Alert polygons"></div>
-          <p class="map-note" id="mapNote">Polygons come from NDMA SACHET CAP when the feed includes them. Light rain nowcasts often have no polygon.</p>
-        </div>
-      </main>
+    <a class="skip" href="#alerts" data-i18n="skip">Skip to alerts</a>
+    <div class="independent">
+      <div class="container">
+        <span data-i18n="independent"
+          >Independent civic initiative · Not a government website</span
+        ><a
+          href="https://sachet.ndma.gov.in/"
+          rel="noopener noreferrer"
+          target="_blank"
+          data-i18n="officialSachet"
+          >Official NDMA SACHET ↗</a
+        >
+      </div>
     </div>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="/app.js" type="module"></script>
+    <header class="site-header container">
+      <a class="brand" href="/" aria-label="Maharashtra Civic Alerts home"
+        ><img src="/icon.svg" width="42" height="42" alt="" /><span
+          ><strong data-i18n="brand">Maharashtra</strong
+          ><small data-i18n="brandSub">CIVIC ALERTS</small></span
+        ></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#alerts" data-i18n="alertsNav">Alerts</a
+        ><a href="#coverage" data-i18n="coverageNav">Coverage</a
+        ><a href="#services" data-i18n="servicesNav">Official services</a>
+      </nav>
+      <div class="header-actions">
+        <button id="langBtn" type="button" lang="mr">मराठी</button
+        ><a class="emergency-link" href="tel:112"
+          ><span aria-hidden="true">☎</span>
+          <span data-i18n="call112">Emergency 112</span></a
+        >
+      </div>
+    </header>
+    <main class="container">
+      <section class="hero" aria-labelledby="heroTitle">
+        <div>
+          <p class="eyebrow" data-i18n="eyebrow">
+            AWARENESS STARTS CLOSE TO HOME
+          </p>
+          <h1 id="heroTitle" data-i18n="heroTitle">
+            Your state. Your district.<br />Your next safe step.
+          </h1>
+          <p class="hero-copy" data-i18n="heroCopy">
+            Official public alerts and essential services for Maharashtra, with
+            the source and its freshness in plain sight.
+          </p>
+        </div>
+        <div class="hero-aside">
+          <div class="state-emblem" aria-hidden="true">
+            <span>MH</span><i></i>
+          </div>
+          <p data-i18n="heroAside">
+            36 districts. One shared responsibility.<br />Stay informed. Check
+            the source.
+          </p>
+        </div>
+      </section>
+      <div id="connection" class="connection" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span
+        ><span id="connectionText">Connecting to official-feed relay…</span
+        ><button id="refreshBtn" type="button" data-i18n="refresh">
+          Refresh
+        </button>
+      </div>
+      <noscript
+        ><div class="notice">
+          JavaScript is required for this live relay. For official alerts, visit
+          <a href="https://sachet.ndma.gov.in/">NDMA SACHET</a>. In an
+          emergency, call <a href="tel:112">112</a>.
+        </div></noscript
+      >
+      <section class="location-panel" aria-labelledby="locationTitle">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow" data-i18n="locationEyebrow">MAKE IT LOCAL</p>
+            <h2 id="locationTitle" data-i18n="locationTitle">
+              What’s happening near you?
+            </h2>
+          </div>
+          <button
+            class="text-button"
+            id="resetBtn"
+            type="button"
+            data-i18n="reset"
+          >
+            Reset filters
+          </button>
+        </div>
+        <form id="locationForm" class="location-search" role="search">
+          <label for="place" data-i18n="placeLabel"
+            >Find a town, village or district</label
+          >
+          <div>
+            <input
+              id="place"
+              name="place"
+              type="search"
+              autocomplete="off"
+              maxlength="80"
+              placeholder="Try Pune, Sawantwadi, Chandgad…"
+              aria-describedby="placeNote"
+            /><button type="submit" data-i18n="search">Find place</button>
+          </div>
+        </form>
+        <p id="placeNote" class="hint" data-i18n="placeNote">
+          Place names match to districts. Exact village and ward coverage is not
+          verified.
+        </p>
+        <div id="placeResults" class="place-results" aria-live="polite"></div>
+        <div class="filters">
+          <label
+            ><span data-i18n="region">Region</span
+            ><select id="region">
+              <option value="">All regions</option>
+            </select></label
+          ><label
+            ><span data-i18n="district">District</span
+            ><select id="district">
+              <option value="">All Maharashtra districts</option>
+            </select></label
+          ><label
+            ><span data-i18n="situation">Situation</span
+            ><select id="kind">
+              <option value="">All situations</option>
+            </select></label
+          ><label
+            ><span data-i18n="priority">Alert category</span
+            ><select id="weaClass">
+              <option value="">All categories</option>
+            </select></label
+          >
+        </div>
+      </section>
+      <div class="dashboard">
+        <div class="main-column">
+          <section id="alerts" aria-labelledby="alertsTitle" tabindex="-1">
+            <div class="section-title feed-heading">
+              <div>
+                <p class="eyebrow" id="scopeLabel">ACROSS MAHARASHTRA</p>
+                <h2 id="alertsTitle" data-i18n="alertsTitle">
+                  Public alert bulletin
+                </h2>
+              </div>
+              <span id="alertCount" class="count-badge">—</span>
+            </div>
+            <p id="feedNote" class="hint"></p>
+            <div id="feed" class="feed" aria-busy="true">
+              <div class="empty">
+                <h3>Checking public feeds…</h3>
+                <p>Source availability will appear here.</p>
+              </div>
+            </div>
+          </section>
+          <section
+            id="services"
+            class="services"
+            aria-labelledby="servicesTitle"
+          >
+            <div class="section-title">
+              <div>
+                <p class="eyebrow" data-i18n="servicesEyebrow">
+                  BEYOND THE WEATHER
+                </p>
+                <h2 id="servicesTitle" data-i18n="servicesTitle">
+                  Everyday essentials
+                </h2>
+              </div>
+            </div>
+            <p class="hint" data-i18n="servicesNote">
+              Coverage varies by service. Directory links open official portals;
+              they are not live incident feeds.
+            </p>
+            <div id="serviceGrid" class="service-grid"></div>
+          </section>
+          <section
+            id="coverage"
+            class="coverage"
+            aria-labelledby="coverageTitle"
+          >
+            <div class="section-title">
+              <div>
+                <p class="eyebrow" data-i18n="coverageEyebrow">
+                  KNOW THE LIMITS
+                </p>
+                <h2 id="coverageTitle" data-i18n="coverageTitle">
+                  District coverage
+                </h2>
+              </div>
+              <span id="districtCount" class="count-badge">36</span>
+            </div>
+            <p class="hint" data-i18n="coverageNote">
+              A district with no relayed alert is not an “all clear”. Feed gaps
+              and local incidents may be missing. Maharashtra border towns are
+              included; Goa is outside this relay.
+            </p>
+            <div id="coverageGrid" class="coverage-grid"></div>
+          </section>
+        </div>
+        <aside class="side-column">
+          <section class="help-panel" aria-labelledby="helpTitle">
+            <span class="eyebrow" data-i18n="helpEyebrow">NEED HELP NOW?</span>
+            <h2 id="helpTitle" data-i18n="helpTitle">In danger, call first.</h2>
+            <p data-i18n="helpNote">
+              Don’t wait for a website to update. Contact emergency services.
+            </p>
+            <a class="call-button" href="tel:112"
+              ><span data-i18n="emergencyServices">Emergency services</span
+              ><strong>112 <span aria-hidden="true">↗</span></strong></a
+            >
+            <p class="small" data-i18n="helpFoot">
+              Police · Fire · Medical assistance
+            </p>
+          </section>
+          <section
+            id="sourcePanel"
+            class="source-panel"
+            aria-labelledby="sourcesTitle"
+          >
+            <div class="section-title">
+              <h2 id="sourcesTitle" data-i18n="sourcesTitle">Source health</h2>
+              <span aria-hidden="true">◉</span>
+            </div>
+            <p class="hint" data-i18n="sourcesNote">
+              A successful check can return zero alerts. Unavailable sources
+              leave gaps.
+            </p>
+            <div id="sourceList"></div>
+            <p id="snapshotTime" class="small"></p>
+          </section>
+          <section class="notification-panel">
+            <h2 data-i18n="notificationsTitle">A little more awareness.</h2>
+            <p class="hint" data-i18n="notificationsNote">
+              Opt in to browser notifications for new urgent alerts matching
+              your filters, while this page is open and visible. Delivery is not
+              guaranteed.
+            </p>
+            <button id="notifyBtn" type="button" data-i18n="notify">
+              Enable notifications
+            </button>
+            <p id="notificationStatus" class="small" role="status"></p>
+          </section>
+        <section class="prepare-panel">
+            <p class="eyebrow" data-i18n="prepareEyebrow">BEFORE YOU NEED IT</p>
+            <h2 data-i18n="prepareTitle">Keep a simple plan.</h2>
+            <ol>
+              <li data-i18n="prepareOne">
+                Save emergency contacts and your district’s official website.
+              </li>
+              <li data-i18n="prepareTwo">
+                Read the issuing agency’s instructions and check the affected
+                area.
+              </li>
+              <li data-i18n="prepareThree">
+                Share the official source, not an unverified screenshot.
+              </li>
+            </ol>
+            <a
+              href="https://sdma.maharashtra.gov.in/en/"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-i18n="preparedness"
+              >Maharashtra SDMA guidance ↗</a
+            >
+            <p><a href="/phone-alerts.html">Phone alert readiness / <span lang="mr">फोन सूचना मार्गदर्शक</span> ↗</a></p>
+          </section>
+        </aside>
+      </div>
+      <section class="about">
+        <div>
+          <h2 data-i18n="aboutTitle">Public information. Clear boundaries.</h2>
+          <p data-i18n="aboutNote">
+            This independent project relays public government feeds. It does not
+            issue official alerts, dispatch help, or send government cell
+            broadcasts. Follow the originating agency and local authorities.
+          </p>
+        </div>
+        <div id="officialLinks" class="official-links"></div>
+      </section>
+    </main>
+    <footer class="container">
+      <span data-i18n="footer">Made for awareness across Maharashtra.</span
+      ><span data-i18n="footerNote"
+        >No account. No precise-location tracking.</span
+      >
+    </footer>
+    <script type="module" src="/app.js"></script>
   </body>
 </html>

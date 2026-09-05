@@ -234,16 +234,8 @@ export const REGIONS = [
 
 export const DISTRICT_BY_ID = new Map(DISTRICTS.map((row) => [row.id, row]))
 
-export const DISTRICT_BY_LGD = (() => {
-  const map = new Map()
-  const lgdIds = new Set(DISTRICTS.map((row) => String(row.lgd)))
-  for (const row of DISTRICTS) map.set(String(row.lgd), row)
-  for (const row of DISTRICTS) {
-    const census = String(row.census2011 || '')
-    if (census && census !== '000' && !lgdIds.has(census)) map.set(census, row)
-  }
-  return map
-})()
+// LGD and Census codes are separate namespaces, even when their numbers overlap.
+export const DISTRICT_BY_LGD = new Map(DISTRICTS.map(row => [String(row.lgd), row]))
 
 const GOA_RE =
   /(?<![\p{L}\p{N}])(?:north\s+goa|south\s+goa|panaji|panjim|margao|madgaon|vasco(?:\s+da\s+gama)?|mapusa|ponda|calangute|canacona|pernem|bardez|tiswadi|salcete|goa\s+state|goan(?=\s|$)|(?<!sindhu)goa)(?![\p{L}\p{N}])/iu

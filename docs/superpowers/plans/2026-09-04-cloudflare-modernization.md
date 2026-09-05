@@ -1,5 +1,7 @@
 # Maharashtra SACHET Cloudflare Modernization Implementation Plan
 
+> For the approved event release, follow `2026-09-05-civic-hub-release.md`. This earlier full-modernization plan remains a roadmap, not a statement of completed implementation.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the in-memory Node relay with a secure, typed, Cloudflare-native civic alert application, preserve its supported contracts, deploy it, and close all critical/high findings from a live production audit.

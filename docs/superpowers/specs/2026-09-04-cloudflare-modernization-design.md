@@ -1,5 +1,7 @@
 # Maharashtra SACHET Cloudflare Modernization Design
 
+> Roadmap status: the scoped event release is specified in `2026-09-05-civic-hub-release.md`. This larger modernization remains a future roadmap; its React, Web Push and full post-release audit requirements are not all implemented by the event release.
+
 **Date:** 2026-09-04  
 **Status:** Approved architecture; implementation requires a separate reviewed plan  
 **Target:** Cloudflare Workers with Static Assets, D1, Cron Triggers, and narrowly scoped Durable Objects  

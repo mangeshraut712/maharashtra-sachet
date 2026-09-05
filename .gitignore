@@ -5,3 +5,9 @@ node_modules/
 *.tgz
 .cache/
 .worktrees/
+.wrangler/
+.dev.vars*
+dist/
+test-results/
+playwright-report/
+output/playwright/

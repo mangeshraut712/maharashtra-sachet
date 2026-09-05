@@ -1,9 +1,9 @@
-import { XMLParser } from 'fast-xml-parser'
+import { XMLParser, XMLValidator } from 'fast-xml-parser'
 import { matchImdDistrictTitle } from './districts.mjs'
 import { fetchText } from './http.mjs'
 import { classifyWea, situationKind } from './wea.mjs'
 
-const parser = new XMLParser({ ignoreAttributes: false, removeNSPrefix: true })
+const parser = new XMLParser({ ignoreAttributes: false, removeNSPrefix: true, processEntities:false })
 const IMD_RSS = 'https://mausam.imd.gov.in/imd_latest/contents/dist_nowcast_rss.php'
 
 function asArray(value) {
@@ -22,10 +22,12 @@ export function xmlText(value) {
   return ''
 }
 
-export async function collectImdNowcast() {
-  const res = await fetchText(IMD_RSS, { accept: 'application/xml,text/xml,*/*' })
+export async function collectImdNowcast(options = {}) {
+  const res = await fetchText(IMD_RSS, { ...options, accept: 'application/xml,text/xml,application/rss+xml', expectedContentTypes:['application/xml','text/xml','application/rss+xml'] })
   if (!res.ok) throw new Error(`IMD RSS HTTP ${res.status}`)
+  if (/<!DOCTYPE|<!ENTITY/i.test(res.text) || XMLValidator.validate(res.text) !== true) throw new Error('Invalid IMD XML')
   const feed = parser.parse(res.text)
+  if (!feed.rss?.channel) throw new Error('Invalid IMD RSS schema')
   const items = asArray(feed.rss?.channel?.item)
   const alerts = []
   for (const item of items) {
@@ -40,16 +42,18 @@ export async function collectImdNowcast() {
       sender: 'IMD',
       sent: item.pubDate || item.sent,
       status: 'Actual',
+      scope: 'Public',
       msgType: 'Alert',
       category: 'Met',
       event: 'District nowcast',
-      urgency: /warning|red|orange/i.test(`${title} ${desc}`) ? 'Immediate' : 'Expected',
-      severity: /red/i.test(`${title} ${desc}`) ? 'Severe' : 'Moderate',
-      certainty: 'Likely',
+      urgency: 'Unknown',
+      severity: 'Unknown',
+      certainty: 'Unknown',
       headlineEn: title,
-      headlineMr: title,
+      headlineMr: '',
+      language: 'en',
       description: desc,
-      instruction: 'Follow IMD and SDMA guidance. Call 112 in an emergency.',
+      instruction: '',
       districts: districts.map((d) => ({ id: d.id, en: d.en, mr: d.mr, lgd: d.lgd })),
       capUrl: item.link,
       author: 'IMD',

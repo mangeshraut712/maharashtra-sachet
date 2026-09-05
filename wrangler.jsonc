@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "maharashtra-sachet-local",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "assets": { "directory": "./web", "binding": "ASSETS", "run_worker_first": true },
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "vars": { "ENVIRONMENT": "local", "CPCB_ENABLED": "false" },
+  "d1_databases": [{ "binding": "DB", "database_name": "maharashtra-sachet-local", "migrations_dir": "migrations" }],
+  "env": {
+    "staging": {
+      "name": "maharashtra-sachet-staging",
+      "vars": { "ENVIRONMENT": "staging", "CPCB_ENABLED": "false" },
+      "d1_databases": [{ "binding": "DB", "database_name": "maharashtra-sachet-staging-db", "database_id": "5367b764-e462-456d-b664-4a80774e20f2", "migrations_dir": "migrations" }],
+      "triggers": { "crons": ["* * * * *"] }
+    },
+    "production": {
+      "name": "maharashtra-sachet",
+      "vars": { "ENVIRONMENT": "production", "CPCB_ENABLED": "false" },
+      "d1_databases": [{ "binding": "DB", "database_name": "maharashtra-sachet-db", "database_id": "047ea5a9-46b2-4a11-9661-dd23c112ef50", "migrations_dir": "migrations" }],
+      "triggers": { "crons": ["* * * * *"] }
+    }
+  }
+}

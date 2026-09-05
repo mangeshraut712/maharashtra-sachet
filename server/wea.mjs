@@ -1,7 +1,6 @@
 /**
  * Map ITU CAP 1.2 onto US Wireless Emergency Alert classes.
- * India has no public AMBER cell-broadcast class yet; Rescue/missing copy
- * is still surfaced as AMBER-style so the UI covers every situation type.
+ * These are presentation classes only, never an official broadcast designation.
  */
 export const WEA_CLASSES = {
   PRESIDENTIAL: {
@@ -23,7 +22,7 @@ export const WEA_CLASSES = {
     rank: 80,
     en: 'Child / missing person',
     mr: 'बालक / बेपत्ता',
-    hint: 'Call 1098 or 112 with sightings — do not approach a suspect',
+    hint: 'Legacy presentation class; this relay does not assign official AMBER status',
   },
   PUBLIC_SAFETY: {
     id: 'PUBLIC_SAFETY',
@@ -65,27 +64,14 @@ export function classifyWea(alert) {
   const category = primaryCategory(alert.category)
   const severity = alert.severity || 'Unknown'
   const urgency = alert.urgency || 'Unknown'
-  const event = `${alert.event || ''} ${alert.headline || ''} ${alert.headlineEn || ''} ${alert.description || ''}`
 
-  if (status === 'Exercise' || status === 'Test' || /test message|चाचणी|no action is required/i.test(event)) {
+  if (status === 'Exercise' || status === 'Test') {
     return 'TEST'
-  }
-  if (
-    category === 'Rescue' ||
-    /amber|missing child|abduct|traffick|खोया|बेपत्ता मुल|बाल अपहरण/i.test(event)
-  ) {
-    return 'AMBER'
-  }
-  if (
-    (category === 'Security' && SEVERITY_RANK[severity] >= 3) ||
-    /national emergency|\bwar\b|hostile|civil defence|operation abhyas/i.test(event)
-  ) {
-    return 'PRESIDENTIAL'
   }
   const imminentCategory = new Set(['Geo', 'Met', 'CBRNE', 'Fire', 'Health', 'Infra', 'Safety'])
   if (
     imminentCategory.has(category) &&
-    (URGENCY_RANK[urgency] >= 4 || SEVERITY_RANK[severity] >= 3)
+    URGENCY_RANK[urgency] >= 3 && SEVERITY_RANK[severity] >= 3
   ) {
     return 'IMMINENT_THREAT'
   }
@@ -112,12 +98,24 @@ export const SITUATION_KINDS = [
   ['air', 'Air quality'],
   ['rain', 'Rain / nowcast'],
   ['civil', 'Civil / security'],
+  ['transport', 'Transport / road closure'],
+  ['water', 'Water supply'],
+  ['power', 'Power supply'],
+  ['infrastructure', 'Infrastructure'],
+  ['administration', 'Administrative notice'],
+  ['agriculture', 'Agriculture'],
   ['other', 'Other'],
 ]
 
 export function situationKind(alert) {
   const blob = `${alert.category || ''} ${alert.event || ''} ${alert.headline || ''} ${alert.headlineEn || ''}`.toLowerCase()
   const rules = [
+    ['transport', /transport|road closure|railway|traffic|flight|रस्ता बंद|वाहतूक/],
+    ['water', /water supply|drinking water|पाणीपुरवठा/],
+    ['power', /power outage|power supply|electricity|वीजपुरवठा/],
+    ['infrastructure', /infrastructure|bridge collapse|building collapse|पूल कोसळ/],
+    ['administration', /administrative|administration|office closure|प्रशासकीय/],
+    ['agriculture', /agriculture|crop|pest advisory|शेती|पीक/],
     ['tsunami', /tsunami|सुनामी/],
     ['cyclone', /cyclone|storm surge|चक्रीवादळ/],
     ['flood', /flood|inundat|dam |lake release|पूर|पाणी सोड/],
@@ -138,7 +136,8 @@ export function situationKind(alert) {
     if (re.test(blob)) return id
   }
   const category = primaryCategory(alert.category).toLowerCase()
-  if (category === 'met' || category === 'geo') return 'rain'
+  if (category === 'transport') return 'transport'
+  if (category === 'infra') return 'infrastructure'
   return 'other'
 }
 

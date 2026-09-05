@@ -1,69 +1,86 @@
-# Maharashtra Civic Alert Relay
+# Maharashtra Civic Alerts
 
-Unofficial public-feed relay for **Maharashtra**: NDMA SACHET Common Alerting Protocol (CAP 1.2), IMD district nowcasts, INCOIS tsunami watches, CWC FloodWatch when the portal answers, and optional CPCB AQI.
+An independent English/Marathi civic information hub for Maharashtra. Read official public alerts, find your district through place-name search, inspect source freshness, and reach official services for weather, fire, industry, health, transport, water, electricity, infrastructure, administration and agriculture.
 
-It presents those **official** messages in a **US Wireless Emergency Alert** style (Presidential / Imminent Threat / AMBER / Public Safety / Weather advisory) so people can scan any kind of situation — cyclone, flood, landslide, earthquake, chemical, fire, health, missing child, heat — not weather only.
+**This is not a government website or an emergency dispatch service.** It cannot originate government alerts, cell broadcasts or US Wireless Emergency Alerts. In immediate danger, contact emergency services and follow the issuing agency. No relayed alerts does not mean an area is safe.
 
-**This is not a government website.** It does not speak for NDMA, Maharashtra SDMA, IMD, CWC, INCOIS, CPCB, or any telecom operator. It **cannot** inject cell broadcasts or Wireless Emergency Alerts. India’s WEA analogue is NDMA SACHET + C-DOT cell broadcast, sent by SDMA through licensed operators (`XX-NDMAEW`). This project only **reads** what those agencies already publish.
+## What this release provides
 
-## Can we build on it?
+- All 36 Maharashtra districts, regional filters and English/Marathi district search.
+- Place aliases, including border locations, with ambiguous district choices preserved. Exact village/ward boundary coverage is **not verified**.
+- Official NDMA SACHET CAP and IMD nowcast ingestion, with explicit unavailable/stale states.
+- CAP updates, cancellations, expiry, public/actual status, source-qualified identities and original language labels.
+- Twelve service areas with official directory links and honest coverage gaps. Directory links do not imply live feeds.
+- A responsive, accessible alert list, source status, locally saved preferences and labelled offline snapshots.
+- Optional notifications for new relevant urgent alerts while the page is open. Background Web Push is not implemented in this release.
+- A Cloudflare Worker with Static Assets, D1 persistence, scheduled ingestion, separate staging/production databases and a local Node server.
 
-Yes — on every source below that already publishes a public feed. No — on cell-broadcast inject, IHIP outbreak push, Mission Vatsalya AMBER CB, or ERSS-112 dispatch. Those stay with government.
+## Source limitations
 
-| Source | Role | Public consume? |
-| --- | --- | --- |
-| [NDMA SACHET](https://sachet.ndma.gov.in/) Maharashtra RSS + CAP XML | State multi-hazard CAP (SDMA is the sender) | **Yes** — RSS `rss_maharashtra.xml`, CAP `FetchXMLFile`, polygons `FetchPolygonXMLFile` (homepage cookie handshake) |
-| [Maharashtra SDMA](https://sdma.maharashtra.gov.in/en/) | SEOC 11077 / +91-9321587143, DEOC 1070, policy | Helplines and guidance — no public push API |
-| [IMD](https://mausam.imd.gov.in/) | District nowcast | **Yes** — public RSS. REST `api.imd.gov.in` needs a key + IP whitelist |
-| [CWC FloodWatch](https://ffs.india-water.gov.in/) | River / reservoir | Best-effort JSON; the homepage often times out |
-| [INCOIS ITEWC](https://tsunami.incois.gov.in/TEWS/searlywarnings.jsp) | Tsunami / large earthquakes | **Yes** — `past90days.json` (west-coast / M≥6.5 filter) |
-| [CPCB AQI](https://airquality.cpcb.gov.in/AQI_India/) via [data.gov.in](https://data.gov.in) | Air quality | **Yes** with a personal API key |
-| 112 / 1098 / 108 / 181 | Life-saving voice | Dial only |
+| Source | Treatment |
+| --- | --- |
+| NDMA SACHET | Public CAP relay; incomplete or invalid fetches preserve previous data and report degradation |
+| IMD | Public district nowcasts; no invented severity, urgency or Marathi translation |
+| INCOIS | Earthquake observations are not promoted to tsunami warnings; strict TLS failure is reported |
+| CWC | Direct adapter disabled until its public schema is verified; follow the official FloodWatch link |
+| CPCB | Optional station observations; pollutant concentration is not presented as AQI or an emergency warning |
+| Municipal, power, transport, health and rural services | Official directories; comprehensive live locality feeds are not connected |
 
-## Run
+See [source research](docs/SOURCE_RESEARCH.md) for provenance and [coverage policy](docs/COVERAGE.md) for precision limits.
 
-Requires Node.js 20.11 or newer.
+## Run locally
 
-```bash
-npm install
-cp .env.example .env   # optional DATA_GOV_IN_API_KEY for AQI
-npm start              # http://127.0.0.1:8787
+Use Node.js 24 LTS (the tested patch is recorded in `.node-version`) and npm.
+
+```sh
+npm ci
+npm start
+# http://127.0.0.1:8787
 ```
 
-`npm test` runs CAP parse, LGD, and WEA classification tests without the network.
+The Node host polls live public sources. For deterministic browser fixtures, use `npm run test:e2e`; fixture records never enter the production Worker.
 
-## What the UI does (2026)
+Optional CPCB credentials must be supplied as a process environment variable `DATA_GOV_IN_API_KEY` or a Cloudflare secret. No credentials are required for the default SACHET/IMD relay. The Node host does not automatically load `.env` files. See [operations](docs/OPERATIONS.md).
 
-- Lock-screen style cards: **EMERGENCY ALERT**, class, source, until-when, instruction, **Call 112** (and **1098** on AMBER-style copy).
-- Marathi / English toggle. SACHET already ships `hi` and `en-IN` CAP `info` blocks.
-- All **36 districts**, grouped by revenue division, including renamed Ahilyanagar, Dharashiv, and Chhatrapati Sambhajinagar. Konkan includes **Sindhudurg** (Sawantwadi, Dodamarg, Tillari) and Kolhapur includes **Chandgad** — Maharashtra border gaons. **Goa state is not in this map** (North/South Goa LGD 551/552 are ignored).
-- Region filters: Konkan, Vidarbha, Marathwada, Khandesh, Western Maharashtra, heat-vulnerable belt.
-- Coverage grid on the home page: every district stays listed even when the live feed is quiet there.
-- Situation filter (flood, chemical, missing child, heat, …), not a weather-only list.
-- Leaflet map of CAP polygons when SACHET publishes them (`lat,lon` rings).
-- Browser notifications + optional siren for Presidential / Imminent Threat / AMBER.
-- PWA shell cache. Live `EventSource` `/api/alerts/live`.
-- Relays only. Highest alertness still means: **official cell broadcast on your phone**, then 112.
+## Verify
 
-## API
+```sh
+npm test                  # offline core/API/D1 tests; live tests skipped explicitly
+npm run types             # regenerate Cloudflare binding and runtime types
+npm run typecheck
+npm run build             # local Worker packaging, no external deployment
+npx playwright install --no-shell chromium
+npm run test:e2e           # desktop/mobile, Marathi, accessibility, offline and injection checks
+npm audit
+npm run test:live          # opt-in government network checks; may fail on upstream outages
+```
 
-- `GET /api/health`
-- `GET /api/meta` — districts, helplines, WEA classes
-- `GET /api/coverage` — all 36 districts, live vs quiet, Goa exclusion note
-- `GET /api/alerts?district=pune&region=konkan&class=IMMINENT_THREAT&kind=flood`
-- `GET /api/alerts/live` — SSE
+Results and limitations are in [the dated verification report](docs/VERIFICATION-2026-09-05.md). A passing offline suite does not establish that government feeds or every locality are currently covered.
 
-## Contribute alertness, not a parallel government
+## Cloudflare
 
-Useful civic work:
+```sh
+npx wrangler d1 migrations apply maharashtra-sachet-local --local
+npm run dev:worker
+```
 
-1. Keep this relay honest (disclaimer, ETags, no fake LGD codes, no pretending to be MSDMA).
-2. File feed outages with NDMA SACHET / IMD / INCOIS instead of scraping private APIs.
-3. Translate instructions into Marathi that match SDMA wording.
-4. District collectors can still only **originate** CAP inside SACHET. This repo cannot grant that.
+Follow the staging-first commands in [operations](docs/OPERATIONS.md). Cloudflare credentials use Wrangler's authenticated session; never put tokens in source files. D1 retains last-good source data and cancellation records. A scheduled run cannot overwrite a newer run after losing its lease.
 
-Do not add a “send alert to all phones” button. That path is SDMA → C-DOT CBS → TSPs.
+## API and documentation
 
-## License
+- [API reference](docs/API.md)
+- [Architecture and approved release scope](docs/superpowers/specs/2026-09-05-civic-hub-release.md)
+- [Release checklist](docs/superpowers/plans/2026-09-05-civic-hub-release.md)
+- [Privacy](docs/PRIVACY.md)
+- [Operations and rollback](docs/OPERATIONS.md)
+- [Event submission draft and demo](docs/SUBMISSION.md)
+- [Security reporting](SECURITY.md)
+- [WEA/IPAWS research and Maharashtra-to-India roadmap](docs/WEA-IPAWS-RESEARCH.md)
 
-MIT. Government feed text remains copyright of the originating agency; this software only fetches and displays it.
+The September 4 modernization design is a longer-term roadmap. This release keeps a small vanilla frontend; React, background push, a complete official locality registry and WebSocket infrastructure are not claimed as complete.
+
+## Contributing
+
+Use deterministic fixtures for new adapters. Prove upstream schema, attribution, time semantics, location precision, permitted public access and failure behaviour. Add an offline regression test before changing alert semantics. Do not add unverified incident generation, personal reports, automated emergency translation, or a send-to-all-phones control.
+
+The software is MIT licensed. Government content remains attributed to its source and is subject to the source's terms; the software license does not relicense that content.

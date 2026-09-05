@@ -1,468 +1,979 @@
-const LANG = {
-  en: {
-    title: 'Maharashtra Civic Alert Relay',
-    tag: 'Unofficial public-feed relay · not NDMA / MSDMA / IMD',
-    langBtn: 'मराठी',
-    notify: 'Enable alerts',
-    notifyOn: 'Alerts on',
-    sirenOn: 'Siren: on',
-    sirenOff: 'Siren: off',
-    bannerTitle: 'This is not a government website.',
-    bannerBody:
-      'It only republishes public Common Alerting Protocol and allied feeds. It cannot send Wireless Emergency Alerts or cell broadcasts. For life-threatening events call 112.',
-    district: 'District',
-    region: 'Region',
-    weaClass: 'WEA class',
-    situation: 'Situation',
-    allDistricts: 'All 36 districts',
-    allRegions: 'All regions',
-    allClasses: 'All classes',
-    allKinds: 'All situations',
-    coverageTitle: 'All 36 Maharashtra districts',
-    coverageNote:
-      'Every district stays on the map even with no live card. Goa state is excluded. Sindhudurg and Kolhapur still cover the border gaons (Sawantwadi, Dodamarg, Chandgad, Tillari).',
-    mapNote:
-      'Polygons come from NDMA SACHET CAP when the feed includes them. Light rain nowcasts often have no polygon.',
-    empty: 'No matching alerts right now. Keep this page open — the relay polls official feeds about every 45 seconds.',
-    until: 'Until',
-    source: 'Source',
-    call112: 'Call 112',
-    call1098: 'Call 1098',
-    official: 'Open official source',
-    speak: 'Speak',
-    districts: 'Districts',
-    updated: 'Updated',
-    emergency: 'EMERGENCY ALERT',
+import {
+  safeOfficialUrl,
+  sourceStatus,
+  matchingAlerts,
+  alertContent,
+  snapshotFresh,
+  alertKey,
+  isCurrent,
+  validSnapshot,
+  validMeta,
+} from './ui-model.js'
+
+const $ = (id) => document.getElementById(id)
+const node = (tag, text, className) => {
+  const el = document.createElement(tag)
+  if (text !== undefined) el.textContent = text
+  if (className) el.className = className
+  return el
+}
+const storage = {
+  get(key) {
+    try {
+      return localStorage.getItem(key)
+    } catch {
+      return null
+    }
   },
-  mr: {
-    title: 'महाराष्ट्र नागरी सतर्कता रिले',
-    tag: 'अनाधिकृत सार्वजनिक फीड रिले · एनडीएमए / एसडीएमए / आयएमडी नाही',
-    langBtn: 'English',
-    notify: 'सूचना चालू करा',
-    notifyOn: 'सूचना चालू',
-    sirenOn: 'सायरन: चालू',
-    sirenOff: 'सायरन: बंद',
-    bannerTitle: 'ही शासकीय संकेतस्थळ नाही.',
-    bannerBody:
-      'येथे फक्त सार्वजनिक CAP आणि संबंधित शासकीय फीड परत दाखवले जातात. वायरलेस इमर्जन्सी अलर्ट किंवा सेल ब्रॉडकास्ट पाठवता येत नाहीत. जीवाची भीती असेल तर ११२ वर कॉल करा.',
-    district: 'जिल्हा',
-    region: 'प्रदेश',
-    weaClass: 'WEA वर्ग',
-    situation: 'परिस्थिती',
-    allDistricts: 'सर्व ३६ जिल्हे',
-    allRegions: 'सर्व प्रदेश',
-    allClasses: 'सर्व वर्ग',
-    allKinds: 'सर्व परिस्थिती',
-    coverageTitle: 'महाराष्ट्राचे सर्व ३६ जिल्हे',
-    coverageNote:
-      'लाईव्ह कार्ड नसला तरी जिल्हा नकाशात राहतो. गोवा राज्य नाही. सिंधुदुर्ग / कोल्हापूर सीमा गावे (सावंतवाडी, दोडामार्ग, चंदगड, तिल्लारी) महाराष्ट्रात आहेत.',
-    mapNote:
-      'बहुभुजे NDMA SACHET CAP मध्ये असतील तेव्हा दिसतात. हलका पाऊस नाऊकास्ट बहुतेकदा बहुभुज नसतो.',
-    empty: 'सध्या जुळणारे अलर्ट नाहीत. पृष्ठ उघडे ठेवा — रिले सुमारे ४५ सेकंदांनी अधिकृत फीड तपासतो.',
-    until: 'पर्यंत',
-    source: 'स्रोत',
-    call112: '११२ कॉल',
-    call1098: '१०९८ कॉल',
-    official: 'अधिकृत स्रोत',
-    speak: 'ऐका',
-    districts: 'जिल्हे',
-    updated: 'अद्यतन',
-    emergency: 'आणीबाणी सूचना',
+  set(key, value) {
+    try {
+      localStorage.setItem(key, value)
+      return true
+    } catch {
+      return false
+    }
   },
 }
-
-const KIND_MR = {
+const EN = Object.fromEntries(
+  [...document.querySelectorAll('[data-i18n]')].map((el) => [
+    el.dataset.i18n,
+    el.innerText,
+  ]),
+)
+const MR = {
+  skip: 'सूचनांकडे जा',
+  independent: 'स्वतंत्र नागरी उपक्रम · हे शासकीय संकेतस्थळ नाही',
+  officialSachet: 'अधिकृत NDMA SACHET ↗',
+  brand: 'महाराष्ट्र',
+  brandSub: 'नागरी सतर्कता',
+  alertsNav: 'सूचना',
+  coverageNav: 'व्याप्ती',
+  servicesNav: 'अधिकृत सेवा',
+  call112: 'आपत्कालीन ११२',
+  eyebrow: 'जागरूकतेची सुरुवात आपल्या परिसरातून',
+  heroTitle: 'आपले राज्य. आपला जिल्हा.\nसुरक्षिततेकडे पुढचे पाऊल.',
+  heroCopy:
+    'महाराष्ट्रातील अधिकृत सार्वजनिक सूचना आणि आवश्यक सेवा — स्रोत व माहितीची अद्ययावत स्थिती स्पष्टपणे पहा.',
+  heroAside:
+    '३६ जिल्हे. एक सामायिक जबाबदारी.\nजागरूक राहा. अधिकृत स्रोत तपासा.',
+  refresh: 'पुन्हा तपासा',
+  locationEyebrow: 'आपल्या परिसरासाठी',
+  locationTitle: 'आपल्या परिसरात काय घडत आहे?',
+  reset: 'फिल्टर हटवा',
+  placeLabel: 'शहर, गाव किंवा जिल्हा शोधा',
+  search: 'ठिकाण शोधा',
+  placeNote:
+    'ठिकाणांची नावे जिल्ह्याशी जोडली जातात. अचूक गाव व प्रभाग स्तरावरील व्याप्ती सत्यापित नाही.',
+  region: 'प्रदेश',
+  district: 'जिल्हा',
+  situation: 'परिस्थिती',
+  priority: 'सूचना प्रकार',
+  alertsTitle: 'सार्वजनिक सूचना फलक',
+  servicesEyebrow: 'हवामानापलीकडील माहिती',
+  servicesTitle: 'दैनंदिन आवश्यक सेवा',
+  servicesNote:
+    'प्रत्येक सेवेची व्याप्ती वेगळी आहे. निर्देशिका दुवे अधिकृत संकेतस्थळे उघडतात; ते थेट घटना फीड नाहीत.',
+  coverageEyebrow: 'माहितीच्या मर्यादा जाणून घ्या',
+  coverageTitle: 'जिल्हानिहाय व्याप्ती',
+  coverageNote:
+    'जिल्ह्यासाठी सूचना नसणे म्हणजे सर्व सुरक्षित आहे असे नाही. फीडमधील त्रुटी आणि स्थानिक घटना येथे दिसणार नाहीत. महाराष्ट्रातील सीमावर्ती गावे समाविष्ट आहेत; गोवा या रिलेच्या बाहेर आहे.',
+  helpEyebrow: 'तातडीने मदत हवी आहे?',
+  helpTitle: 'धोका असल्यास आधी कॉल करा.',
+  helpNote:
+    'संकेतस्थळ अद्ययावत होण्याची वाट पाहू नका. आपत्कालीन सेवांशी संपर्क साधा.',
+  emergencyServices: 'आपत्कालीन सेवा',
+  helpFoot: 'पोलीस · अग्निशमन · वैद्यकीय मदत',
+  sourcesTitle: 'स्रोतांची स्थिती',
+  sourcesNote:
+    'यशस्वी तपासणीतही शून्य सूचना मिळू शकतात. अनुपलब्ध स्रोतांमुळे माहिती अपूर्ण असू शकते.',
+  notificationsTitle: 'जागरूकतेसाठी आणखी एक पाऊल.',
+  notificationsNote:
+    'हे पृष्ठ उघडे व दिसत असताना आपल्या फिल्टरशी जुळणाऱ्या नवीन तातडीच्या ब्राउझर सूचनांसाठी परवानगी द्या. सूचना मिळण्याची हमी नाही.',
+  notify: 'ब्राउझर सूचना चालू करा',
+  prepareEyebrow: 'गरज पडण्यापूर्वी',
+  prepareTitle: 'साधी तयारी ठेवा.',
+  prepareOne:
+    'आपत्कालीन संपर्क व जिल्ह्याच्या अधिकृत संकेतस्थळाचा पत्ता जतन करा.',
+  prepareTwo: 'सूचना देणाऱ्या संस्थेचे निर्देश व प्रभावित क्षेत्र तपासा.',
+  prepareThree: 'असत्यापित स्क्रीनशॉटऐवजी अधिकृत स्रोत शेअर करा.',
+  preparedness: 'महाराष्ट्र SDMA मार्गदर्शन ↗',
+  aboutTitle: 'सार्वजनिक माहिती. स्पष्ट मर्यादा.',
+  aboutNote:
+    'हा स्वतंत्र प्रकल्प सार्वजनिक शासकीय फीडमधील माहिती दाखवतो. तो अधिकृत सूचना जारी करत नाही, मदत पाठवत नाही किंवा शासकीय सेल ब्रॉडकास्ट पाठवत नाही. मूळ संस्था व स्थानिक प्रशासनाचे निर्देश पाळा.',
+  footer: 'महाराष्ट्रातील जनजागृतीसाठी.',
+  footerNote: 'खाते आवश्यक नाही. अचूक स्थानाचा मागोवा नाही.',
+}
+const KINDS = {
   tsunami: 'सुनामी',
   cyclone: 'चक्रीवादळ',
   flood: 'पूर',
   landslide: 'दरड',
   earthquake: 'भूकंप',
-  lightning: 'विज / गडगडाट',
+  lightning: 'विजा / गडगडाट',
   heat: 'उष्णतेची लाट',
   cold: 'थंडीची लाट',
-  chemical: 'रासायनिक / औद्योगिक',
+  chemical: 'रासायनिक धोका',
   fire: 'आग',
   health: 'आरोग्य',
   child: 'बेपत्ता बालक',
   air: 'हवेची गुणवत्ता',
-  rain: 'पाऊस / नाऊकास्ट',
-  civil: 'नागरी / सुरक्षा',
+  rain: 'पाऊस',
+  civil: 'नागरी सुरक्षा',
   other: 'इतर',
+  transport: 'वाहतूक',
+  water: 'पाणीपुरवठा',
+  power: 'वीजपुरवठा',
+  infrastructure: 'पायाभूत सुविधा',
+  administration: 'प्रशासन',
+  admin: 'प्रशासन',
+  agriculture: 'शेती',
+  industry: 'उद्योग',
 }
-
+const SOURCES = {
+  sachet: 'NDMA SACHET',
+  imd: 'IMD',
+  incois: 'INCOIS',
+  cwc: 'CWC FloodWatch',
+  cpcb: 'CPCB AQI',
+}
+const URGENT = new Set(['PRESIDENTIAL', 'IMMINENT_THREAT', 'AMBER'])
 const state = {
-  lang: localStorage.getItem('mh-sachet-lang') || 'en',
-  siren: localStorage.getItem('mh-sachet-siren') !== 'off',
+  lang: storage.get('mh-sachet-lang') === 'mr' ? 'mr' : 'en',
   meta: null,
   alerts: [],
-  stats: {},
+  sources: {},
   generatedAt: null,
-  seen: new Set(JSON.parse(localStorage.getItem('mh-sachet-seen') || '[]')),
+  status: 'uninitialized',
+  error: null,
+  offline: !navigator.onLine,
+  loaded: false,
+  busy: false,
+  seen: new Set(),
+  primed: false,
+  notify: false,
+  metaError: false,
+  saveFailed: false,
 }
-
-const $ = (id) => document.getElementById(id)
-
-function t() {
-  return LANG[state.lang]
+const tx = (en, mr) => (state.lang === 'mr' ? mr : en)
+const label = (row) =>
+  state.lang === 'mr'
+    ? row?.mr || row?.en || row?.label || row?.id || ''
+    : row?.en || row?.label || row?.id || ''
+const filters = () =>
+  Object.fromEntries(
+    ['district', 'region', 'kind', 'weaClass'].map((id) => [id, $(id).value]),
+  )
+const date = (iso) =>
+  Number.isFinite(Date.parse(iso))
+    ? new Date(iso).toLocaleString(state.lang === 'mr' ? 'mr-IN' : 'en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      })
+    : tx('Not reported', 'नोंद उपलब्ध नाही')
+const number = (n) =>
+  Number(n).toLocaleString(state.lang === 'mr' ? 'mr-IN' : 'en-IN')
+function officialLink(url, text) {
+  const href = safeOfficialUrl(url)
+  if (!href) return null
+  const link = node('a', text)
+  link.href = href
+  link.target = '_blank'
+  link.rel = 'noopener noreferrer'
+  return link
 }
-
-function applyLang() {
-  const L = t()
-  $('title').textContent = L.title
-  document.title = `${L.title} — unofficial`
-  $('tag').textContent = L.tag
-  $('langBtn').textContent = L.langBtn
-  $('bannerTitle').textContent = L.bannerTitle
-  $('bannerBody').textContent = L.bannerBody
-  $('lblDistrict').textContent = L.district
-  $('lblRegion').textContent = L.region
-  $('lblClass').textContent = L.weaClass
-  $('lblKind').textContent = L.situation
-  $('coverageTitle').textContent = L.coverageTitle
-  $('coverageNote').textContent = L.coverageNote
-  $('mapNote').textContent = L.mapNote
-  $('sirenBtn').textContent = state.siren ? L.sirenOn : L.sirenOff
-  $('notifyBtn').textContent = Notification?.permission === 'granted' ? L.notifyOn : L.notify
-  document.documentElement.lang = state.lang === 'mr' ? 'mr' : 'en'
-}
-
-function headline(alert) {
-  return state.lang === 'mr' ? alert.headlineMr || alert.headlineEn : alert.headlineEn || alert.headlineMr
-}
-
-function weaLabel(id) {
-  const row = state.meta?.weaClasses?.find((c) => c.id === id)
-  if (!row) return id
-  return state.lang === 'mr' ? row.mr : row.en
-}
-
-function fillSelects() {
-  const prevDistrict = $('district').value
-  const prevKind = $('kind').value
-  const prevRegion = $('region').value
-  const district = $('district')
-  const kind = $('kind')
-  const region = $('region')
-  district.innerHTML = `<option value="">${t().allDistricts}</option>`
-  const byDiv = new Map()
-  for (const d of state.meta.districts) {
-    if (!byDiv.has(d.division)) byDiv.set(d.division, [])
-    byDiv.get(d.division).push(d)
-  }
-  for (const [div, list] of byDiv) {
-    const group = document.createElement('optgroup')
-    group.label = div
-    for (const d of list) {
-      const opt = document.createElement('option')
-      opt.value = d.id
-      opt.textContent = state.lang === 'mr' ? d.mr : d.en
-      group.appendChild(opt)
-    }
-    district.appendChild(group)
-  }
-  district.value = prevDistrict
-  region.innerHTML = `<option value="">${t().allRegions}</option>`
-  for (const r of state.meta.regions || []) {
-    const opt = document.createElement('option')
-    opt.value = r.id
-    opt.textContent = `${state.lang === 'mr' ? r.mr : r.en} (${r.districtIds.length})`
-    region.appendChild(opt)
-  }
-  region.value = prevRegion
-  kind.innerHTML = `<option value="">${t().allKinds}</option>`
-  for (const k of state.meta.situationKinds) {
-    const opt = document.createElement('option')
-    opt.value = k.id
-    opt.textContent = state.lang === 'mr' ? KIND_MR[k.id] || k.en : k.en
-    kind.appendChild(opt)
-  }
-  kind.value = prevKind
-  const cls = $('weaClass')
-  cls.options[0].textContent = t().allClasses
-}
-
-function filtered() {
-  const district = $('district').value
-  const weaClass = $('weaClass').value
-  const kind = $('kind').value
-  const region = $('region').value
-  const allowed = region ? new Set((state.meta.regions || []).find((r) => r.id === region)?.districtIds || []) : null
-  return state.alerts.filter((a) => {
-    if (district && !(a.districts || []).some((d) => d.id === district)) return false
-    if (allowed && !(a.districts || []).some((d) => allowed.has(d.id))) return false
-    if (weaClass && a.weaClass !== weaClass) return false
-    if (kind && a.kind !== kind) return false
-    return true
-  })
-}
-
-function formatWhen(iso) {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleString(state.lang === 'mr' ? 'mr-IN' : 'en-IN', { hour12: true })
-}
-
-function persistSeen() {
-  const ids = [...state.seen].slice(-400)
-  localStorage.setItem('mh-sachet-seen', JSON.stringify(ids))
-}
-
-function playSiren() {
-  if (!state.siren) return
-  const ctx = new AudioContext()
-  const osc = ctx.createOscillator()
-  const gain = ctx.createGain()
-  osc.type = 'sawtooth'
-  osc.frequency.value = 880
-  gain.gain.value = 0.04
-  osc.connect(gain)
-  gain.connect(ctx.destination)
-  osc.start()
-  let up = true
-  const pulse = setInterval(() => {
-    osc.frequency.value = up ? 620 : 880
-    up = !up
-  }, 180)
-  setTimeout(() => {
-    clearInterval(pulse)
-    osc.stop()
-    ctx.close()
-  }, 1800)
-}
-
-let primed = false
-
-function notifyNew(alerts) {
-  if (!primed) {
-    for (const a of alerts) state.seen.add(a.id)
-    primed = true
-    persistSeen()
-    return
-  }
-  const fresh = alerts.filter((a) => !state.seen.has(a.id))
-  for (const a of alerts) state.seen.add(a.id)
-  persistSeen()
-  const high = fresh.filter((a) => ['PRESIDENTIAL', 'IMMINENT_THREAT', 'AMBER'].includes(a.weaClass))
-  if (high.length) playSiren()
-  if (Notification?.permission !== 'granted' || high.length === 0) return
-  const a = high[0]
-  new Notification(`${weaLabel(a.weaClass)} · Maharashtra`, {
-    body: headline(a),
-    tag: a.id,
-  })
-}
-
-let map
-let polyLayer
-
-function ensureMap() {
-  if (map) return
-  map = L.map('map', { zoomControl: true }).setView([19.2, 76.0], 6)
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap',
-    maxZoom: 18,
-  }).addTo(map)
-  polyLayer = L.layerGroup().addTo(map)
-}
-
-function colorFor(weaClass) {
-  switch (weaClass) {
-    case 'PRESIDENTIAL':
-    case 'IMMINENT_THREAT':
-      return '#c81e1e'
-    case 'AMBER':
-      return '#c47a00'
-    case 'PUBLIC_SAFETY':
-      return '#1d4ed8'
-    case 'WEATHER_ADVISORY':
-      return '#64748b'
-    case 'TEST':
-      return '#15803d'
-    default:
-      return '#64748b'
-  }
-}
-
-function drawMap(alerts) {
-  ensureMap()
-  polyLayer.clearLayers()
-  const bounds = []
-  for (const a of alerts) {
-    for (const ring of a.polygons || []) {
-      const latlngs = ring.map(([lat, lon]) => [lat, lon])
-      const layer = L.polygon(latlngs, {
-        color: colorFor(a.weaClass),
-        weight: 2,
-        fillOpacity: 0.25,
-      }).bindPopup(`<strong>${headline(a)}</strong>`)
-      polyLayer.addLayer(layer)
-      for (const p of latlngs) bounds.push(p)
-    }
-  }
-  if (bounds.length) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 10 })
-  else map.setView([19.2, 76.0], 6)
-}
-
-function speak(alert) {
-  const text = [weaLabel(alert.weaClass), headline(alert), alert.instruction].filter(Boolean).join('. ')
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = state.lang === 'mr' ? 'mr-IN' : 'en-IN'
-  speechSynthesis.cancel()
-  speechSynthesis.speak(u)
-}
-
-function card(alert) {
-  const L = t()
-  const districts = (alert.districts || []).map((d) => (state.lang === 'mr' ? d.mr : d.en)).join(', ')
-  const until = alert.expires ? `${L.until} ${formatWhen(alert.expires)}` : formatWhen(alert.sent)
-  const el = document.createElement('article')
-  el.className = `wea ${alert.weaClass}`
-  el.innerHTML = `
-    <div class="bar">
-      <span>${L.emergency} · ${weaLabel(alert.weaClass).toUpperCase()}</span>
-      <span>${alert.kind || ''}</span>
-    </div>
-    <div class="body">
-      <h2>${headline(alert)}</h2>
-      <div class="meta">${L.source}: ${alert.sender || alert.author || alert.source} · ${until}${districts ? ` · ${L.districts}: ${districts}` : ''}</div>
-      <div class="desc">${alert.description || ''}</div>
-      ${alert.instruction ? `<div class="instr">${alert.instruction}</div>` : ''}
-      <div class="actions">
-        <a href="tel:112">${L.call112}</a>
-        ${alert.weaClass === 'AMBER' ? `<a href="tel:1098">${L.call1098}</a>` : ''}
-        ${alert.capUrl ? `<a href="${alert.capUrl}" target="_blank" rel="noopener">${L.official}</a>` : ''}
-        <button type="button" data-speak="${alert.id}">${L.speak}</button>
-      </div>
-    </div>
-  `
-  el.querySelector('[data-speak]')?.addEventListener('click', () => speak(alert))
-  return el
-}
-
-function render() {
-  applyLang()
-  const alerts = filtered()
-  const feed = $('feed')
-  feed.innerHTML = ''
-  if (alerts.length === 0) {
-    const empty = document.createElement('div')
-    empty.className = 'empty'
-    empty.textContent = t().empty
-    feed.appendChild(empty)
-  } else {
-    for (const a of alerts) feed.appendChild(card(a))
-  }
-  const bits = [
-    `${t().updated} ${formatWhen(state.generatedAt) || '—'}`,
-    `${alerts.length} / ${state.alerts.length}`,
-  ]
-  if (state.stats?.byClass) {
-    bits.push(
-      Object.entries(state.stats.byClass)
-        .map(([k, n]) => `${k}:${n}`)
-        .join(' · '),
+function applyLanguage() {
+  document.documentElement.lang = state.lang
+  document.title = tx(
+    'Maharashtra Civic Alerts — Independent public-feed relay',
+    'महाराष्ट्र नागरी सतर्कता — स्वतंत्र सार्वजनिक फीड रिले',
+  )
+  for (const el of document.querySelectorAll('[data-i18n]'))
+    el.textContent =
+      (state.lang === 'mr' ? MR[el.dataset.i18n] : EN[el.dataset.i18n]) ||
+      EN[el.dataset.i18n]
+  $('langBtn').textContent = tx('मराठी', 'English')
+  $('langBtn').lang = tx('mr', 'en')
+  $('place').placeholder = tx(
+    'Try Pune, Sawantwadi, Chandgad…',
+    'पुणे, सावंतवाडी, चंदगड…',
+  )
+  $('notifyBtn').textContent = state.notify
+    ? tx('Turn notifications off', 'ब्राउझर सूचना बंद करा')
+    : tx('Enable notifications', 'ब्राउझर सूचना चालू करा')
+  if (!('Notification' in window)) {
+    $('notifyBtn').disabled = true
+    $('notificationStatus').textContent = tx(
+      'This browser does not support notifications. The bulletin still works.',
+      'या ब्राउझरमध्ये सूचना उपलब्ध नाहीत. सूचना फलक वापरता येईल.',
     )
   }
-  $('statusRow').textContent = bits.join('  ·  ')
-  renderCoverage()
-  drawMap(alerts)
 }
-
-function renderCoverage() {
-  const grid = $('coverageGrid')
-  if (!grid || !state.meta?.districts) return
-  const counts = Object.fromEntries(state.meta.districts.map((d) => [d.id, 0]))
-  for (const a of state.alerts) {
-    for (const d of a.districts || []) {
-      if (counts[d.id] != null) counts[d.id] += 1
+function fillSelects() {
+  const selections = filters()
+  const sets = [
+    [
+      'district',
+      state.meta?.districts,
+      tx('All Maharashtra districts', 'महाराष्ट्रातील सर्व जिल्हे'),
+    ],
+    ['region', state.meta?.regions, tx('All regions', 'सर्व प्रदेश')],
+    [
+      'kind',
+      state.meta?.situationKinds,
+      tx('All situations', 'सर्व परिस्थिती'),
+    ],
+    ['weaClass', state.meta?.weaClasses, tx('All categories', 'सर्व प्रकार')],
+  ]
+  for (const [id, rows, all] of sets) {
+    const first = node('option', all)
+    first.value = ''
+    $(id).replaceChildren(first)
+    for (const row of rows || []) {
+      const option = node(
+        'option',
+        id === 'kind' && state.lang === 'mr'
+          ? row.mr || KINDS[row.id] || row.en
+          : label(row),
+      )
+      option.value = row.id
+      $(id).append(option)
     }
-  }
-  const hot = Object.values(counts).filter((n) => n > 0).length
-  $('coverageTitle').textContent = `${t().coverageTitle} · ${hot}/36`
-  const region = $('region')?.value
-  const allowed = region ? new Set((state.meta.regions || []).find((r) => r.id === region)?.districtIds || []) : null
-  grid.innerHTML = ''
-  for (const d of state.meta.districts) {
-    const chip = document.createElement('div')
-    chip.className = counts[d.id] ? 'chip hot' : 'chip'
-    if (allowed) chip.classList.add(allowed.has(d.id) ? 'in-region' : 'out-region')
-    chip.title = d.division
-    chip.textContent = `${state.lang === 'mr' ? d.mr : d.en}${counts[d.id] ? ` (${counts[d.id]})` : ''}`
-    grid.appendChild(chip)
+    $(id).value = selections[id]
   }
 }
-
-async function loadMeta() {
-  const res = await fetch('/api/meta')
-  state.meta = await res.json()
-  fillSelects()
-  const help = $('helplines')
-  help.innerHTML = ''
-  for (const h of state.meta.helplines.slice(0, 5)) {
-    const a = document.createElement('a')
-    a.href = `tel:${h.tel}`
-    a.textContent = h.label
-    a.title = h.detail
-    help.appendChild(a)
+function selectedAlerts() {
+  return matchingAlerts(state.alerts, filters(), state.meta?.regions || [])
+}
+function freshness() {
+  if (state.offline) return 'offline'
+  if (state.error) return 'error'
+  if (!state.loaded || !state.generatedAt || state.status === 'uninitialized')
+    return 'loading'
+  if (!snapshotFresh(state.generatedAt) || state.status === 'stale')
+    return 'stale'
+  if (
+    state.status === 'degraded' ||
+    !Object.keys(state.sources).length ||
+    Object.values(state.sources).some((s) => sourceStatus(s) !== 'healthy')
+  )
+    return 'degraded'
+  return 'healthy'
+}
+function renderStatus() {
+  const mode = freshness()
+  const text = {
+    offline: tx(
+      'Offline · Showing last-known information, if available. Check official channels.',
+      'ऑफलाइन · उपलब्ध असल्यास शेवटची माहिती दाखवत आहोत. अधिकृत माध्यमे तपासा.',
+    ),
+    error: tx(
+      'Relay unavailable · The last-known bulletin may be outdated. Retry or check official sources.',
+      'रिले अनुपलब्ध · शेवटची माहिती जुनी असू शकते. पुन्हा प्रयत्न करा किंवा अधिकृत स्रोत तपासा.',
+    ),
+    loading: tx(
+      'Waiting for a verified feed snapshot · Coverage is not yet known.',
+      'फीडमधील माहितीची प्रतीक्षा · सध्याची व्याप्ती अद्याप ज्ञात नाही.',
+    ),
+    stale: tx(
+      'Stale snapshot · This bulletin has not refreshed within 5 minutes. Do not treat it as current.',
+      'जुनी माहिती · सूचना फलक ५ मिनिटांत अद्ययावत झालेला नाही. ही वर्तमान माहिती समजू नका.',
+    ),
+    degraded: tx(
+      'Partial coverage · One or more sources are unavailable or not configured. Check source health.',
+      'अपूर्ण व्याप्ती · एक किंवा अधिक स्रोत अनुपलब्ध किंवा जोडलेले नाहीत. स्रोतांची स्थिती पहा.',
+    ),
+    healthy: tx(
+      'Connected · Official feeds checked. Local incidents may still be missing.',
+      'जोडलेले · अधिकृत फीड तपासले. काही स्थानिक घटना तरीही उपलब्ध नसू शकतात.',
+    ),
+  }[mode]
+  $('connectionText').textContent =
+    text +
+    (state.metaError
+      ? tx(
+          ' Location metadata is unavailable.',
+          ' ठिकाणांची माहिती अनुपलब्ध आहे.',
+        )
+      : '')
+  $('connection').className =
+    `connection ${['offline', 'error'].includes(mode) ? 'offline' : mode !== 'healthy' ? 'warning' : ''}`
+  $('snapshotTime').textContent =
+    `${tx('Snapshot', 'माहितीची वेळ')}: ${date(state.generatedAt)}` +
+    (state.saveFailed
+      ? tx(
+          ' · Offline snapshot storage is unavailable.',
+          ' · ऑफलाइन माहिती जतन करता येत नाही.',
+        )
+      : '')
+  $('feed').setAttribute('aria-busy', String(state.busy))
+  return mode
+}
+function renderSources() {
+  const list = $('sourceList')
+  list.replaceChildren()
+  const entries = Object.entries(state.sources)
+  if (!entries.length)
+    list.append(
+      node(
+        'p',
+        tx(
+          'No source health report is available yet.',
+          'स्रोतांच्या स्थितीचा अहवाल अद्याप उपलब्ध नाही.',
+        ),
+        'hint',
+      ),
+    )
+  for (const [id, source] of entries) {
+    const status = sourceStatus(source)
+    const row = node('div', undefined, 'source-row')
+    const top = node('div', undefined, 'source-row-top')
+    top.append(node('span', SOURCES[id] || source.name || id))
+    const badgeText =
+      source.status === 'stale'
+        ? tx('Stale', 'जुनी माहिती')
+        : status === 'healthy'
+          ? tx('Checked', 'तपासले')
+          : status === 'disabled'
+            ? tx('Not connected', 'जोडलेले नाही')
+            : status === 'degraded'
+              ? tx('Unavailable', 'अनुपलब्ध')
+              : tx('Not checked', 'तपासणी नाही')
+    top.append(
+      node(
+        'span',
+        badgeText,
+        `source-badge ${status === 'healthy' ? '' : status === 'disabled' ? 'neutral' : 'warn'}`,
+      ),
+    )
+    row.append(top)
+    const detail =
+      status === 'healthy'
+        ? `${number(source.count || 0)} ${tx('records · last success', 'नोंदी · शेवटचे यश')} ${date(source.lastSuccessAt)}`
+        : status === 'disabled'
+          ? tx(
+              'No live data from this source.',
+              'या स्रोताकडून थेट माहिती नाही.',
+            )
+          : tx(
+              'Coverage cannot be confirmed for this source.',
+              'या स्रोताची व्याप्ती निश्चित करता येत नाही.',
+            )
+    row.append(node('p', detail, 'small'))
+    if (source.error) {
+      const details = node('details')
+      details.append(
+        node('summary', tx('Check details', 'तपशील पहा')),
+        node('p', String(source.error).slice(0, 300), 'small'),
+      )
+      row.append(details)
+    }
+    list.append(row)
   }
 }
-
-async function loadAlerts() {
-  const res = await fetch('/api/alerts?limit=200')
-  const body = await res.json()
-  state.alerts = body.alerts || []
-  state.stats = body.stats || {}
-  state.generatedAt = body.generatedAt
-  notifyNew(state.alerts)
-  render()
+function makeCard(alert) {
+  const content = alertContent(alert, state.lang)
+  const card = node(
+    'article',
+    undefined,
+    `alert-card ${URGENT.has(alert.weaClass) ? 'urgent' : ''}`,
+  )
+  const bar = node('div', undefined, 'alert-bar')
+  const category = state.meta?.weaClasses?.find((c) => c.id === alert.weaClass)
+  const kind = state.meta?.situationKinds?.find((c) => c.id === alert.kind)
+  bar.append(
+    node(
+      'span',
+      category
+        ? label(category)
+        : alert.weaClass || tx('Public alert', 'सार्वजनिक सूचना'),
+    ),
+    node(
+      'span',
+      state.lang === 'mr'
+        ? KINDS[alert.kind] || label(kind)
+        : label(kind) || alert.kind || '',
+    ),
+  )
+  const body = node('div', undefined, 'alert-body')
+  const title = node(
+    'h3',
+    content.headline || tx('Official bulletin', 'अधिकृत सूचना'),
+  )
+  title.lang = content.language
+  body.append(title)
+  body.append(
+    node(
+      'p',
+      `${alert.sender || SOURCES[alert.source] || alert.source} · ${tx('Issued', 'जारी')}: ${date(alert.sent)}`,
+      'alert-meta',
+    ),
+  )
+  body.append(
+    node(
+      'p',
+      `${tx('Area', 'क्षेत्र')}: ${(alert.districts || []).map(label).join(', ') || tx('Not specified; check official source', 'नोंद नाही; अधिकृत स्रोत तपासा')}`,
+      'alert-meta',
+    ),
+  )
+  body.append(
+    node(
+      'p',
+      alert.expires
+        ? `${tx('Valid until', 'वैधता')}: ${date(alert.expires)}`
+        : tx(
+            'Expiry not reported — confirm validity with the source.',
+            'वैधतेची वेळ उपलब्ध नाही — स्रोताकडे खात्री करा.',
+          ),
+      'alert-meta',
+    ),
+  )
+  if (
+    sourceStatus(state.sources[alert.source]) !== 'healthy' ||
+    !snapshotFresh(state.generatedAt) ||
+    state.offline ||
+    state.error
+  )
+    body.append(
+      node(
+        'p',
+        tx(
+          'Last-known message: freshness is not confirmed. Check the issuing agency.',
+          'शेवटचा उपलब्ध संदेश: ताजेपणाची खात्री नाही. मूळ संस्थेकडे तपासा.',
+        ),
+        'language-note',
+      ),
+    )
+  if (content.fallback) {
+    const names =
+      state.lang === 'mr'
+        ? { en: 'इंग्रजी', hi: 'हिंदी', mr: 'मराठी', und: 'अज्ञात भाषा' }
+        : {
+            en: 'English',
+            hi: 'Hindi',
+            mr: 'Marathi',
+            und: 'unreported language',
+          }
+    body.append(
+      node(
+        'p',
+        `${tx('Official text shown in', 'मूळ सूचना या भाषेत आहे')}: ${names[content.language.split('-')[0]] || content.language}. ${tx('Selected-language text is unavailable; no automatic translation.', 'निवडलेल्या भाषेतील मजकूर उपलब्ध नाही; स्वयंचलित भाषांतर केलेले नाही.')}`,
+        'language-note',
+      ),
+    )
+  }
+  if (content.description) {
+    const desc = node('p', content.description, 'description')
+    desc.lang = content.language
+    body.append(desc)
+  }
+  if (content.instruction) {
+    const instruction = node('div', undefined, 'instruction')
+    const text = node('p', content.instruction)
+    text.lang = content.language
+    instruction.append(
+      node('strong', tx('Agency instructions', 'संस्थेचे निर्देश')),
+      text,
+    )
+    body.append(instruction)
+  }
+  const actions = node('div', undefined, 'alert-actions')
+  const sourceUrl =
+    safeOfficialUrl(alert.capUrl) ||
+    safeOfficialUrl(alert.url) ||
+    state.meta?.links?.find(
+      (l) =>
+        l.id === alert.source ||
+        (alert.source === 'cwc' && l.id === 'floodwatch'),
+    )?.href
+  const link = officialLink(
+    sourceUrl,
+    tx('Read official source ↗', 'अधिकृत स्रोत वाचा ↗'),
+  )
+  if (link) actions.append(link)
+  else
+    actions.append(
+      node(
+        'span',
+        tx('Source link unavailable', 'स्रोताचा दुवा उपलब्ध नाही'),
+        'small',
+      ),
+    )
+  body.append(actions)
+  card.append(bar, body)
+  return card
+}
+function renderBulletin(mode) {
+  const alerts = selectedAlerts()
+  const feed = $('feed')
+  feed.replaceChildren()
+  $('alertCount').textContent =
+    state.loaded && state.generatedAt
+      ? `${number(alerts.length)} ${tx('alerts', 'सूचना')}`
+      : '—'
+  const selected =
+    state.meta?.districts?.find((d) => d.id === $('district').value) ||
+    state.meta?.regions?.find((r) => r.id === $('region').value)
+  $('scopeLabel').textContent = selected
+    ? label(selected)
+    : tx('ACROSS MAHARASHTRA', 'संपूर्ण महाराष्ट्र')
+  $('feedNote').textContent = tx(
+    'Relayed official messages · Expired alerts are excluded · Times shown in your device’s timezone.',
+    'अधिकृत संदेशांचे पुनर्प्रसारण · कालबाह्य सूचना वगळल्या आहेत · वेळ आपल्या उपकरणाच्या वेळक्षेत्रानुसार आहे.',
+  )
+  if (alerts.length) {
+    for (const alert of alerts) feed.append(makeCard(alert))
+    return
+  }
+  const empty = node('div', undefined, 'empty')
+  const symbol = node('span', mode === 'healthy' ? '○' : '!', 'empty-symbol')
+  symbol.setAttribute('aria-hidden', 'true')
+  let title = tx('No matching active alerts', 'जुळणाऱ्या सक्रिय सूचना नाहीत')
+  let note = tx(
+    'No current messages match these filters. This is not an all-clear. Check official sources and local updates.',
+    'या फिल्टरशी जुळणारे वर्तमान संदेश नाहीत. याचा अर्थ सर्व सुरक्षित आहे असा नाही. अधिकृत स्रोत व स्थानिक माहिती तपासा.',
+  )
+  if (!state.loaded || !state.generatedAt) {
+    title = tx(
+      'Current alerts cannot be confirmed',
+      'वर्तमान सूचनांची खात्री करता येत नाही',
+    )
+    note = tx(
+      'A verified snapshot is not available yet. Use the official source links and retry.',
+      'फीडमधील माहिती अद्याप उपलब्ध नाही. अधिकृत दुवे वापरा आणि पुन्हा प्रयत्न करा.',
+    )
+  } else if (mode !== 'healthy') {
+    title = tx(
+      'No matching alerts in this snapshot',
+      'या माहितीत जुळणाऱ्या सूचना नाहीत',
+    )
+    note = tx(
+      'Coverage is incomplete or outdated. Missing alerts do not mean there is no danger. Check the source health panel.',
+      'माहिती अपूर्ण किंवा जुनी आहे. सूचना नसणे म्हणजे धोका नाही असे नाही. स्रोतांची स्थिती पहा.',
+    )
+  }
+  empty.append(symbol, node('h3', title), node('p', note))
+  feed.append(empty)
+}
+function renderCoverage() {
+  const counts = new Map((state.meta?.districts || []).map((d) => [d.id, 0]))
+  for (const alert of state.alerts.filter((a) => isCurrent(a)))
+    for (const district of alert.districts || [])
+      if (counts.has(district.id))
+        counts.set(district.id, counts.get(district.id) + 1)
+  $('districtCount').textContent = state.meta ? number(counts.size) : '—'
+  $('coverageGrid').replaceChildren()
+  for (const district of state.meta?.districts || []) {
+    const count = counts.get(district.id)
+    const button = node(
+      'button',
+      undefined,
+      `district-chip ${count ? 'hot' : ''} ${$('district').value === district.id ? 'selected' : ''}`,
+    )
+    button.type = 'button'
+    button.setAttribute(
+      'aria-pressed',
+      String($('district').value === district.id),
+    )
+    button.setAttribute(
+      'aria-label',
+      `${label(district)}: ${state.loaded && state.generatedAt ? `${number(count)} ${tx('relayed active alerts', 'सक्रिय रिले सूचना')}` : tx('coverage not known', 'व्याप्ती ज्ञात नाही')}`,
+    )
+    button.append(
+      node('span', label(district)),
+      node(
+        'span',
+        state.loaded && state.generatedAt ? number(count) : '—',
+        'district-number',
+      ),
+    )
+    button.addEventListener('click', () => {
+      $('district').value = district.id
+      $('region').value = ''
+      render()
+      $('alerts').focus()
+    })
+    $('coverageGrid').append(button)
+  }
+}
+function renderServices() {
+  $('serviceGrid').replaceChildren()
+  const icons = {
+    transport: '↔',
+    water: '≈',
+    power: 'ϟ',
+    infrastructure: '⌂',
+    administration: '▤',
+    agriculture: '♧',
+    health: '+',
+    industry: '▥',
+    weather: '☁',
+    disaster: '△',
+  }
+  for (const service of state.meta?.serviceCategories || []) {
+    const card = node('article', undefined, 'service-card')
+    const icon = node('span', icons[service.id] || '↗', 'service-icon')
+    icon.setAttribute('aria-hidden', 'true')
+    card.append(icon, node('h3', label(service)))
+    const live = [
+      'public-feed',
+      'live',
+      'partial-feed',
+      'source-dependent',
+    ].includes(service.coverage)
+    card.append(
+      node(
+        'p',
+        live
+          ? tx('Partial public-feed coverage', 'अंशतः सार्वजनिक फीड')
+          : tx(
+              'Official directory · No live feed',
+              'अधिकृत निर्देशिका · थेट फीड नाही',
+            ),
+        'small',
+      ),
+    )
+    const link = officialLink(
+      service.officialUrl,
+      tx('Official portal ↗', 'अधिकृत संकेतस्थळ ↗'),
+    )
+    if (link) card.append(link)
+    if (service.note) {
+      const details = node('details')
+      const note = node(
+        'p',
+        state.lang === 'mr' ? service.noteMr || service.note : service.note,
+      )
+      if (state.lang === 'mr' && !service.noteMr) note.lang = 'en'
+      details.append(
+        node('summary', tx('Coverage details', 'व्याप्तीचा तपशील')),
+        note,
+      )
+      card.append(details)
+    }
+    $('serviceGrid').append(card)
+  }
+  if (!$('serviceGrid').children.length)
+    $('serviceGrid').append(
+      node(
+        'p',
+        tx(
+          'Service directory is unavailable. Use the official agency links below.',
+          'सेवा निर्देशिका उपलब्ध नाही. खालील अधिकृत संस्थांचे दुवे वापरा.',
+        ),
+        'hint',
+      ),
+    )
+  $('officialLinks').replaceChildren()
+  for (const item of state.meta?.links || []) {
+    const link = officialLink(item.href || item.url, `${label(item)} ↗`)
+    if (link) $('officialLinks').append(link)
+  }
+}
+function render() {
+  applyLanguage()
+  const mode = renderStatus()
+  renderBulletin(mode)
+  renderSources()
+  renderCoverage()
+  renderServices()
 }
 
-function bind() {
-  $('langBtn').addEventListener('click', () => {
-    state.lang = state.lang === 'en' ? 'mr' : 'en'
-    localStorage.setItem('mh-sachet-lang', state.lang)
+async function request(url) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 15_000)
+  try {
+    const response = await fetch(url, {
+      cache: 'no-store',
+      signal: controller.signal,
+      headers: { accept: 'application/json' },
+    })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    return await response.json()
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+async function fullSnapshot() {
+  const first = await request('/api/alerts?limit=500')
+  if (!validSnapshot(first)) throw new Error('Invalid alert snapshot')
+  const alerts = [...first.alerts]
+  let next = first.pagination?.nextOffset
+  let pages = 0
+  while (next != null) {
+    if (++pages > 50) throw new Error('Snapshot exceeds supported page count')
+    const query = new URLSearchParams({
+      limit: '500',
+      offset: String(next),
+      snapshot: first.pagination.snapshot || first.generatedAt || '',
+    })
+    const page = await request(`/api/alerts?${query}`)
+    if (
+      page.generatedAt !== first.generatedAt ||
+      !validSnapshot(page) ||
+      (page.pagination?.nextOffset != null &&
+        page.pagination.nextOffset <= next)
+    )
+      throw new Error('Snapshot changed during pagination')
+    alerts.push(...page.alerts)
+    next = page.pagination?.nextOffset
+  }
+  if (
+    first.pagination?.total != null &&
+    alerts.length !== first.pagination.total
+  )
+    throw new Error('Incomplete alert snapshot')
+  if (!first.pagination && first.count > alerts.length)
+    throw new Error('Truncated alert snapshot')
+  return { ...first, alerts }
+}
+function notifyNew(alerts) {
+  const fresh = new Set(
+    alerts.filter((a) => !state.seen.has(alertKey(a))).map(alertKey),
+  )
+  for (const alert of alerts) state.seen.add(alertKey(alert))
+  if (state.seen.size > 10_000)
+    state.seen = new Set([...state.seen].slice(-5000))
+  if (!state.primed) {
+    state.primed = true
+    return
+  }
+  if (
+    !state.notify ||
+    document.visibilityState !== 'visible' ||
+    !('Notification' in window) ||
+    Notification.permission !== 'granted' ||
+    !snapshotFresh(state.generatedAt) ||
+    state.offline
+  )
+    return
+  const alert = selectedAlerts().find(
+    (a) => fresh.has(alertKey(a)) && URGENT.has(a.weaClass),
+  )
+  if (alert)
+    try {
+      new Notification(
+        tx('Maharashtra · New urgent alert', 'महाराष्ट्र · नवीन तातडीची सूचना'),
+        {
+          body: alertContent(alert, state.lang).headline,
+          tag: alertKey(alert),
+          silent: true,
+        },
+      )
+    } catch {
+      $('notificationStatus').textContent = tx(
+        'Notifications could not be displayed. Use the bulletin.',
+        'ब्राउझर सूचना दाखवता आल्या नाहीत. सूचना फलक वापरा.',
+      )
+    }
+}
+function restoreSnapshot() {
+  try {
+    const raw = storage.get('mh-sachet-snapshot')
+    if (!raw || raw.length > 2_000_000) return
+    const saved = JSON.parse(raw)
+    if (!validSnapshot(saved?.body) || !validMeta(saved?.meta)) return
+    state.meta = saved.meta
+    Object.assign(state, {
+      alerts: saved.body.alerts,
+      sources: saved.body.sources || {},
+      generatedAt: saved.body.generatedAt,
+      status: saved.body.status || 'stale',
+      loaded: true,
+      error: 'restored',
+    })
+    for (const alert of state.alerts) state.seen.add(alertKey(alert))
     fillSelects()
+  } catch {
+    /* Storage may be denied or a previous version may be malformed. */
+  }
+}
+let refreshTimer
+async function refresh() {
+  if (state.busy) return
+  clearTimeout(refreshTimer)
+  state.busy = true
+  $('refreshBtn').disabled = true
+  renderStatus()
+  try {
+    const results = await Promise.allSettled([
+      request('/api/meta'),
+      fullSnapshot(),
+    ])
+    if (results[0].status === 'fulfilled' && validMeta(results[0].value)) {
+      state.meta = results[0].value
+      state.metaError = false
+      fillSelects()
+    } else state.metaError = true
+    if (results[1].status === 'rejected') throw results[1].reason
+    const body = results[1].value
+    Object.assign(state, {
+      alerts: body.alerts,
+      sources: body.sources || {},
+      generatedAt: body.generatedAt,
+      status: body.status || 'unknown',
+      loaded: true,
+      error: null,
+      offline: !navigator.onLine,
+    })
+    notifyNew(state.alerts)
+    if (state.meta) {
+      const saved = JSON.stringify({ meta: state.meta, body })
+      state.saveFailed =
+        saved.length > 2_000_000 || !storage.set('mh-sachet-snapshot', saved)
+    }
+  } catch (error) {
+    state.error = error.message
+    state.offline = !navigator.onLine
+  } finally {
+    state.busy = false
+    $('refreshBtn').disabled = false
+    render()
+    refreshTimer = setTimeout(refresh, 60_000)
+  }
+}
+let searchSequence = 0
+$('locationForm').addEventListener('submit', async (event) => {
+  event.preventDefault()
+  const query = $('place').value.trim()
+  const sequence = ++searchSequence
+  $('placeResults').replaceChildren()
+  if (query.length < 2) {
+    $('placeResults').append(
+      node(
+        'p',
+        tx('Enter at least two characters.', 'किमान दोन अक्षरे लिहा.'),
+        'hint',
+      ),
+    )
+    return
+  }
+  $('placeResults').append(
+    node('p', tx('Finding district matches…', 'जिल्हे शोधत आहोत…'), 'hint'),
+  )
+  try {
+    const body = await request(
+      `/api/locations?${new URLSearchParams({ q: query })}`,
+    )
+    if (sequence !== searchSequence) return
+    $('placeResults').replaceChildren()
+    for (const place of body.locations || []) {
+      const button = node(
+        'button',
+        `${place.name} · ${state.lang === 'mr' ? place.districtMr : place.districtEn}`,
+      )
+      button.type = 'button'
+      button.addEventListener('click', () => {
+        $('district').value = place.districtId
+        $('region').value = ''
+        $('placeResults').replaceChildren(
+          node(
+            'p',
+            `${place.name}: ${tx('district-level match; exact village/ward coverage is not verified.', 'जिल्हा स्तरावरील जुळणी; अचूक गाव/प्रभाग व्याप्ती सत्यापित नाही.')}`,
+            'hint',
+          ),
+        )
+        render()
+      })
+      $('placeResults').append(button)
+    }
+    if (!$('placeResults').children.length)
+      $('placeResults').append(
+        node(
+          'p',
+          tx(
+            'No verified place match. Select a district above; this is not a complete village directory.',
+            'ठिकाणाची जुळणी नाही. वरील जिल्हा निवडा; ही सर्व गावांची निर्देशिका नाही.',
+          ),
+          'hint',
+        ),
+      )
+  } catch {
+    if (sequence === searchSequence)
+      $('placeResults').replaceChildren(
+        node(
+          'p',
+          tx(
+            'Place search is unavailable. Use the district filter.',
+            'ठिकाण शोध उपलब्ध नाही. जिल्हा फिल्टर वापरा.',
+          ),
+          'hint',
+        ),
+      )
+  }
+})
+$('langBtn').addEventListener('click', () => {
+  state.lang = state.lang === 'en' ? 'mr' : 'en'
+  storage.set('mh-sachet-lang', state.lang)
+  $('placeResults').replaceChildren()
+  $('notificationStatus').textContent = ''
+  fillSelects()
+  render()
+})
+$('refreshBtn').addEventListener('click', refresh)
+$('resetBtn').addEventListener('click', () => {
+  for (const id of ['district', 'region', 'kind', 'weaClass']) $(id).value = ''
+  $('place').value = ''
+  $('placeResults').replaceChildren()
+  searchSequence++
+  render()
+})
+for (const id of ['district', 'region', 'kind', 'weaClass'])
+  $(id).addEventListener('change', () => {
+    if (id === 'region') $('district').value = ''
+    $('placeResults').replaceChildren()
     render()
   })
-  $('sirenBtn').addEventListener('click', () => {
-    state.siren = !state.siren
-    localStorage.setItem('mh-sachet-siren', state.siren ? 'on' : 'off')
-    applyLang()
-  })
-  $('notifyBtn').addEventListener('click', async () => {
-    if (!('Notification' in window)) return
-    await Notification.requestPermission()
-    applyLang()
-  })
-  $('district').addEventListener('change', render)
-  $('region').addEventListener('change', render)
-  $('weaClass').addEventListener('change', render)
-  $('kind').addEventListener('change', render)
-}
-
-function live() {
-  try {
-    const es = new EventSource('/api/alerts/live')
-    es.onmessage = (ev) => {
-      const body = JSON.parse(ev.data)
-      state.alerts = body.alerts || []
-      state.stats = body.stats || {}
-      state.generatedAt = body.generatedAt
-      notifyNew(state.alerts)
-      render()
-    }
-  } catch {
-    setInterval(loadAlerts, 20_000)
+$('notifyBtn').addEventListener('click', async () => {
+  if (state.notify) {
+    state.notify = false
+    $('notificationStatus').textContent = tx(
+      'Notifications are off for this page.',
+      'या पृष्ठासाठी ब्राउझर सूचना बंद आहेत.',
+    )
+    applyLanguage()
+    return
   }
-}
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {})
-}
-
-bind()
-applyLang()
-await loadMeta()
-await loadAlerts()
-live()
+  if (!('Notification' in window)) return
+  try {
+    const permission = await Notification.requestPermission()
+    state.notify = permission === 'granted'
+    for (const a of state.alerts) state.seen.add(alertKey(a))
+    $('notificationStatus').textContent = state.notify
+      ? tx(
+          'On for this visit. Only new matching urgent alerts while this page is visible.',
+          'या भेटीसाठी चालू. पृष्ठ दिसत असताना फक्त नवीन जुळणाऱ्या तातडीच्या सूचना.',
+        )
+      : tx(
+          'Permission was not granted. You can still read all alerts here.',
+          'परवानगी मिळाली नाही. सर्व सूचना येथे वाचता येतील.',
+        )
+    applyLanguage()
+  } catch {
+    $('notificationStatus').textContent = tx(
+      'Notifications are unavailable in this browser.',
+      'या ब्राउझरमध्ये सूचना उपलब्ध नाहीत.',
+    )
+  }
+})
+window.addEventListener('offline', () => {
+  state.offline = true
+  render()
+})
+window.addEventListener('online', () => {
+  state.offline = false
+  refresh()
+})
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') refresh()
+})
+if ('serviceWorker' in navigator)
+  navigator.serviceWorker.register('/sw.js').catch(() => {
+    $('notificationStatus').textContent = tx(
+      'Offline shell unavailable; online browsing still works.',
+      'ऑफलाइन पृष्ठ उपलब्ध नाही; ऑनलाइन वापर सुरू आहे.',
+    )
+  })
+restoreSnapshot()
+applyLanguage()
+render()
+refresh()

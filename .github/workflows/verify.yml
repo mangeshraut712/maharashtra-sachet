@@ -1,0 +1,31 @@
+name: Verify civic relay
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm run types
+      - run: git diff --exit-code -- worker-configuration.d.ts
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm audit
+      - run: npx playwright install --with-deps --no-shell chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-evidence
+          path: test-results/
