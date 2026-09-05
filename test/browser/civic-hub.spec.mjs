@@ -1,6 +1,24 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
+test('public-service design keeps independent identity and narrow layouts clear', async ({page}, testInfo) => {
+  await page.goto('/')
+  await expect(page.locator('#feed article')).toHaveCount(2)
+  await expect(page.locator('.independent')).toContainText('Not a government website')
+  await expect(page.locator('.brand-marathi')).toContainText('महाराष्ट्र')
+  await expect(page.getByRole('navigation', {name:'Main navigation'}).getByRole('link')).toHaveCount(5)
+  await page.screenshot({path:`output/playwright/portal-${testInfo.project.name}.png`,fullPage:testInfo.project.name==='desktop'})
+  for (const width of [320, 768, 1440]) {
+    await page.setViewportSize({width,height:900})
+    for (const language of ['en','mr']) {
+      if (await page.locator('html').getAttribute('lang') !== language) await page.locator('#langBtn').click()
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+      await expect(page.locator('.independent')).toBeVisible()
+      await expect(page.locator('.portal-nav')).toBeVisible()
+    }
+  }
+})
+
 test('official fixture text is safe; filters, place search and Marathi work', async ({ page }) => {
   const errors = []
   page.on('pageerror', error => errors.push(error.message))

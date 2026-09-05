@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#173c39" />
+    <meta name="theme-color" content="#a44b13" />
     <meta
       name="description"
       content="Independent Maharashtra civic alert relay. Check official public alerts, district coverage, source freshness and government service links in English or Marathi."
@@ -30,16 +30,12 @@
     </div>
     <header class="site-header container">
       <a class="brand" href="/" aria-label="Maharashtra Civic Alerts home"
-        ><img src="/icon.svg" width="42" height="42" alt="" /><span
-          ><strong data-i18n="brand">Maharashtra</strong
-          ><small data-i18n="brandSub">CIVIC ALERTS</small></span
+        ><img src="/icon.svg" width="64" height="64" alt="" /><span
+          ><span class="brand-marathi" lang="mr">महाराष्ट्र नागरी सतर्कता</span
+          ><strong lang="en">Maharashtra Civic Alerts</strong
+          ><small data-i18n="brandSub">Independent public information portal</small></span
         ></a
       >
-      <nav aria-label="Main navigation">
-        <a href="#alerts" data-i18n="alertsNav">Alerts</a
-        ><a href="#coverage" data-i18n="coverageNav">Coverage</a
-        ><a href="#services" data-i18n="servicesNav">Official services</a>
-      </nav>
       <div class="header-actions">
         <button id="langBtn" type="button" lang="mr">मराठी</button
         ><a class="emergency-link" href="tel:112"
@@ -48,31 +44,40 @@
         >
       </div>
     </header>
+    <nav class="portal-nav" aria-label="Main navigation">
+      <div class="container">
+        <a href="#alerts" data-i18n="alertsNav">Alert bulletin</a>
+        <a href="#services" data-i18n="servicesNav">Citizen services</a>
+        <a href="#coverage" data-i18n="coverageNav">District directory</a>
+        <a href="#sourcePanel" data-i18n="sourcesNav">Source status</a>
+        <a href="/phone-alerts.html" data-i18n="readinessNav">Phone alert guide</a>
+      </div>
+    </nav>
     <main class="container">
       <section class="hero" aria-labelledby="heroTitle">
         <div>
           <p class="eyebrow" data-i18n="eyebrow">
-            AWARENESS STARTS CLOSE TO HOME
+            INFORMATION FOR CITIZENS
           </p>
           <h1 id="heroTitle" data-i18n="heroTitle">
-            Your state. Your district.<br />Your next safe step.
+            Public alerts &amp; citizen services
           </h1>
           <p class="hero-copy" data-i18n="heroCopy">
-            Official public alerts and essential services for Maharashtra, with
-            the source and its freshness in plain sight.
+            Find public alerts for your district, check source updates and access
+            essential services across Maharashtra.
           </p>
         </div>
         <div class="hero-aside">
-          <div class="state-emblem" aria-hidden="true">
-            <span>MH</span><i></i>
+          <div class="coverage-mark" aria-hidden="true">
+            <span>36</span>
           </div>
           <p data-i18n="heroAside">
-            36 districts. One shared responsibility.<br />Stay informed. Check
-            the source.
+            Districts across Maharashtra.<br />Local information. Clear sources.
           </p>
         </div>
       </section>
       <div id="connection" class="connection" role="status" aria-live="polite">
+        <strong class="update-label" data-i18n="updateLabel">Latest status</strong>
         <span class="status-dot" aria-hidden="true"></span
         ><span id="connectionText">Connecting to official-feed relay…</span
         ><button id="refreshBtn" type="button" data-i18n="refresh">
@@ -89,9 +94,9 @@
       <section class="location-panel" aria-labelledby="locationTitle">
         <div class="section-title">
           <div>
-            <p class="eyebrow" data-i18n="locationEyebrow">MAKE IT LOCAL</p>
+            <p class="eyebrow" data-i18n="locationEyebrow">DISTRICT INFORMATION</p>
             <h2 id="locationTitle" data-i18n="locationTitle">
-              What’s happening near you?
+              Select your area
             </h2>
           </div>
           <button

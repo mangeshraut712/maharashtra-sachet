@@ -1,4 +1,4 @@
-const CACHE = 'mh-sachet-shell-v3'
+const CACHE = 'mh-sachet-shell-v4'
 const SHELL = [
   '/',
   '/index.html',

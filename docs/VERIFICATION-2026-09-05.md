@@ -2,6 +2,8 @@
 
 Scope: the approved September 5 civic-hub release. This is not a certification of comprehensive Maharashtra incident coverage or WEA/IPAWS compliance.
 
+Latest frontend deployment: see the public-service design refresh addendum below. Earlier version IDs and measurements are retained as historical evidence.
+
 ## Local verification
 
 | Check | Observed result |
@@ -80,3 +82,13 @@ Eight of nine unique official service landing URLs returned HTTP 200 in a bounde
 - Live feeds can be late, empty or unavailable; polling is not instantaneous emergency delivery.
 - CI workflow is written and locally exercised through its main commands; no remote GitHub Actions execution is claimed.
 - Event submission endpoint, deadline and pre-existing-project rules remain unverified; no final submission sent.
+
+## Public-service design refresh addendum
+
+The frontend was restyled after inspecting official Maharashtra SDMA, Public Health and Urban Development sites. The bilingual masthead, navigation band, amber notices and service panels use those public-service layout conventions. Original project identity and independent-site disclosure remain; no government seal, portraits or government ownership claims were copied. See `DESIGN-2026-09-05.md`.
+
+Local checks: 72 deterministic tests passed with three live checks explicitly skipped; TypeScript and Worker build passed; 14 browser tests passed. The added browser test covers both languages at 320, 768 and 1440 CSS pixels, visible independent identity and the five navigation links. After updating the offline-shell cache to v4, its three tests and both offline-reload browser checks passed again. Desktop/mobile screenshots were visually reviewed.
+
+Staging version `045774dc-2a38-4826-96f3-da8bb721b0b7` passed both live browser tests. Production version `d7257b42-b107-4d14-823b-789b2f47b407` deployed successfully and passed both live desktop/mobile checks, including axe accessibility checks in English/Marathi, filters and API validation. Enabled sources were healthy at `2026-09-05T09:23:42.011Z`; CWC and CPCB remained explicitly disabled. No collector or alert semantics changed in this design pass.
+
+Production lab sample: desktop LCP 2.364 s, mobile LCP 2.080 s, CLS 0 on both; Worker startup 21 ms. These are observed samples, not field Core Web Vitals or guaranteed loading times. No new external rendering dependency was added.

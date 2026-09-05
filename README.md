@@ -76,6 +76,7 @@ Follow the staging-first commands in [operations](docs/OPERATIONS.md). Cloudflar
 - [Event submission draft and demo](docs/SUBMISSION.md)
 - [Security reporting](SECURITY.md)
 - [WEA/IPAWS research and Maharashtra-to-India roadmap](docs/WEA-IPAWS-RESEARCH.md)
+- [Maharashtra public-service design refresh](docs/DESIGN-2026-09-05.md)
 
 The September 4 modernization design is a longer-term roadmap. This release keeps a small vanilla frontend; React, background push, a complete official locality registry and WebSocket infrastructure are not claimed as complete.
 
