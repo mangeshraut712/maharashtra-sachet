@@ -69,8 +69,6 @@ For Marunji, step 6 currently requires selecting Pune manually because the looku
 - A degraded/disabled source means information is unavailable or incomplete.
 - No active alert and an unknown place are not green safety assessments.
 
-## Recommended next change
+## Follow-up (same day)
 
-Add a source-backed Marunji search alias and a regression test for Marunji → Pune, with Marathi spelling reviewed against an official source. Preserve the district-level precision disclosure. A complete locality solution requires a versioned official village/local-body directory and verified boundaries, rather than continuing to claim completeness from selected aliases.
-
-Application code and deployment were unchanged during this test/report task. The missing alias has been reported, not silently added.
+`marunji` was added as a Pune `places` alias with a regression test. Precision remains `district-alias`. Production still returned no Marunji match until a Worker deploy. A complete locality solution still needs a versioned official village/local-body directory and verified boundaries.

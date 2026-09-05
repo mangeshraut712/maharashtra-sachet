@@ -85,7 +85,7 @@ Eight of nine unique official service landing URLs returned HTTP 200 in a bounde
 
 ## Public-service design refresh addendum
 
-The frontend was restyled after inspecting official Maharashtra SDMA, Public Health and Urban Development sites. The bilingual masthead, navigation band, amber notices and service panels use those public-service layout conventions. Original project identity and independent-site disclosure remain; no government seal, portraits or government ownership claims were copied. See `DESIGN-2026-09-05.md`.
+The frontend was restyled after inspecting official Maharashtra SDMA, Public Health and Urban Development sites. The bilingual masthead, navigation band, amber notices and service panels use those public-service layout conventions. Original project identity and independent-site disclosure remain; no government seal, portraits or government ownership claims were copied. See `DESIGN-2026-09-05.md` in this folder.
 
 Local checks: 72 deterministic tests passed with three live checks explicitly skipped; TypeScript and Worker build passed; 14 browser tests passed. The added browser test covers both languages at 320, 768 and 1440 CSS pixels, visible independent identity and the five navigation links. After updating the offline-shell cache to v4, its three tests and both offline-reload browser checks passed again. Desktop/mobile screenshots were visually reviewed.
 

@@ -27,7 +27,7 @@ test('every district and Maharashtra border place is discoverable', () => {
       assert.ok(catalog.searchLocalities(query).some(x => x.districtId === district.id), query)
     }
   }
-  for (const [query, id] of [['Sawantwadi', 'sindhudurg'], ['Chandgad', 'kolhapur'], ['Navapur', 'nandurbar'], ['Sironcha', 'gadchiroli']]) {
+  for (const [query, id] of [['Sawantwadi', 'sindhudurg'], ['Chandgad', 'kolhapur'], ['Navapur', 'nandurbar'], ['Sironcha', 'gadchiroli'], ['Marunji', 'pune']]) {
     assert.ok(catalog.searchLocalities(query).some(x => x.districtId === id), query)
   }
 })

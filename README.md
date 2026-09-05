@@ -1,36 +1,43 @@
 # Maharashtra Civic Alerts
 
-An independent English/Marathi civic information hub for Maharashtra. Read official public alerts, find your district through place-name search, inspect source freshness, and reach official services for weather, fire, industry, health, transport, water, electricity, infrastructure, administration and agriculture.
+Independent English/Marathi hub for official Maharashtra public alerts, district search and service directories.
 
-**This is not a government website or an emergency dispatch service.** It cannot originate government alerts, cell broadcasts or US Wireless Emergency Alerts. In immediate danger, contact emergency services and follow the issuing agency. No relayed alerts does not mean an area is safe.
+**This is not a government website or an emergency dispatch service.** In immediate danger call **112**. Zero relayed alerts does not mean an area is safe.
 
-## What this release provides
+**Use it live:** [maharashtra-sachet.mangeshraut712.workers.dev](https://maharashtra-sachet.mangeshraut712.workers.dev)
 
-- All 36 Maharashtra districts, regional filters and English/Marathi district search.
-- Place aliases, including border locations, with ambiguous district choices preserved. Exact village/ward boundary coverage is **not verified**.
-- Official NDMA SACHET CAP and IMD nowcast ingestion, with explicit unavailable/stale states.
-- CAP updates, cancellations, expiry, public/actual status, source-qualified identities and original language labels.
-- Twelve service areas with official directory links and honest coverage gaps. Directory links do not imply live feeds.
-- A responsive, accessible alert list, source status, locally saved preferences and labelled offline snapshots.
-- Optional notifications for new relevant urgent alerts while the page is open. Background Web Push is not implemented in this release.
-- A Cloudflare Worker with Static Assets, D1 persistence, scheduled ingestion, separate staging/production databases and a local Node server.
+![Production homepage, 5 Sept 2026](docs/screenshots/desktop-home.png)
 
-## Source limitations
+## How to use (in short)
 
-| Source | Treatment |
+1. Open the site. Read the independent-project banner and **Latest status**.
+2. Search a place (Pune, Sawantwadi, Navi Mumbai) or pick a district. Place names map to a **district**, not a verified village/ward boundary.
+3. If two districts appear (Navi Mumbai → Raigad and Thane), choose the one that matches your area.
+4. Read **Source health** before treating an empty bulletin as “all clear”.
+5. Use **Citizen services** for official portals. Directory links are not live incident feeds.
+6. Switch to **मराठी** when needed. Optional notifications only work while the page is open.
+
+Full walkthrough and current live numbers: [How to use](docs/HOW-TO.md) · [Current snapshot](docs/STATUS.md)
+
+## Current live snapshot
+
+Captured **5 Sept 2026, 16:39 IST** from production. The latest stored generation was `2026-09-05T10:33:41.986Z` (16:03:41 IST), so the health endpoint correctly reported it as stale. Feeds and health can change after this snapshot.
+
+| Check | Result |
 | --- | --- |
-| NDMA SACHET | Public CAP relay; incomplete or invalid fetches preserve previous data and report degradation |
-| IMD | Public district nowcasts; no invented severity, urgency or Marathi translation |
-| INCOIS | Earthquake observations are not promoted to tsunami warnings; strict TLS failure is reported |
-| CWC | Direct adapter disabled until its public schema is verified; follow the official FloodWatch link |
-| CPCB | Optional station observations; pollutant concentration is not presented as AQI or an emergency warning |
-| Municipal, power, transport, health and rural services | Official directories; comprehensive live locality feeds are not connected |
+| Production health | HTTP 503, `status: stale`, last generation `2026-09-05T10:33:41.986Z` |
+| Active alerts | **0** (expired CAP records are excluded) |
+| SACHET | Stale, **10** last-known retained records |
+| IMD / INCOIS | Stale, **0** last-known records |
+| CWC / CPCB | Explicitly **disabled** (not connected) |
+| Districts | All **36** listed; none had a live alert in this snapshot |
+| Place search | Navi Mumbai → Raigad + Thane; Sawantwadi → Sindhudurg; Marunji is in source as Pune and needs a production deploy to appear on the live site |
 
-See [source research](docs/SOURCE_RESEARCH.md) for provenance and [coverage policy](docs/COVERAGE.md) for precision limits.
+Staging was **stale** at the same time (`generatedAt: 2026-09-05T10:23:59.254Z`). Treat staging as a deploy target, not a second live bulletin.
 
 ## Run locally
 
-Use Node.js 24 LTS (the tested patch is recorded in `.node-version`) and npm.
+Node.js 24 LTS (see `.node-version`) and npm:
 
 ```sh
 npm ci
@@ -38,50 +45,19 @@ npm start
 # http://127.0.0.1:8787
 ```
 
-The Node host polls live public sources. For deterministic browser fixtures, use `npm run test:e2e`; fixture records never enter the production Worker.
-
-Optional CPCB credentials must be supplied as a process environment variable `DATA_GOV_IN_API_KEY` or a Cloudflare secret. No credentials are required for the default SACHET/IMD relay. The Node host does not automatically load `.env` files. See [operations](docs/OPERATIONS.md).
-
-## Verify
-
 ```sh
-npm test                  # offline core/API/D1 tests; live tests skipped explicitly
-npm run types             # regenerate Cloudflare binding and runtime types
+npm test                 # offline tests; live network checks skipped
 npm run typecheck
-npm run build             # local Worker packaging, no external deployment
-npx playwright install --no-shell chromium
-npm run test:e2e           # desktop/mobile, Marathi, accessibility, offline and injection checks
-npm audit
-npm run test:live          # opt-in government network checks; may fail on upstream outages
+npm run test:e2e         # after: npx playwright install --no-shell chromium
 ```
 
-Results and limitations are in [the dated verification report](docs/VERIFICATION-2026-09-05.md). A passing offline suite does not establish that government feeds or every locality are currently covered.
+Deploy, rollback and secrets: [operations](docs/OPERATIONS.md). API: [docs/API.md](docs/API.md). All docs: [docs/README.md](docs/README.md).
 
-## Cloudflare
+## What this project does not do
 
-```sh
-npx wrangler d1 migrations apply maharashtra-sachet-local --local
-npm run dev:worker
-```
+- Originate government alerts, cell broadcasts or US Wireless Emergency Alerts.
+- Guarantee complete village, ward or municipal coverage.
+- Connect statewide live power, water, traffic or AQI feeds (those are official directories unless a source is enabled).
+- Deliver background Web Push after you close the tab.
 
-Follow the staging-first commands in [operations](docs/OPERATIONS.md). Cloudflare credentials use Wrangler's authenticated session; never put tokens in source files. D1 retains last-good source data and cancellation records. A scheduled run cannot overwrite a newer run after losing its lease.
-
-## API and documentation
-
-- [API reference](docs/API.md)
-- [Architecture and approved release scope](docs/superpowers/specs/2026-09-05-civic-hub-release.md)
-- [Release checklist](docs/superpowers/plans/2026-09-05-civic-hub-release.md)
-- [Privacy](docs/PRIVACY.md)
-- [Operations and rollback](docs/OPERATIONS.md)
-- [Event submission draft and demo](docs/SUBMISSION.md)
-- [Security reporting](SECURITY.md)
-- [WEA/IPAWS research and Maharashtra-to-India roadmap](docs/WEA-IPAWS-RESEARCH.md)
-- [Maharashtra public-service design refresh](docs/DESIGN-2026-09-05.md)
-
-The September 4 modernization design is a longer-term roadmap. This release keeps a small vanilla frontend; React, background push, a complete official locality registry and WebSocket infrastructure are not claimed as complete.
-
-## Contributing
-
-Use deterministic fixtures for new adapters. Prove upstream schema, attribution, time semantics, location precision, permitted public access and failure behaviour. Add an offline regression test before changing alert semantics. Do not add unverified incident generation, personal reports, automated emergency translation, or a send-to-all-phones control.
-
-The software is MIT licensed. Government content remains attributed to its source and is subject to the source's terms; the software license does not relicense that content.
+The software is MIT licensed. Government content stays attributed to its source.

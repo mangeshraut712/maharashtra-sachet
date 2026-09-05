@@ -2,6 +2,8 @@
 
 Use Node 24 and the checked-in lockfile. Cloudflare is the release target. Staging and production use separate Workers and D1 databases; do not bind production data to local test environments.
 
+Refresh documentation screenshots from the live site with `LIVE_URL=https://maharashtra-sachet.mangeshraut712.workers.dev npm run docs:screenshots` (Node 24, Playwright Chromium). Record the new `generatedAt` in `docs/STATUS.md`.
+
 ## Local checks
 
 ```sh

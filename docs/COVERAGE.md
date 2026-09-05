@@ -1,6 +1,6 @@
 # Coverage and geographic precision
 
-The release lists 36 Maharashtra districts across six revenue divisions. District inventory, aliases and supported border settlements are in `server/districts.mjs`. `server/coverage-catalog.mjs` exposes a searchable subset of place aliases and an explicit coverage contract.
+The release lists 36 Maharashtra districts across six revenue divisions. District inventory, aliases and supported border settlements are in `server/districts.mjs`. `server/coverage-catalog.mjs` exposes a searchable subset of place aliases and an explicit coverage contract. Aliases such as Sawantwadi, Navi Mumbai and Marunji (Pune / Mulshi context) are navigation hints, not a village registry.
 
 ## What a result means
 

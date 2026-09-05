@@ -147,7 +147,7 @@ export const DISTRICTS = [
   d({
     lgd: '490', census2011: '521', id: 'pune', en: 'Pune', mr: 'पुणे', division: 'Pune',
     imdTitles: ['pune'],
-    places: ['pimpri', 'chinchwad', 'pcmc', 'pimpri chinchwad', 'hadapsar', 'hinjewadi', 'lonavala', 'lonavla', 'talegaon', 'baramati', 'indapur', 'daund', 'shirur', 'junnar', 'ambegaon', 'khed pune', 'mulshi', 'velhe', 'bhor', 'purandar', 'saswad', 'khadakwasla', 'pawna', 'lavasa'],
+    places: ['pimpri', 'chinchwad', 'pcmc', 'pimpri chinchwad', 'hadapsar', 'hinjewadi', 'lonavala', 'lonavla', 'talegaon', 'baramati', 'indapur', 'daund', 'shirur', 'junnar', 'ambegaon', 'khed pune', 'mulshi', 'marunji', 'velhe', 'bhor', 'purandar', 'saswad', 'khadakwasla', 'pawna', 'lavasa'],
   }),
   d({
     lgd: '491', census2011: '520', id: 'raigad', en: 'Raigad', mr: 'रायगड', division: 'Konkan',
