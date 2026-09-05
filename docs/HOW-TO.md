@@ -36,7 +36,9 @@ The same site works in a mobile browser. Notifications, if enabled, only run whi
 
 ```sh
 npm ci
-npm start                 # http://127.0.0.1:8787
+npm start                 # live public sources, http://127.0.0.1:8787
+npm run demo              # labelled fixture bulletin (2 test alerts), http://127.0.0.1:8799
+npm run verify:realtime   # observe two advancing production generations, read-only
 npm test
 npx wrangler d1 migrations apply maharashtra-sachet-local --local
 npm run dev:worker
@@ -46,6 +48,6 @@ Useful reads: [API](API.md), [operations](OPERATIONS.md), [coverage](COVERAGE.md
 
 ## Honest limits while you use it
 
-- Place search is not a complete village directory. Marunji is added in source as a Pune district hint; production still needs a deploy for that alias to appear live.
+- Place search is not a complete village directory. Marunji resolves on production as a Pune district hint, not a verified village, ward or municipal boundary.
 - Empty bulletin + healthy SACHET means no **active public Actual** CAP items in this snapshot, not “Maharashtra is safe”.
 - Expired, cancelled, private-scope and Test messages are kept out of the public list on purpose.

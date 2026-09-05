@@ -21,19 +21,19 @@ Full walkthrough and current live numbers: [How to use](docs/HOW-TO.md) · [Curr
 
 ## Current live snapshot
 
-Captured **5 Sept 2026, 16:39 IST** from production. The latest stored generation was `2026-09-05T10:33:41.986Z` (16:03:41 IST), so the health endpoint correctly reported it as stale. Feeds and health can change after this snapshot.
+Verified **6 Sept 2026, 00:59 IST** against production version `6645d3eb-b2e0-4070-bc55-81c18fc5f2af`. The one-minute scheduler advanced the healthy generation from `2026-09-05T19:27:58.576Z` to `2026-09-05T19:28:58.319Z`. Feeds and health can change after this snapshot.
 
 | Check | Result |
 | --- | --- |
-| Production health | HTTP 503, `status: stale`, last generation `2026-09-05T10:33:41.986Z` |
+| Production health | HTTP 200, `status: healthy`, generation advanced within 60 seconds |
 | Active alerts | **0** (expired CAP records are excluded) |
-| SACHET | Stale, **10** last-known retained records |
-| IMD / INCOIS | Stale, **0** last-known records |
+| SACHET | Healthy, **10** retained source records; none currently active |
+| IMD / INCOIS | Healthy checks, **0** current source records |
 | CWC / CPCB | Explicitly **disabled** (not connected) |
 | Districts | All **36** listed; none had a live alert in this snapshot |
-| Place search | Navi Mumbai → Raigad + Thane; Sawantwadi → Sindhudurg; Marunji is in source as Pune and needs a production deploy to appear on the live site |
+| Place search | Navi Mumbai → Raigad + Thane; Sawantwadi → Sindhudurg; Marunji → Pune, all labelled district aliases |
 
-Staging was **stale** at the same time (`generatedAt: 2026-09-05T10:23:59.254Z`). Treat staging as a deploy target, not a second live bulletin.
+Staging version `d4af16ea-0bdc-41c4-bb52-35f416ce58d1` also passed desktop/mobile deployment tests and advanced from `19:29:58.101Z` to `19:30:58.545Z`. See the [dated verification report](docs/REALTIME-DEMO-VERIFICATION-2026-09-06.md).
 
 ## Run locally
 
@@ -42,13 +42,17 @@ Node.js 24 LTS (see `.node-version`) and npm:
 ```sh
 npm ci
 npm start
-# http://127.0.0.1:8787
+# http://127.0.0.1:8787  live public sources
+
+npm run demo
+# http://127.0.0.1:8799  labelled fixture alerts for demos; never production
 ```
 
 ```sh
 npm test                 # offline tests; live network checks skipped
 npm run typecheck
 npm run test:e2e         # after: npx playwright install --no-shell chromium
+npm run verify:realtime  # read-only proof of two advancing production generations
 ```
 
 Deploy, rollback and secrets: [operations](docs/OPERATIONS.md). API: [docs/API.md](docs/API.md). All docs: [docs/README.md](docs/README.md).

@@ -14,6 +14,8 @@ All routes are read-only. `GET` and `HEAD` are supported; mutation methods retur
 
 Unknown routes return `404`. Unknown/duplicate query keys and invalid filter values return `400`. There is no public refresh, write, report or notification-subscription endpoint.
 
+On production and staging, a read of a dynamic API route may schedule a background recovery when enabled-source data is uninitialized or stale. The response is never rewritten as fresh before that recovery commits, and the 60-second attempt cooldown plus D1 lease prevent request amplification. Clients should read the returned status and timestamp, then use the advertised 60-second healthy/degraded or 15-second stale/error polling interval.
+
 ## Alert pagination
 
 `/api/alerts` accepts `district`, `region`, `class`, `kind`, `source`, `limit` (1–500, default 200), `offset` and `snapshot`. Discover allowed filter values from `/api/meta` and `/api/sources`.

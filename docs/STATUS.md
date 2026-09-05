@@ -1,54 +1,51 @@
-# Current production snapshot — 5 Sept 2026
+# Current production snapshot — 6 Sept 2026
 
-Checked against https://maharashtra-sachet.mangeshraut712.workers.dev at **16:39 IST**. The refreshed screenshots show the last-known generation `2026-09-05T10:33:41.986Z` (16:03:41 IST) and a **stale** source state. The bulletin still had **0 active alerts** and SACHET retained **10** records. This is not an all-clear: stale means no successful generation arrived within the five-minute freshness window even though ingestion is scheduled about once per minute.
+Checked against https://maharashtra-sachet.mangeshraut712.workers.dev at **00:59 IST**. Production version `6645d3eb-b2e0-4070-bc55-81c18fc5f2af` returned HTTP 200 with `status: healthy`. The read-only observer saw the stored generation advance from `2026-09-05T19:27:58.576Z` to `2026-09-05T19:28:58.319Z` in one scheduler cycle.
 
-Screenshots in [screenshots/](screenshots/) were taken from that live site in the same session.
+The bulletin had **0 active alerts** while SACHET retained **10 source records**. This is not an all-clear: only active public Actual records appear, source coverage is incomplete, and local incidents may not have a consumable public feed.
+
+Screenshots in [screenshots/](screenshots/) were refreshed from production after this deployment.
 
 ## Production
 
 | Surface | Observed |
 | --- | --- |
 | Homepage | Independent banner, 36-district panel, bilingual masthead, five nav links |
-| Latest status | Partial coverage (CWC and CPCB not connected) |
-| Public bulletin | **0 alerts** — empty list is labelled incomplete, not all-clear |
-| `/api/health` | HTTP 503, `status: stale`, `environment: production` |
+| Latest status | Partial coverage because CWC and CPCB are not connected |
+| Public bulletin | **0 active alerts** — empty state explicitly says it is not an all-clear |
+| `/api/health` | HTTP 200, `status: healthy`, `environment: production` |
 | `/api/alerts` | `count: 0`, pagination total 0 |
 | `/api/coverage` | `totalDistricts: 36`, `liveCovered: 0` |
-| SACHET | `stale`, 10 last-known retained records, last success 5 Sept 2026, 4:03 pm IST |
-| IMD | `stale`, 0 last-known records |
-| INCOIS | `stale`, 0 last-known records |
+| SACHET | `healthy`, 10 retained records, 0 currently active alerts |
+| IMD | `healthy`, 0 current records |
+| INCOIS | `healthy`, 0 current records |
 | CWC FloodWatch | `disabled` — use the official directory link |
 | CPCB AQI | `disabled` — use the official directory link |
+| Demo controls | Hidden; `POST /__demo/advance` returns 405 |
 
-Place search on production at capture time:
+Place search on production:
 
 | Query | HTTP | Result |
 | --- | --- | --- |
-| `Pune` | 200 | Pune district (+ `khed pune` alias) |
+| `Pune` | 200 | Pune district aliases |
 | `Navi Mumbai` | 200 | Raigad and Thane (`precision: district-alias`) |
 | `Sawantwadi` | 200 | Sindhudurg |
-| `Marunji` | 200 | **empty** on production; alias is now in git for Pune (Mulshi context) pending deploy |
-| `Panaji` | (prior check) | no Maharashtra district match |
+| `Marunji` | 200 | Pune (`precision: district-alias`) |
+| `Panaji` | 200 | No Maharashtra district match |
 
 ## Staging
 
-https://maharashtra-sachet-staging.mangeshraut712.workers.dev returned `status: stale` with the same source pattern (SACHET 10 records, CWC/CPCB disabled) and `generatedAt: 2026-09-05T10:23:59.254Z`. Do not demo staging as a fresh bulletin.
+Version `d4af16ea-0bdc-41c4-bb52-35f416ce58d1` passed the same desktop/mobile deployed suite. Its observer saw healthy generations advance from `2026-09-05T19:29:58.101Z` to `2026-09-05T19:30:58.545Z`.
 
 ## Screenshots
 
 | File | What it shows |
 | --- | --- |
-| [desktop-home.png](screenshots/desktop-home.png) | English homepage, 0 alerts, partial coverage |
+| [desktop-home.png](screenshots/desktop-home.png) | Current English production homepage |
 | [desktop-search-navi-mumbai.png](screenshots/desktop-search-navi-mumbai.png) | Ambiguous place search chips |
-| [desktop-source-health.png](screenshots/desktop-source-health.png) | Bulletin empty state + source panel |
-| [desktop-marathi.png](screenshots/desktop-marathi.png) | Marathi UI |
+| [desktop-source-health.png](screenshots/desktop-source-health.png) | Current bulletin and source panel |
+| [desktop-marathi.png](screenshots/desktop-marathi.png) | Marathi interface |
 | [mobile-phone-guide.png](screenshots/mobile-phone-guide.png) | Phone / WEA readiness page at a mobile viewport |
-| [mobile-home.png](screenshots/mobile-home.png) | Narrow viewport |
+| [mobile-home.png](screenshots/mobile-home.png) | Narrow production viewport |
 
-## What changed in the repo with this snapshot
-
-- Docs reorganized: everyday guides stay at `docs/`; dated plans and old verification live in `docs/history/`.
-- `marunji` added as a Pune place alias (district-level hint only). Production will keep returning no Marunji match until the Worker is redeployed.
-- Screenshot capture script: `npm run docs:screenshots`.
-
-Earlier measured deploy IDs, Lighthouse-style lab samples and the 72-test verification table remain in [history/VERIFICATION-2026-09-05.md](history/VERIFICATION-2026-09-05.md).
+Full release evidence and limitations are in [REALTIME-DEMO-VERIFICATION-2026-09-06.md](REALTIME-DEMO-VERIFICATION-2026-09-06.md). Earlier measurements remain in [history/VERIFICATION-2026-09-05.md](history/VERIFICATION-2026-09-05.md).

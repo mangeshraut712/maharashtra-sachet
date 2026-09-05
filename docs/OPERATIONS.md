@@ -15,6 +15,7 @@ npm run build
 npx playwright install --no-shell chromium
 npm run test:e2e
 npm audit
+npm run verify:realtime
 ```
 
 Browser tests select Chromium's full browser channel; the separate headless-shell download is unnecessary. Mobile checks emulate a phone viewport in Chromium, not a physical device or Safari.
@@ -40,11 +41,15 @@ LIVE_URL=https://maharashtra-sachet.mangeshraut712.workers.dev npm run test:e2e
 
 Do not seed production with browser-test fixtures. Scheduled ingestion runs every minute with bounded collectors. Confirm successive `generatedAt` timestamps, not just a successful asset upload. If the deploy command reports a partial trigger update, inspect current state and use `npx wrangler triggers deploy --env staging` (or production) to reconcile it; report any remaining failure.
 
+Production and staging API reads may schedule a background recovery when enabled-source data is uninitialized or older than five minutes. Recovery is bounded by a 60-second last-attempt cooldown and the token-owned D1 lease; the current response still reports the snapshot it actually read. There is no public refresh or mutation route.
+
 ## Monitoring
 
 Use `/api/health`, `/api/sources` and Wrangler logs. Health `503` can indicate data-source degradation while the application is serving correctly. Examine each source's `lastSuccessAt`, `lastAttemptAt`, `errorCode` and status. A source timeout is not proof of zero hazards.
 
 Logs include only outcome/source/error category. Never log response bodies, cookies, keys or complete error URLs. Source-specific outages preserve previous records. CWC direct ingestion is intentionally disabled pending an established schema; CPCB is disabled by default.
+
+`npm run verify:realtime` performs read-only health requests and succeeds only after two distinct, non-regressing production generations are observed within 90 seconds. Set `LIVE_URL` for staging. A stale/503 response or no advancement is a failed realtime check; investigate the trigger and ingestion logs rather than weakening the check.
 
 ## Capacity and lifecycle
 

@@ -31,19 +31,19 @@
 - Consumes: persisted `RelayState.sources[*].lastAttemptAt`, `STALE_MS`, existing `ingest(env)` lease.
 - Produces: `snapshotNeedsIngest(state, now, cooldownMs = 60_000): boolean`.
 
-- [ ] **Step 1: Write cooldown failures**
+- [x] **Step 1: Write cooldown failures**
 
 Add assertions proving a stale snapshot needs recovery after 60 seconds but does not when its latest enabled-source attempt is 59,999 ms old; disabled/misconfigured sources cannot force recovery.
 
-- [ ] **Step 2: Run the focused tests and confirm the recent-attempt case fails**
+- [x] **Step 2: Run the focused tests and confirm the recent-attempt case fails**
 
 Run `node --test test/runtime.test.mjs`. Expected failure: `snapshotNeedsIngest` returns `true` for a recent failed attempt.
 
-- [ ] **Step 3: Implement the cooldown**
+- [x] **Step 3: Implement the cooldown**
 
 Compute enabled sources, find their newest finite `lastAttemptAt`, return false inside the cooldown, then evaluate uninitialized/stale success timestamps. Keep `ctx.waitUntil(ingest(env))` and D1 lease fencing.
 
-- [ ] **Step 4: Verify recovery behavior**
+- [x] **Step 4: Verify recovery behavior**
 
 Run `node --test test/runtime.test.mjs test/runtime-worker.test.mjs` and `npm run typecheck`. Expected: all pass; the request response remains immediate and only one lease owner writes.
 
@@ -60,19 +60,19 @@ Run `node --test test/runtime.test.mjs test/runtime-worker.test.mjs` and `npm ru
 - Consumes: `createRelay`, `createRelayServer`, public alert schema.
 - Produces: `createDemoRelay(now)`, `startDemoServer({ port = 8799 })`, Node-only `POST /__demo/advance` and `/__demo/reset`.
 
-- [ ] **Step 1: Write demo lifecycle failures**
+- [x] **Step 1: Write demo lifecycle failures**
 
 Start a demo server on an ephemeral port. Assert meta environment `demo`, initial count 2, first advance replaces the water Alert with an Update, second advance leaves only the road alert, reset restores two. Assert a normal server rejects `/__demo/advance`.
 
-- [ ] **Step 2: Run the test and confirm missing demo controls**
+- [x] **Step 2: Run the test and confirm missing demo controls**
 
 Run `node --test test/demo.test.mjs`. Expected failure: the demo module/control contract is absent.
 
-- [ ] **Step 3: Implement the demo runner**
+- [x] **Step 3: Implement the demo runner**
 
 Move reusable fixture construction into `demo/server.mjs`; inject an optional Node-only control handler into `createRelayServer`; keep the Worker entry untouched. Update `npm run demo` and make `test/browser-server.mjs` a thin runner.
 
-- [ ] **Step 4: Verify Node isolation**
+- [x] **Step 4: Verify Node isolation**
 
 Run `node --test test/demo.test.mjs test/runtime.test.mjs` and search the Worker bundle for `__demo`/fixture headlines. Expected: tests pass and the dry-run Worker bundle contains neither demo control paths nor fixture messages.
 
@@ -92,19 +92,19 @@ Run `node --test test/demo.test.mjs test/runtime.test.mjs` and search the Worker
 - Consumes: `/api/meta.environment`, demo control JSON responses, `nextPollMs(mode)`.
 - Produces: visible `#demoBanner`, `#demoAdvance`, `#demoReset`; no controls outside demo mode.
 
-- [ ] **Step 1: Add failing browser assertions**
+- [x] **Step 1: Add failing browser assertions**
 
 Assert demo controls are visible locally, first advance changes the Pune headline/instruction, second advance removes that alert, and reset restores it. Assert deployed environments hide controls and return non-success for the control URL.
 
-- [ ] **Step 2: Run focused Playwright and observe the missing controls**
+- [x] **Step 2: Run focused Playwright and observe the missing controls**
 
 Run `npm run test:e2e -- --grep "demo lifecycle"`. Expected failure: advance/reset controls are absent.
 
-- [ ] **Step 3: Implement the controls and polling schedule**
+- [x] **Step 3: Implement the controls and polling schedule**
 
 Render controls only for `environment === "demo"`; POST the local control, then call `refresh()`. Use 60 seconds for healthy/degraded and 15 seconds for stale/loading/error/offline. Bump only this app's shell cache version.
 
-- [ ] **Step 4: Verify browser safety and accessibility**
+- [x] **Step 4: Verify browser safety and accessibility**
 
 Run `npm run test:e2e` and `node --test test/ui-model.test.mjs test/ui-sw.test.mjs`. Expected: desktop/mobile, English/Marathi, offline, injection, permissions, pagination, deployed isolation, and lifecycle tests pass.
 
@@ -121,19 +121,19 @@ Run `npm run test:e2e` and `node --test test/ui-model.test.mjs test/ui-sw.test.m
 - Consumes: `GET ${LIVE_URL}/api/health`.
 - Produces: `observeGenerations({ fetch, url, intervalMs, timeoutMs, now, wait })` and `npm run verify:realtime`.
 
-- [ ] **Step 1: Write observer failures and success**
+- [x] **Step 1: Write observer failures and success**
 
 Use injected responses to cover two advancing timestamps, repeated timestamp timeout, invalid timestamp, HTTP 503 and time regression.
 
-- [ ] **Step 2: Run the test and confirm the observer is missing**
+- [x] **Step 2: Run the test and confirm the observer is missing**
 
 Run `node --test test/realtime.test.mjs`. Expected failure: `scripts/verify-realtime.mjs` cannot be imported.
 
-- [ ] **Step 3: Implement the bounded observer**
+- [x] **Step 3: Implement the bounded observer**
 
 Poll read-only health, require two unique non-regressing timestamps, print JSON observations, and exit nonzero on failure. Default to production, 5-second polling and a 90-second timeout.
 
-- [ ] **Step 4: Verify locally and against staging**
+- [x] **Step 4: Verify locally and against staging**
 
 Run `node --test test/realtime.test.mjs` and `LIVE_URL=https://maharashtra-sachet-staging.mangeshraut712.workers.dev npm run verify:realtime`. Expected: deterministic tests pass; staging either proves advancement or produces a truthful bounded failure.
 
@@ -148,19 +148,19 @@ Run `node --test test/realtime.test.mjs` and `LIVE_URL=https://maharashtra-sache
 - Consumes: all prior tasks and deployment evidence.
 - Produces: reproducible demo/live commands, verification matrix, recorded limitations.
 
-- [ ] **Step 1: Run the complete local gate**
+- [x] **Step 1: Run the complete local gate**
 
 Run `npm run types`, `npm run typecheck`, `npm test`, `npm run build`, `npm audit`, `npm run test:e2e`, and `git diff --check`. Expected: zero failures; live checks reported separately.
 
-- [ ] **Step 2: Inspect the demo visually**
+- [x] **Step 2: Inspect the demo visually**
 
 Open `http://127.0.0.1:8799`, verify bilingual fixture label and lifecycle controls at desktop/mobile widths, and capture screenshots under `output/playwright/`.
 
-- [ ] **Step 3: Deploy and verify staging**
+- [x] **Step 3: Deploy and verify staging**
 
 Run `npm run deploy:staging`, the deployed Playwright suite, API method/filter checks, and the generation observer. Stop before production if any critical/high result remains.
 
-- [ ] **Step 4: Deploy and verify production**
+- [x] **Step 4: Deploy and verify production**
 
 Run `npm run deploy:production`, then production Playwright, `/api/health`, `/api/sources`, Marunji search, invalid-input checks and generation observation. Record version ID and actual source states.
 
