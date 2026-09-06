@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { collectSnapshot, emptyState, handleApi, jsonResponse, SECURITY_HEADERS, sourceCollectors } from './service.mjs'
 
 const WEB = fileURLToPath(new URL('../web', import.meta.url))
-const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation' }
+const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.ico': 'image/x-icon', '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation' }
 
 export function boundedInteger(value, fallback, min, max) {
   if (value === undefined || value === '') return fallback

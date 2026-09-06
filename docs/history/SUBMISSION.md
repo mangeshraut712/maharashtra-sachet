@@ -1,6 +1,6 @@
 # Codex Build House Pune submission
 
-Status: submitted on 6 Sept 2026 via https://forms.gle/FvRnxoUA7S8DBaFeA before the 13:00 IST cutoff.
+Status: submitted on 6 Sept 2026 via https://forms.gle/FvRnxoUA7S8DBaFeA. Final verification before cutoff: live hub, briefing pitch, PPTX, place search and deployed Playwright all passed. Production health can be stale when SACHET returns `http_error`; that is reported honestly.
 
 | Field | Value |
 | --- | --- |
