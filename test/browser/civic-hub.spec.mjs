@@ -128,6 +128,25 @@ test('pagination beyond 500 alerts remains complete', async ({ page }) => {
   await expect(page.locator('#feed article')).toHaveCount(501)
 })
 
+test('event pitch deck is labelled, linked and keyboard reachable', async ({ page }) => {
+  await page.goto('/pitch.html')
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Maharashtra Civic Alerts')
+  await expect(page.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
+    'href',
+    'https://github.com/mangeshraut712/maharashtra-sachet',
+  )
+  await expect(page.getByRole('link', { name: 'Download PPTX' })).toHaveAttribute('href', '/pitch.pptx')
+  await page.keyboard.press('ArrowRight')
+  await expect(page.locator('#progress')).toContainText('2 / 9')
+  await page.goto('/pitch.html#s9')
+  await expect(page.getByRole('link', { name: 'Live demo — Cloudflare Workers' })).toHaveAttribute(
+    'href',
+    'https://maharashtra-sachet.mangeshraut712.workers.dev',
+  )
+  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()
+  expect(axe.violations.map((v) => v.id)).toEqual([])
+})
+
 test('phone readiness guide is accessible and never offers to trigger a broadcast', async ({page}) => {
   await page.goto('/phone-alerts.html')
   await expect(page.getByRole('heading', {level:1})).toContainText('Keep official alerts')

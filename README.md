@@ -6,6 +6,8 @@ Independent English/Marathi hub for official Maharashtra public alerts, district
 
 **Use it live:** [maharashtra-sachet.mangeshraut712.workers.dev](https://maharashtra-sachet.mangeshraut712.workers.dev)
 
+**Event pitch:** [live slides](https://maharashtra-sachet.mangeshraut712.workers.dev/pitch.html) · [PPTX](https://maharashtra-sachet.mangeshraut712.workers.dev/pitch.pptx) · [submission notes](docs/history/SUBMISSION.md)
+
 ![Production homepage, 5 Sept 2026](docs/screenshots/desktop-home.png)
 
 ## How to use (in short)

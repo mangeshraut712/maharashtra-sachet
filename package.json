@@ -27,6 +27,7 @@
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:production": "wrangler deploy --env production",
     "docs:screenshots": "node scripts/capture-docs-screenshots.mjs",
+    "docs:pitch": "uv run --with python-pptx python3 scripts/build-pitch-pptx.py",
     "verify:realtime": "node scripts/verify-realtime.mjs"
   },
   "dependencies": {

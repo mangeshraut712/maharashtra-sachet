@@ -1,8 +1,21 @@
-# Codex Build House Pune submission draft
+# Codex Build House Pune submission
 
-Status: draft prepared for the builder; no organizer form submitted. The public event page does not establish the submission endpoint, exact deadline time, rubric or pre-existing-project rules. Confirm these with organizer instructions before final submission.
+Status: submitted on 6 Sept 2026 via https://forms.gle/FvRnxoUA7S8DBaFeA before the 13:00 IST cutoff.
 
-Verified live demo: https://maharashtra-sachet.mangeshraut712.workers.dev
+| Field | Value |
+| --- | --- |
+| Builder | Mangesh Raut |
+| Team | Maharashtra Civic Alerts |
+| Email | mbr63drexel@gmail.com |
+| GitHub | https://github.com/mangeshraut712/maharashtra-sachet |
+| Live demo | https://maharashtra-sachet.mangeshraut712.workers.dev |
+| HTML pitch | https://maharashtra-sachet.mangeshraut712.workers.dev/pitch.html |
+| PPTX | https://maharashtra-sachet.mangeshraut712.workers.dev/pitch.pptx |
+| Written notes | this file |
+
+The organizer form's "Phone No" field is typed as an email input, so the submitted phone row used the Gmail address. The real India number is in the solution text and on the last PPTX slide: +91 7276819090.
+
+Vercel is not used. The hosted project is the existing Cloudflare Worker + D1 deployment.
 
 ## Project
 
@@ -18,20 +31,20 @@ An independent English/Marathi hub combining CAP lifecycle handling, official-so
 
 ## Codex contribution during this event work
 
-Codex inspected the existing relay, researched official sources and US IPAWS design concepts, identified unsafe and misleading behaviours, added regression coverage, implemented source/runtime/UI changes in parallel, integrated and tested the result, and prepared documentation and deployment checks. See the dated verification report for completed checks and live outcomes.
+Codex inspected the existing relay, researched official sources and US IPAWS design concepts, identified unsafe and misleading behaviours, added regression coverage, implemented source/runtime/UI changes in parallel, integrated and tested the result, and prepared documentation and deployment checks.
 
 This repository predates the event-day changes. Prior commits and the September 4 design documents are preserved. Do not describe the whole repository as created from scratch during the event.
 
 ## Demonstration sequence
 
 1. Open the production site and explain the independent-project banner.
-2. Show source health before interpreting the active-alert count.
-3. Search Sawantwadi or Chandgad; explain the district-level precision disclosure.
-4. Search Navi Mumbai and show the separate district candidates.
-5. Switch to Marathi; demonstrate filters and coverage across 36 districts.
-6. Open service coverage details for power, water, public health or transport and explain which are directory-only.
-7. Use the isolated local browser fixture server for a labelled demonstration of Marathi alert content, injection protection and offline cached data if live feeds are empty. Never inject fixtures into the production feed.
-8. Show the test report and explain cancellation, expiry and source-outage behaviour.
+2. Open `/pitch.html` if judges want the short slide walkthrough.
+3. Show source health before interpreting the active-alert count.
+4. Search Sawantwadi or Chandgad; explain the district-level precision disclosure.
+5. Search Navi Mumbai and show the separate district candidates.
+6. Switch to Marathi; demonstrate filters and coverage across 36 districts.
+7. Open service coverage details for power, water, public health or transport and explain which are directory-only.
+8. Use `npm run demo` for a labelled demonstration of Marathi alert content if live feeds are empty. Never inject fixtures into the production feed.
 
 ## Honest limits
 

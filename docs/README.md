@@ -5,6 +5,7 @@ Start here if you are choosing a file. Dated plans and old verification notes li
 | Doc | Use it for |
 | --- | --- |
 | [How to use](HOW-TO.md) | Resident / demo walkthrough with screenshots |
+| [Event pitch](../web/pitch.html) | Codex Build House slides (live at `/pitch.html`) |
 | [Current snapshot](STATUS.md) | Latest production numbers and screenshot results |
 | [Realtime/demo verification](REALTIME-DEMO-VERIFICATION-2026-09-06.md) | Release IDs, test matrix, scheduler proof and known limits |
 | [API](API.md) | Read-only JSON routes, pagination, source states |

@@ -46,3 +46,13 @@ test('deployed civic hub renders, filters and reports actual source coverage', a
   console.log(JSON.stringify({ sourceStatus: sources.status, generatedAt: sources.generatedAt, sources: sources.sources }))
   expect(errors).toEqual([])
 })
+
+test('hosted pitch and PPTX are public on the live Worker', async ({ page, request }) => {
+  const pageResponse = await page.goto('/pitch.html')
+  expect(pageResponse.status()).toBe(200)
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Maharashtra Civic Alerts')
+  await expect(page.locator('#demoBanner')).toHaveCount(0)
+  const pptx = await request.get('/pitch.pptx')
+  expect(pptx.status()).toBe(200)
+  expect(pptx.headers()['content-type'] || '').toMatch(/presentation|officedocument|octet-stream/)
+})

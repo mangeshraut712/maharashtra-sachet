@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#a44b13" />
+    <meta
+      name="description"
+      content="Codex Build House Pune pitch for Maharashtra Civic Alerts, an independent English/Marathi official-alert hub."
+    />
+    <title>Maharashtra Civic Alerts — Project pitch</title>
+    <link rel="icon" href="/icon.svg" />
+    <link rel="stylesheet" href="/pitch.css" />
+  </head>
+  <body>
+    <a class="skip" href="#deck">Skip to slides</a>
+    <header class="mast">
+      <a class="brand" href="/"
+        ><img src="/icon.svg" width="36" height="36" alt="" />Maharashtra Civic
+        Alerts</a
+      >
+      <nav class="mast-links" aria-label="Pitch links">
+        <a href="/">Live hub</a>
+        <a href="https://github.com/mangeshraut712/maharashtra-sachet"
+          >GitHub</a
+        >
+        <a href="/pitch.pptx">Download PPTX</a>
+      </nav>
+    </header>
+    <main id="deck" class="deck">
+      <section class="slide is-active" id="s1" aria-labelledby="t1">
+        <p class="kicker">Codex Build House · Pune</p>
+        <h1 id="t1">Maharashtra Civic Alerts</h1>
+        <p class="lede">
+          Independent English/Marathi hub for official Maharashtra public
+          warnings, district search and citizen-service directories.
+        </p>
+        <p class="warn">
+          This is not a government website and not emergency dispatch. In
+          danger call <strong>112</strong>. An empty bulletin is not an
+          all-clear.
+        </p>
+        <p class="muted">Builder: Mangesh Raut · Live on Cloudflare Workers</p>
+      </section>
+      <section class="slide" id="s2" aria-labelledby="t2">
+        <p class="kicker">The problem</p>
+        <h2 id="t2">Residents should not have to guess which feed is live</h2>
+        <div class="grid two">
+          <article class="card">
+            <h3>Scattered official sources</h3>
+            <p>
+              National, state and municipal pages sit apart. Weather-only
+              dashboards miss civic disruptions.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Empty can look safe</h3>
+            <p>
+              A quiet map is misleading when a source is stale, disabled or
+              only covering some hazards.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Place names are ambiguous</h3>
+            <p>
+              Navi Mumbai spans districts. Village names are not the same as
+              verified ward boundaries.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Language gap</h3>
+            <p>
+              Residents need the original warning in English or Marathi, not a
+              rewritten AI summary.
+            </p>
+          </article>
+        </div>
+      </section>
+      <section class="slide" id="s3" aria-labelledby="t3">
+        <p class="kicker">What we built</p>
+        <h2 id="t3">A place-aware bulletin that states its coverage</h2>
+        <ul>
+          <li>Official CAP lifecycle: actual, update, cancel, expiry.</li>
+          <li>District search plus place aliases (Sawantwadi, Marunji, Navi Mumbai).</li>
+          <li>Source-health strip before anyone reads “no alerts”.</li>
+          <li>Twelve citizen-service directories with live vs directory-only labels.</li>
+          <li>Safe rendering, offline snapshot cache, bilingual UI.</li>
+          <li>Labelled local demo fixtures that never enter production.</li>
+        </ul>
+      </section>
+      <section class="slide" id="s4" aria-labelledby="t4">
+        <p class="kicker">Live product</p>
+        <h2 id="t4">Production hub</h2>
+        <p>
+          Hosted on Cloudflare Workers + D1. Minute cron plus bounded
+          heal-on-read. Vercel is not required.
+        </p>
+        <img
+          class="shot"
+          src="/pitch-media/desktop-home.png"
+          alt="Production homepage with independent banner, latest status and 36-district panel"
+        />
+      </section>
+      <section class="slide" id="s5" aria-labelledby="t5">
+        <p class="kicker">Search honesty</p>
+        <h2 id="t5">Places map to districts, not invented village polygons</h2>
+        <img
+          class="shot"
+          src="/pitch-media/desktop-search-navi-mumbai.png"
+          alt="Navi Mumbai search returning separate Raigad and Thane district candidates"
+        />
+      </section>
+      <section class="slide" id="s6" aria-labelledby="t6">
+        <p class="kicker">Source health</p>
+        <h2 id="t6">Read freshness before sharing an empty bulletin</h2>
+        <img
+          class="shot"
+          src="/pitch-media/desktop-source-health.png"
+          alt="Source health panel showing connected SACHET and disconnected CWC and CPCB"
+        />
+      </section>
+      <section class="slide" id="s7" aria-labelledby="t7">
+        <p class="kicker">Marathi</p>
+        <h2 id="t7">Same bulletin, resident language</h2>
+        <img
+          class="shot"
+          src="/pitch-media/desktop-marathi.png"
+          alt="Marathi interface of the civic alert hub"
+        />
+      </section>
+      <section class="slide" id="s8" aria-labelledby="t8">
+        <p class="kicker">Limits we keep public</p>
+        <h2 id="t8">What this project does not do</h2>
+        <ul>
+          <li>No government affiliation, cell broadcast or 112 dispatch.</li>
+          <li>No complete village or ward map.</li>
+          <li>CWC and CPCB stay disabled until a reviewed adapter exists.</li>
+          <li>No background Web Push after the tab closes.</li>
+          <li>No generative rewrite of emergency instructions.</li>
+          <li>The repository predates the event; event work was honesty, realtime ingest, place search and a labelled demo.</li>
+        </ul>
+      </section>
+      <section class="slide" id="s9" aria-labelledby="t9">
+        <p class="kicker">Submission links</p>
+        <h2 id="t9">Open these in the review</h2>
+        <div class="links">
+          <a href="https://maharashtra-sachet.mangeshraut712.workers.dev"
+            >Live demo — Cloudflare Workers</a
+          >
+          <a href="https://github.com/mangeshraut712/maharashtra-sachet"
+            >GitHub repository</a
+          >
+          <a href="/pitch.pptx">PowerPoint download (PPTX)</a>
+          <a href="https://github.com/mangeshraut712/maharashtra-sachet/blob/main/docs/history/SUBMISSION.md"
+            >Written submission notes</a
+          >
+          <a href="/">Back to the hub</a>
+        </div>
+        <p class="muted">
+          Labelled fixture demo locally: <code>npm run demo</code> at
+          http://127.0.0.1:8799 — never production.
+        </p>
+      </section>
+    </main>
+    <div class="controls">
+      <button id="prev" type="button">Previous</button>
+      <span class="progress" id="progress">1 / 9</span>
+      <button id="next" type="button">Next</button>
+    </div>
+    <script src="/pitch.js"></script>
+  </body>
+</html>

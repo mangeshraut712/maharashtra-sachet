@@ -2,6 +2,8 @@
 
 Live site: https://maharashtra-sachet.mangeshraut712.workers.dev
 
+Event pitch (HTML + PPTX): https://maharashtra-sachet.mangeshraut712.workers.dev/pitch.html
+
 This is an independent relay of public official feeds. It does not dispatch help. Call **112** in danger.
 
 ## On the website
