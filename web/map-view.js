@@ -1,4 +1,5 @@
-import { alertsToMapGeoJSON, mapFitBounds, MH_BBOX } from './map-model.js'
+import { alertsToMapGeoJSON, mapFitBounds, REGION } from './map-model.js'
+import { bboxPolygonCoordinates } from './modules/geo.mjs'
 
 const STYLE_URL = 'https://demotiles.maplibre.org/style.json'
 
@@ -41,12 +42,17 @@ function loadMapLibre() {
   return mapLibrePromise
 }
 
-function ensureMap(container, maplibregl) {
+function regionBbox(bbox) {
+  return bbox && Number.isFinite(bbox.west) ? bbox : REGION.bbox
+}
+
+function ensureMap(container, maplibregl, bbox) {
   if (map) return map
+  const box = regionBbox(bbox)
   map = new maplibregl.Map({
     container,
     style: STYLE_URL,
-    bounds: mapFitBounds(),
+    bounds: mapFitBounds(box),
     fitBoundsOptions: { padding: 24, maxZoom: 8 },
     attributionControl: { compact: true },
     dragRotate: false,
@@ -56,29 +62,21 @@ function ensureMap(container, maplibregl) {
   })
   map.on('load', () => {
     mapReady = true
-    map.addSource('mh-bbox', {
+    map.addSource('region-bbox', {
       type: 'geojson',
       data: {
         type: 'Feature',
         properties: {},
         geometry: {
           type: 'Polygon',
-          coordinates: [
-            [
-              [MH_BBOX.west, MH_BBOX.south],
-              [MH_BBOX.east, MH_BBOX.south],
-              [MH_BBOX.east, MH_BBOX.north],
-              [MH_BBOX.west, MH_BBOX.north],
-              [MH_BBOX.west, MH_BBOX.south],
-            ],
-          ],
+          coordinates: bboxPolygonCoordinates(box),
         },
       },
     })
     map.addLayer({
-      id: 'mh-bbox-line',
+      id: 'region-bbox-line',
       type: 'line',
-      source: 'mh-bbox',
+      source: 'region-bbox',
       paint: { 'line-color': '#8d775b', 'line-width': 1, 'line-dasharray': [2, 2] },
     })
     map.addSource('cap-polygons', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
@@ -160,14 +158,14 @@ function applySituational({ snapshot, showQuakes, showFires }) {
   }
 }
 
-export function updateSituationalMap({ snapshot, showQuakes, showFires }) {
+export function updateSituationalMap({ snapshot, showQuakes, showFires, bbox }) {
   const container = document.getElementById('alertMap')
   if (!container || mapFailed) return
   void (async () => {
     try {
       const maplibregl = await loadMapLibre()
       if (!maplibregl) return
-      ensureMap(container, maplibregl)
+      ensureMap(container, maplibregl, bbox)
       const payload = { snapshot, showQuakes, showFires }
       if (!mapReady) pendingSituational = payload
       else applySituational(payload)
@@ -177,9 +175,9 @@ export function updateSituationalMap({ snapshot, showQuakes, showFires }) {
   })()
 }
 
-function applyData({ alerts, selectedDistrictId }) {
+function applyData({ alerts, selectedDistrictId, centroids }) {
   if (!mapReady || !map) return
-  const { polygons, districts } = alertsToMapGeoJSON(alerts)
+  const { polygons, districts } = alertsToMapGeoJSON(alerts, centroids || REGION.districtCentroids)
   const polygonSource = map.getSource('cap-polygons')
   const districtSource = map.getSource('alert-districts')
   if (polygonSource) polygonSource.setData(polygons)
@@ -191,13 +189,13 @@ function applyData({ alerts, selectedDistrictId }) {
   }
 }
 
-async function loadAndUpdate({ container, alerts, selectedDistrictId }) {
+async function loadAndUpdate({ container, alerts, selectedDistrictId, bbox, centroids }) {
   if (!container || mapFailed) return
-  const payload = { alerts, selectedDistrictId }
+  const payload = { alerts, selectedDistrictId, centroids }
   try {
     const maplibregl = await loadMapLibre()
     if (!maplibregl) return
-    ensureMap(container, maplibregl)
+    ensureMap(container, maplibregl, bbox)
     if (!mapReady) pendingUpdate = payload
     else applyData(payload)
   } catch {

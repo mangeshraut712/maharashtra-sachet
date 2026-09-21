@@ -9,14 +9,16 @@ test('CAP lat,lon rings convert to GeoJSON lon,lat polygons', () => {
 })
 
 test('alertsToMapGeoJSON merges polygons and district centroids', () => {
-  const { polygons, districts } = alertsToMapGeoJSON([
-    {
-      id: 'one',
-      headlineEn: 'Rain',
-      polygons: [[[18, 73], [19, 73], [19, 74], [18, 73]]],
-      districts: [{ id: 'pune', en: 'Pune' }, { id: 'satara', en: 'Satara' }],
-    },
-  ])
+  const { polygons, districts } = alertsToMapGeoJSON(
+    [
+      {
+        id: 'one',
+        headlineEn: 'Rain',
+        polygons: [[[18, 73], [19, 73], [19, 74], [18, 73]]],
+        districts: [{ id: 'pune', en: 'Pune' }, { id: 'satara', en: 'Satara' }],
+      },
+    ],
+  )
   assert.equal(polygons.features.length, 1)
   assert.equal(districts.features.length, 2)
   assert.equal(districts.features[0].properties.geometrySource, 'district-centroid')

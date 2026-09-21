@@ -705,6 +705,8 @@ function mapInput() {
   return {
     alerts: selectedAlerts(),
     selectedDistrictId: $('district').value || '',
+    bbox: state.meta?.map?.bbox,
+    centroids: state.meta?.map?.districtCentroids,
   }
 }
 
@@ -730,6 +732,7 @@ function renderSituationalControls() {
     snapshot: state.situational,
     showQuakes: state.layerQuakes,
     showFires: state.layerFires,
+    bbox: state.meta?.map?.bbox,
   })
 }
 
