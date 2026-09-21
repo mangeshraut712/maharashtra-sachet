@@ -23,7 +23,13 @@ function loadMapLibre() {
     mapLibrePromise = import('/vendor/maplibre-gl.mjs')
       .then((mod) => {
         const api = resolveMapLibreModule(mod)
-        if (!api) mapFailed = true
+        if (!api) {
+          mapFailed = true
+          return null
+        }
+        if (typeof api.setWorkerUrl === 'function') {
+          api.setWorkerUrl('/vendor/maplibre-gl-worker.mjs')
+        }
         return api
       })
       .catch(() => {
