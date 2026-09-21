@@ -4,7 +4,18 @@ This repository is a **Maharashtra-shaped** unofficial relay. A fork can serve a
 
 A fork is still **not** a government website. CAP from the issuer remains the sole authority. Call **112**. Do not originate cell broadcast, C-DOT CBS, WEA, or IPAWS.
 
-## 1. Jurisdiction: districts and LGD
+## 1. Region pack
+
+Edit `web/region.json` (the Worker and the static map share this file):
+
+- `id`, `nameEn`, `nameLocal`, `country`
+- `emergencyNumber` (keep a real public number; do not invent dispatch)
+- `bbox` (west/south/east/north) used by the optional map outline and USGS/FIRMS clip
+- `districtCentroids` — approximate `[lon, lat]` keyed by the same district `id`s you use in the district catalog
+
+Centroids are **not** legal boundaries. CAP polygons remain authoritative when present. See [region/README.md](../region/README.md).
+
+## 2. Jurisdiction: districts and LGD
 
 Replace `server/districts.mjs` (and coverage aliases in `server/coverage-catalog.mjs`):
 
@@ -17,7 +28,7 @@ Replace `server/districts.mjs` (and coverage aliases in `server/coverage-catalog
 
 SACHET CAP often carries `geocode` with LGD district codes. `DISTRICT_BY_LGD` must match **your** codes or polygons will attach to the wrong place—or nowhere.
 
-## 2. Feed adapters
+## 3. Feed adapters
 
 `SOURCE_IDS` and `sourceCollectors()` in `server/service.mjs` define what is ingested.
 
@@ -31,9 +42,9 @@ SACHET CAP often carries `geocode` with LGD district codes. `DISTRICT_BY_LGD` mu
 
 New collectors: approved host/path, size and time bounds, schema tests, deterministic outage tests, allowlisted error codes. Do not log bodies or URLs that might contain keys.
 
-Optional **situational** overlays (USGS, FIRMS, etc.) and **Jev** ops shadow pipelines, if present in a later merge, stay **feature-flagged off**. They are not CAP. Do not enable them by default in your Worker vars. Do not add recon/port-scan tooling.
+Optional **situational** overlays (USGS, FIRMS, etc.) clip to the region pack bbox and stay **feature-flagged off**. They are not CAP. Do not enable them by default in your Worker vars. Do not add recon/port-scan tooling.
 
-## 3. Branding and copy
+## 4. Branding and copy
 
 Search the tree for Maharashtra-specific chrome:
 
@@ -48,7 +59,7 @@ Languages: this tree is English + Marathi. Swap `mr` fields and UI `tx()` string
 
 Demo mode (`npm run demo`) must remain **labelled fixtures**, never a production feed.
 
-## 4. Workers and D1
+## 5. Workers and D1
 
 Do **not** reuse this project’s D1 `database_id` values or production Worker name.
 
@@ -62,23 +73,25 @@ Do **not** reuse this project’s D1 `database_id` values or production Worker n
 
 Rollback and monitoring: [OPERATIONS.md](OPERATIONS.md). A Worker rollback does not undo D1 migrations.
 
-## 5. Feature flags
+## 6. Feature flags
 
 Current flags in this tree:
 
 - `CPCB_ENABLED` — observation collector; default `"false"` in all Wrangler envs.
 - `ENVIRONMENT` — `local` / `staging` / `production` (and demo via `DEMO=1` locally).
+- `SITUATIONAL_LAYERS_ENABLED` — optional USGS/FIRMS clip; default `"false"`.
+- `JEV_SHADOW_ENABLED` / `JEV_USE_LIVE` — ops-only System One; default off; CI uses fixtures.
 
-Treat any later `SITUATIONAL_LAYERS_ENABLED`, Jev shadow, or similar vars as **opt-in**. Forks should ship with them off. Public `/api/meta` should advertise capabilities honestly (`webPush: unavailable` unless you have built and reviewed that path).
+Forks should ship with optional layers and Jev **off**. Public `/api/meta` should advertise capabilities honestly (`webPush: unavailable` unless you have built and reviewed that path).
 
-## 6. Tests and CI
+## 7. Tests and CI
 
 - Replace Maharashtra fixtures (Sawantwadi, Navi Mumbai/Raigad+Thane, Marunji/Pune, Goa exclusion) with **your** border and alias cases.
 - Keep merge/lifecycle tests: issuer-matched cancel, expiry, fail-closed storage budget.
 - Keep e2e checks that the banner is unofficial and that 112 is visible.
 - Point `LIVE_URL` in docs/scripts at your deployment, not `maharashtra-sachet.mangeshraut712.workers.dev`.
 
-## 7. Legal and ops hygiene
+## 8. Legal and ops hygiene
 
 - MIT license: keep the license file; government content stays attributed.
 - Do not scrape authenticated or personal records. Directory pages are not alert feeds ([SOURCE_RESEARCH.md](SOURCE_RESEARCH.md)).

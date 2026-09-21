@@ -3,6 +3,9 @@ contact_links:
   - name: GitHub Discussions
     url: https://github.com/mangeshraut712/maharashtra-sachet/discussions
     about: Questions, ideas, and fork coordination (not bugs). Enable Discussions in repo settings if this link 404s.
+  - name: Forking help
+    url: https://github.com/mangeshraut712/maharashtra-sachet/blob/main/docs/FORKING.md
+    about: Adapting this MIT relay to another state or country.
   - name: Live unofficial demo
     url: https://maharashtra-sachet.mangeshraut712.workers.dev
     about: Not a government website. In danger call 112.

@@ -80,4 +80,17 @@ Issues: bug vs source-health vs docs templates under `.github/ISSUE_TEMPLATE`. O
 - Connect statewide live power, water, traffic or AQI feeds (those are official directories unless a source is enabled).
 - Deliver background Web Push after you close the tab.
 
-The software is MIT licensed. Government content stays attributed to its source.
+The software is MIT licensed. Government content stays attributed to its source. See [Contributing](CONTRIBUTING.md) and [how to fork for another jurisdiction](docs/FORKING.md).
+
+## Why this exists / How others use it
+
+Maharashtra residents should not have to guess which official feed is live, whether an empty list is an all-clear, or whether a map is government cartography. This repo is a **reference implementation**: relay public CAP (and listed official nowcasts), show coverage honestly, keep unofficial chrome, and optionally add a map plus ops-only Jev triage.
+
+Other groups can fork it under MIT:
+
+1. Swap `web/region.json` (bbox, centroids, emergency number) and `server/districts.mjs` (LGD or local gazetteer).
+2. Point collectors at **your** national/state CAP and met feeds (`docs/FORKING.md`).
+3. Leave `SITUATIONAL_LAYERS_ENABLED` and `JEV_SHADOW_ENABLED` **false** in production until you opt in.
+4. Keep CAP as the only public alert authority. No SMS/push. No claiming to be the government.
+
+Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Optional modules: [packages/README.md](packages/README.md).
