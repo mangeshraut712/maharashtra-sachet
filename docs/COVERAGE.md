@@ -18,6 +18,15 @@ The homepage map plots **active relayed alerts** from `/api/alerts`:
 
 The bulletin text, issuer, expiry and official links remain the only authoritative presentation of an alert.
 
+## Optional situational layers (feature-flagged)
+
+When `SITUATIONAL_LAYERS_ENABLED=true` on the worker, `/api/situational` proxies:
+
+- **USGS** earthquake GeoJSON (last 7 days, M≥2.5) clipped to the Maharashtra bounding box.
+- **NASA FIRMS** VIIRS heat detections when `FIRMS_MAP_KEY` is configured.
+
+These layers use distinct map styling from official CAP alerts and are **off by default in production**. They do not create or modify relayed alert records.
+
 ## Border policy
 
 Maharashtra border locations remain part of their Maharashtra districts. An incident outside the state can still have an officially declared impact within it; use the issuing authority's affected-area data. Never fabricate a Maharashtra impact from distance, earthquake magnitude or neighboring-state names. Goa and other neighboring states are not listed as Maharashtra districts.

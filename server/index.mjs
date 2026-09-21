@@ -25,12 +25,19 @@ export function createRelay({ collectors = sourceCollectors(), initialState = em
   return { pollOnce, getState: () => state }
 }
 
-export function createRelayServer({ relay = createRelay(), webRoot = WEB, environment = 'local', controlHandler = null, now = () => Date.now() } = {}) {
+export function createRelayServer({ relay = createRelay(), webRoot = WEB, environment = 'local', controlHandler = null, now = () => Date.now(), situationalEnabled = false, firmsMapKey = '' } = {}) {
   return createServer(async (req, res) => {
     try {
       const request = new Request(new URL(req.url || '/', 'http://localhost'), { method: req.method || 'GET' })
       let response = controlHandler ? await controlHandler(request) : null
-      if (!response) response = handleApi(request, relay.getState(), { environment, now: now() })
+      if (!response) {
+        response = await handleApi(request, relay.getState(), {
+          environment,
+          now: now(),
+          situationalEnabled,
+          firmsMapKey,
+        })
+      }
       if (!response) {
         if (!['GET', 'HEAD'].includes(request.method)) response = jsonResponse(405, { error: 'Method not allowed' }, { allow: 'GET, HEAD' })
         else {
@@ -64,7 +71,12 @@ export function startServer(env = process.env) {
   const collectors = sourceCollectors({ apiKey: env.DATA_GOV_IN_API_KEY, cpcbEnabled: env.CPCB_ENABLED ? env.CPCB_ENABLED === 'true' : Boolean(env.DATA_GOV_IN_API_KEY), aqiCities: env.AQI_CITIES?.split(',').map(s => s.trim()).filter(Boolean) })
   const relay = createRelay({ collectors })
   const environment = env.DEMO === '1' || env.ENVIRONMENT === 'demo' ? 'demo' : env.ENVIRONMENT || 'local'
-  const server = createRelayServer({ relay, environment })
+  const server = createRelayServer({
+    relay,
+    environment,
+    situationalEnabled: env.SITUATIONAL_LAYERS_ENABLED === 'true',
+    firmsMapKey: env.FIRMS_MAP_KEY || '',
+  })
   let timer
   const poll = async () => {
     try { await relay.pollOnce() } catch { console.error(JSON.stringify({ event: 'ingestion_failed' })) }

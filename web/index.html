@@ -118,6 +118,17 @@
         <p id="mapCaption" class="hint" data-i18n="mapCaption">
           Polygons come from official CAP geometry when available.
         </p>
+        <div id="situationalControls" class="map-layer-controls" hidden>
+          <p class="eyebrow" data-i18n="situationalEyebrow">OPTIONAL CONTEXT</p>
+          <p class="hint" data-i18n="situationalNote">
+            These layers are not official Sachet alerts. They show third-party
+            earthquake and fire detections clipped to Maharashtra for situational
+            awareness only.
+          </p>
+          <label><input id="layerQuakes" type="checkbox" /> <span data-i18n="layerQuakes">USGS earthquakes (7 days)</span></label>
+          <label><input id="layerFires" type="checkbox" /> <span data-i18n="layerFires">NASA FIRMS heat detections</span></label>
+          <p id="situationalStatus" class="small" role="status"></p>
+        </div>
       </section>
       <section class="location-panel" aria-labelledby="locationTitle">
         <div class="section-title">

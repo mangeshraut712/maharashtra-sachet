@@ -36,7 +36,7 @@ test('source failure persists safe diagnostic codes and logs no raw errors', asy
 })
 
 test('startup is uninitialized, never false-green', async () => {
-  const response = handleApi(new Request('http://localhost/api/health'), emptyState(), { now: NOW })
+  const response = await handleApi(new Request('http://localhost/api/health'), emptyState(), { now: NOW })
   assert.equal(response.status, 503)
   assert.equal((await response.json()).status, 'uninitialized')
   assert.equal(snapshotNeedsIngest(emptyState(), NOW), true)
@@ -122,30 +122,34 @@ test('disabled and misconfigured sources are not healthy empty feeds', async () 
 
 test('pagination exposes all counted records and rejects invalid filters', async () => {
   const state = await collectSnapshot(emptyState(), success(Array.from({ length: 520 }, (_, i) => alert(String(i)))), { now: NOW })
-  const first = await handleApi(new Request('http://localhost/api/v1/alerts?limit=500'), state, { now: NOW }).json()
+  const first = await (await handleApi(new Request('http://localhost/api/v1/alerts?limit=500'), state, { now: NOW })).json()
   assert.equal(first.count, 520)
   assert.equal(first.alerts.length, 500)
-  const last = await handleApi(new Request(`http://localhost/api/alerts?limit=500&offset=500&snapshot=${encodeURIComponent(first.pagination.snapshot)}`), state, { now: NOW }).json()
+  const last = await (await handleApi(new Request(`http://localhost/api/alerts?limit=500&offset=500&snapshot=${encodeURIComponent(first.pagination.snapshot)}`), state, { now: NOW })).json()
   assert.equal(last.alerts.length, 20)
   assert.equal(last.pagination.nextOffset, null)
   assert.equal(new Set([...first.alerts, ...last.alerts].map(a => a.id)).size, 520)
   for (const query of ['limit=NaN', 'limit=0', 'limit=501', 'limit=1.5', 'offset=-1', 'district=invalid', 'region=invalid', 'kind=invalid', 'source=invalid', 'class=invalid', 'limit=2&limit=3', 'unknown=1']) {
-    assert.equal(handleApi(new Request(`http://localhost/api/alerts?${query}`), state).status, 400, query)
+    assert.equal((await handleApi(new Request(`http://localhost/api/alerts?${query}`), state)).status, 400, query)
   }
-  assert.equal(handleApi(new Request('http://localhost/api/alerts?snapshot=old'), state).status, 409)
-  assert.equal(handleApi(new Request(`http://localhost/api/alerts?snapshot=${encodeURIComponent(first.pagination.snapshot)}`), state, { now: NOW + 600_001 }).status, 409)
+  assert.equal((await handleApi(new Request('http://localhost/api/alerts?snapshot=old'), state)).status, 409)
+  assert.equal((await handleApi(new Request(`http://localhost/api/alerts?snapshot=${encodeURIComponent(first.pagination.snapshot)}`), state, { now: NOW + 600_001 })).status, 409)
 })
 
 test('public API is read-only, no refresh route, and errors carry security headers', async () => {
   const request = new Request('http://localhost/api/alerts', { method: 'POST' })
-  const response = handleApi(request, emptyState())
+  const response = await handleApi(request, emptyState())
   assert.equal(response.status, 405)
   assert.equal(response.headers.get('allow'), 'GET, HEAD')
   assert.equal(response.headers.get('x-content-type-options'), 'nosniff')
   assert.equal(response.headers.get('cache-control'), 'no-store')
-  assert.equal(handleApi(new Request('http://localhost/api/refresh'), emptyState()).status, 404)
-  assert.equal(handleApi(new Request('http://localhost/api/alerts/live'), emptyState()).status, 410)
-  assert.equal(await handleApi(new Request('http://localhost/api/meta', { method: 'HEAD' }), emptyState()).text(), '')
+  assert.equal((await handleApi(new Request('http://localhost/api/refresh'), emptyState())).status, 404)
+  assert.equal((await handleApi(new Request('http://localhost/api/alerts/live'), emptyState())).status, 410)
+  assert.equal((await handleApi(new Request('http://localhost/api/meta', { method: 'HEAD' }), emptyState())).status, 200)
+  assert.equal((await handleApi(new Request('http://localhost/api/situational'), emptyState())).status, 404)
+  const situational = await (await handleApi(new Request('http://localhost/api/situational'), emptyState(), { situationalEnabled: true })).json()
+  assert.equal(situational.enabled, true)
+  assert.equal(situational.unofficial, true)
 })
 
 test('Node runner binds ephemeral local listener and safely serves assets', async t => {
