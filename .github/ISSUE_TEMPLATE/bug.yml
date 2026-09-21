@@ -1,0 +1,42 @@
+name: Bug
+description: Product, API, or UI defect in the unofficial civic relay
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This project is an **independent CAP relay**, not a government website. Do not request official status. In danger call **112**.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Expected vs actual. Include unofficial/banner behaviour if relevant.
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL or environment
+      description: Local, staging, production Worker URL, or `npm start` / `npm run demo`.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: git SHA, Worker version id, or `generatedAt` from `/api/health`.
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: No credentials, no exploit payloads against production.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety
+      options:
+        - label: I am not asking this software to originate cell broadcast, WEA, or IPAWS.
+          required: true
+        - label: I understand a healthy empty feed is not an all-clear.
+          required: true

@@ -1,0 +1,33 @@
+name: Docs
+description: README, CONTRIBUTING, architecture, forking, or API documentation
+title: "[docs] "
+labels: ["documentation"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Doc area
+      options:
+        - README / How to use
+        - CONTRIBUTING
+        - Architecture
+        - Forking
+        - API
+        - Operations / Security / Privacy
+        - Coverage / source research
+        - Issue or PR templates
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or missing
+      description: Quote the misleading sentence if the docs over-claim official status, coverage, or cell broadcast.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested fix
+      description: Optional patch outline or correct official URL (NDMA, SDMA, IMD, etc.).

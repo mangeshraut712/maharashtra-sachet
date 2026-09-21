@@ -1,0 +1,20 @@
+name: Ideas
+title: "[idea] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Discussions are for questions and fork ideas. File bugs with issue templates. This relay stays **unofficial**; CAP is the authority; call **112**.
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea or question
+    validations:
+      required: true
+  - type: checkboxes
+    id: bounds
+    attributes:
+      label: Bounds
+      options:
+        - label: I am not proposing cell-broadcast origination, fake .gov branding, or recon/port-scan tooling.
+          required: true
