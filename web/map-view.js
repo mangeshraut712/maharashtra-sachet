@@ -1,14 +1,30 @@
-import maplibregl from '/vendor/maplibre-gl.mjs'
 import { alertsToMapGeoJSON, mapFitBounds, MH_BBOX } from './map-model.js'
 
 const STYLE_URL = 'https://demotiles.maplibre.org/style.json'
 
 let map = null
 let mapReady = false
+let mapFailed = false
 let pendingUpdate = null
 let observer = null
+let mapLibrePromise = null
 
-function ensureMap(container) {
+function loadMapLibre() {
+  if (mapFailed) return Promise.resolve(null)
+  if (!mapLibrePromise) {
+    // Dynamic import keeps MapLibre off the app.js module graph so a vendor/CSP
+    // failure cannot prevent the alert bulletin from rendering.
+    mapLibrePromise = import('/vendor/maplibre-gl.mjs')
+      .then((mod) => mod.default)
+      .catch(() => {
+        mapFailed = true
+        return null
+      })
+  }
+  return mapLibrePromise
+}
+
+function ensureMap(container, maplibregl) {
   if (map) return map
   map = new maplibregl.Map({
     container,
@@ -78,6 +94,9 @@ function ensureMap(container) {
       pendingUpdate = null
     }
   })
+  map.on('error', () => {
+    /* Tile/style errors must not surface as page errors that fail the bulletin. */
+  })
   return map
 }
 
@@ -95,12 +114,23 @@ function applyData({ alerts, selectedDistrictId }) {
   }
 }
 
+async function loadAndUpdate({ container, alerts, selectedDistrictId }) {
+  if (!container || mapFailed) return
+  const payload = { alerts, selectedDistrictId }
+  try {
+    const maplibregl = await loadMapLibre()
+    if (!maplibregl) return
+    ensureMap(container, maplibregl)
+    if (!mapReady) pendingUpdate = payload
+    else applyData(payload)
+  } catch {
+    mapFailed = true
+  }
+}
+
 export function updateAlertMap({ container, alerts, selectedDistrictId }) {
   if (!container) return
-  ensureMap(container)
-  const payload = { alerts, selectedDistrictId }
-  if (!mapReady) pendingUpdate = payload
-  else applyData(payload)
+  void loadAndUpdate({ container, alerts, selectedDistrictId })
 }
 
 export function bindLazyMap(container, getMapInput) {

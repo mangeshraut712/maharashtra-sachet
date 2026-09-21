@@ -18,7 +18,7 @@ export const SECURITY_HEADERS = {
   'referrer-policy': 'strict-origin-when-cross-origin',
   'x-frame-options': 'DENY',
   'permissions-policy': 'camera=(), microphone=(), geolocation=()',
-  'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://demotiles.maplibre.org; worker-src blob:; font-src 'self' https://demotiles.maplibre.org; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+  'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://demotiles.maplibre.org; connect-src 'self' https://demotiles.maplibre.org; worker-src 'self' blob:; font-src 'self' https://demotiles.maplibre.org; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
 }
 
 export function emptyState() {
