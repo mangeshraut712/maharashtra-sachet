@@ -6,6 +6,7 @@ let map = null
 let mapReady = false
 let mapFailed = false
 let pendingUpdate = null
+let pendingSituational = null
 let observer = null
 let mapLibrePromise = null
 
@@ -145,8 +146,6 @@ function ensureMap(container, maplibregl) {
   return map
 }
 
-let pendingSituational = null
-
 function applySituational({ snapshot, showQuakes, showFires }) {
   if (!mapReady || !map) return
   const quakeSource = map.getSource('situational-quakes')
@@ -163,11 +162,19 @@ function applySituational({ snapshot, showQuakes, showFires }) {
 
 export function updateSituationalMap({ snapshot, showQuakes, showFires }) {
   const container = document.getElementById('alertMap')
-  if (!container) return
-  ensureMap(container)
-  const payload = { snapshot, showQuakes, showFires }
-  if (!mapReady) pendingSituational = payload
-  else applySituational(payload)
+  if (!container || mapFailed) return
+  void (async () => {
+    try {
+      const maplibregl = await loadMapLibre()
+      if (!maplibregl) return
+      ensureMap(container, maplibregl)
+      const payload = { snapshot, showQuakes, showFires }
+      if (!mapReady) pendingSituational = payload
+      else applySituational(payload)
+    } catch {
+      mapFailed = true
+    }
+  })()
 }
 
 function applyData({ alerts, selectedDistrictId }) {
