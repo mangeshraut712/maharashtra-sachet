@@ -1,5 +1,6 @@
-import { collectSnapshot, emptyState, handleApi, jsonResponse, SECURITY_HEADERS, snapshotNeedsIngest, sourceCollectors } from '../server/service.mjs'
-import { acquireLease, readState, releaseLease, saveState } from './storage'
+import { collectSnapshot, emptyState, handleApi, jsonResponse, publicSnapshot, SECURITY_HEADERS, snapshotNeedsIngest, sourceCollectors } from '../server/service.mjs'
+import { acquireLease, appendJevShadowEntries, readRecentJevShadowEntries, readState, releaseLease, saveState } from './storage'
+import { jevShadowEnabled, triageAlertShadow } from '../server/jev-shadow.mjs'
 
 export async function ingest(env: Env, collectors?: ReturnType<typeof sourceCollectors>): Promise<{ status: string }> {
   const token = crypto.randomUUID()
@@ -9,6 +10,23 @@ export async function ingest(env: Env, collectors?: ReturnType<typeof sourceColl
     const apiKey = 'DATA_GOV_IN_API_KEY' in env && typeof env.DATA_GOV_IN_API_KEY === 'string' ? env.DATA_GOV_IN_API_KEY : undefined
     const next = await collectSnapshot(previous, collectors || sourceCollectors({ apiKey, cpcbEnabled: String(env.CPCB_ENABLED) === 'true' }))
     if (!await saveState(env.DB, token, next)) throw new Error('Ingestion lease expired')
+    if (jevShadowEnabled(env)) {
+      const { alerts } = publicSnapshot(next, Date.now())
+      const generatedAt = next.generatedAt || new Date().toISOString()
+      const entries = []
+      for (const alert of alerts) {
+        const payload = await triageAlertShadow(alert, env)
+        entries.push({ alertKey: payload.alertKey, generatedAt, payload })
+        console.log(JSON.stringify({
+          event: 'jev_shadow_triage',
+          alertKey: payload.alertKey,
+          provider: payload.provider,
+          recommendation: payload.recommendation,
+          hazardMismatch: payload.hazardMismatch,
+        }))
+      }
+      await appendJevShadowEntries(env.DB, entries)
+    }
     console.log(JSON.stringify({ event: 'ingestion_complete', generatedAt: next.generatedAt }))
     return { status: 'completed' }
   } finally {
@@ -34,6 +52,17 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     try {
       const path = new URL(request.url).pathname
+      if (path === '/api/jev/shadow') {
+        if (!jevShadowEnabled(env)) return jsonResponse(404, { error: 'Jev shadow triage is disabled.' })
+        const limit = Math.min(Math.max(Number(new URL(request.url).searchParams.get('limit') || 20), 1), 100)
+        const entries = await readRecentJevShadowEntries(env.DB, limit)
+        return jsonResponse(200, {
+          unofficial: true,
+          mode: 'shadow',
+          disclaimer: 'Ops-only shadow triage. Does not change public CAP bulletin truth.',
+          entries,
+        })
+      }
       if (path === '/api' || path.startsWith('/api/')) {
         if (request.method !== 'GET' && request.method !== 'HEAD') return jsonResponse(405, { error: 'Method not allowed' }, { allow: 'GET, HEAD', ...(new URL(request.url).protocol === 'https:' ? { 'strict-transport-security': 'max-age=31536000' } : {}) })
         const staticApi = /^\/api(?:\/v1)?\/(?:meta|locations)$/.test(path)
@@ -41,7 +70,12 @@ export default {
         if (!staticApi) maybeScheduleRecovery(env, state, ctx)
         const firmsKey = 'FIRMS_MAP_KEY' in env && typeof env.FIRMS_MAP_KEY === 'string' ? env.FIRMS_MAP_KEY : ''
         const situationalEnabled = String(env.SITUATIONAL_LAYERS_ENABLED) === 'true'
-        const response = await handleApi(request, state, { environment: env.ENVIRONMENT, situationalEnabled, firmsMapKey: firmsKey }) || jsonResponse(404, { error: 'Not found' })
+        const response = await handleApi(request, state, {
+          environment: env.ENVIRONMENT,
+          situationalEnabled,
+          firmsMapKey: firmsKey,
+          jevShadowEnabled: jevShadowEnabled(env),
+        }) || jsonResponse(404, { error: 'Not found' })
         if (new URL(request.url).protocol === 'https:') response.headers.set('strict-transport-security', 'max-age=31536000')
         return response
       }

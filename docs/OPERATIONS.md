@@ -61,6 +61,19 @@ D1 uses a token-owned 120-second ingestion lease. Atomic writes require a live m
 
 CPCB is an observation integration, not AQI calculation. If enabled after review, set `DATA_GOV_IN_API_KEY` using `wrangler secret put` for the correct environment and change `CPCB_ENABLED` intentionally. Never put the key in `wrangler.jsonc`, git, an issue or a CLI argument. No OpenAI API key or Supabase credential is required by the release runtime.
 
+### Shadow Jev (TypeSafe System One) — default off
+
+Ops-only. Does **not** change `/api/alerts`, rewrite CAP text, or send SMS/push/WEA.
+
+- `JEV_SHADOW_ENABLED` defaults to `false` in production/staging vars. Set `true` only after reviewing `/api/jev/shadow`.
+- `JEV_SHADOW_KILL=true` stops triage without redeploying collectors.
+- CI and local default: `JEV_USE_LIVE` not `true` → deterministic mock/fixture scorer (no key).
+- Live: `JEV_USE_LIVE=true` plus `JEV_API_KEY` **or** the Cloudflare secret named `cursor` (env `cursor`). Endpoint is `POST https://api.typesafe.ai/v1/systemone` with `Authorization: Bearer …` and model `jev-latest`.
+- Store the key with `npx wrangler secret put JEV_API_KEY --env staging` (and production). If the dashboard secret is named `cursor`, that binding is accepted as a fallback.
+- Code owns routing: one System One request per alert with parallel atomic questions; `escalate_human` or low confidence becomes `human_review`.
+
+See [JEV-SHADOW.md](JEV-SHADOW.md).
+
 ## Rollback
 
 Run `npx wrangler versions list --env production` and `npx wrangler deployments list --env production` to identify the previously verified version. Inspect `npx wrangler rollback --help`, then roll back to that explicit version when authorized. A Worker rollback does not revert a D1 migration. The first deployment has no previous production version; never invent a rollback ID or delete the database as a rollback substitute.
