@@ -1,0 +1,49 @@
+name: Source health
+description: Feed outage, schema drift, or misleading empty/stale presentation
+title: "[source] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for **SACHET / IMD / INCOIS / CWC / CPCB** (or a fork’s adapters). Official CAP remains the authority. Do not paste full CAP XML if it may contain sensitive operational detail; summarise identifiers and timestamps.
+  - type: dropdown
+    id: source
+    attributes:
+      label: Source
+      options:
+        - sachet
+        - imd
+        - incois
+        - cwc
+        - cpcb
+        - merge / lifecycle
+        - unknown / multiple
+    validations:
+      required: true
+  - type: dropdown
+    id: symptom
+    attributes:
+      label: Symptom
+      options:
+        - Unexpected empty bulletin while the official portal shows alerts
+        - Health shows healthy but UI looks like all-clear
+        - degraded / stale / 503
+        - Schema or parse failure
+        - Cancel/Update not applied (or applied across issuers)
+        - Wrong district / LGD mapping
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: `/api/health` and `/api/sources` snippets (redact URLs with credentials). `generatedAt`, `lastSuccessAt`, `errorCode`.
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Notes
+      description: Timezone, district, and whether you compared NDMA SACHET or another official page.

@@ -59,6 +59,20 @@ npm run verify:realtime  # read-only proof of two advancing production generatio
 
 Deploy, rollback and secrets: [operations](docs/OPERATIONS.md). API: [docs/API.md](docs/API.md). All docs: [docs/README.md](docs/README.md).
 
+## Open source / Fork this
+
+This is an **MIT** civic CAP relay meant to be forked, and it is **not a government website**. Another Indian state or region can reuse the pipeline by replacing district/LGD tables, feed adapters, and branding—while keeping the same safety rules: unofficial relay, **CAP is the sole authority**, call **112**, no cell-broadcast / WEA / IPAWS origination.
+
+**Live demo:** [maharashtra-sachet.mangeshraut712.workers.dev](https://maharashtra-sachet.mangeshraut712.workers.dev) (independent Worker; not `.gov.in`)
+
+| Guide | What it covers |
+| --- | --- |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Setup, tests, PR norms, what not to claim |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Sources → collectors → merge/lifecycle → D1 → public GET API → web (poll + MapLibre) |
+| [docs/FORKING.md](docs/FORKING.md) | Districts/LGD, adapters, Workers/D1, feature flags |
+
+Issues: bug vs source-health vs docs templates under `.github/ISSUE_TEMPLATE`. Optional layers and ops shadow pipelines stay **off by default** if present.
+
 ## What this project does not do
 
 - Originate government alerts, cell broadcasts or US Wireless Emergency Alerts.
