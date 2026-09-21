@@ -9,13 +9,23 @@ let pendingUpdate = null
 let observer = null
 let mapLibrePromise = null
 
+export function resolveMapLibreModule(mod) {
+  const api = mod?.default && typeof mod.default.Map === 'function' ? mod.default : mod
+  if (!api || typeof api.Map !== 'function') return null
+  return api
+}
+
 function loadMapLibre() {
   if (mapFailed) return Promise.resolve(null)
   if (!mapLibrePromise) {
     // Dynamic import keeps MapLibre off the app.js module graph so a vendor/CSP
     // failure cannot prevent the alert bulletin from rendering.
     mapLibrePromise = import('/vendor/maplibre-gl.mjs')
-      .then((mod) => mod.default)
+      .then((mod) => {
+        const api = resolveMapLibreModule(mod)
+        if (!api) mapFailed = true
+        return api
+      })
       .catch(() => {
         mapFailed = true
         return null
