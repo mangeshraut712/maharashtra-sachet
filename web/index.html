@@ -12,6 +12,7 @@
     <link rel="icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/vendor/maplibre-gl.css" />
   </head>
   <body>
     <a class="skip" href="#alerts" data-i18n="skip">Skip to alerts</a>
@@ -47,6 +48,7 @@
     <nav class="portal-nav" aria-label="Main navigation">
       <div class="container">
         <a href="#alerts" data-i18n="alertsNav">Alert bulletin</a>
+        <a href="#alertMapSection" data-i18n="mapNav">Map view</a>
         <a href="#services" data-i18n="servicesNav">Citizen services</a>
         <a href="#coverage" data-i18n="coverageNav">District directory</a>
         <a href="#sourcePanel" data-i18n="sourcesNav">Source status</a>
@@ -99,6 +101,24 @@
           emergency, call <a href="tel:112">112</a>.
         </div></noscript
       >
+      <section id="alertMapSection" class="map-panel" aria-labelledby="mapTitle">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow" data-i18n="mapEyebrow">ORIENTATION</p>
+            <h2 id="mapTitle" data-i18n="mapTitle">Alert map</h2>
+          </div>
+        </div>
+        <p class="map-disclaimer" data-i18n="mapDisclaimer">
+          This map helps you see relayed alert areas. It is not official government
+          mapping. Read the bulletin text and issuer links below — they are the
+          source of truth. District dots are approximate when CAP polygons are
+          missing.
+        </p>
+        <div id="alertMap" class="alert-map"></div>
+        <p id="mapCaption" class="hint" data-i18n="mapCaption">
+          Polygons come from official CAP geometry when available.
+        </p>
+      </section>
       <section class="location-panel" aria-labelledby="locationTitle">
         <div class="section-title">
           <div>

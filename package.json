@@ -28,10 +28,12 @@
     "deploy:production": "wrangler deploy --env production",
     "docs:screenshots": "node scripts/capture-docs-screenshots.mjs",
     "docs:pitch": "uv run --with python-pptx python3 scripts/build-pitch-pptx.py",
-    "verify:realtime": "node scripts/verify-realtime.mjs"
+    "verify:realtime": "node scripts/verify-realtime.mjs",
+    "postinstall": "node scripts/vendor-maplibre.mjs"
   },
   "dependencies": {
-    "fast-xml-parser": "5.11.1"
+    "fast-xml-parser": "5.11.1",
+    "maplibre-gl": "6.10.0"
   },
   "devDependencies": {
     "wrangler": "4.134.0",

@@ -1,10 +1,16 @@
-const CACHE = 'mh-sachet-shell-v6'
+const CACHE = 'mh-sachet-shell-v8'
 const SHELL = [
   '/',
   '/index.html',
   '/styles.css',
   '/app.js',
   '/ui-model.js',
+  '/map-model.js',
+  '/map-view.js',
+  '/vendor/maplibre-gl.mjs',
+  '/vendor/maplibre-gl-shared.mjs',
+  '/vendor/maplibre-gl-worker.mjs',
+  '/vendor/maplibre-gl.css',
   '/manifest.webmanifest',
   '/icon.svg',
 ]
