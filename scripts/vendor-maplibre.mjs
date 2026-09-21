@@ -7,5 +7,5 @@ const vendor = join(root, 'web', 'vendor')
 const dist = join(root, 'node_modules', 'maplibre-gl', 'dist')
 
 await mkdir(vendor, { recursive: true })
-await copyFile(join(dist, 'maplibre-gl.js'), join(vendor, 'maplibre-gl.js'))
+await copyFile(join(dist, 'maplibre-gl.mjs'), join(vendor, 'maplibre-gl.mjs'))
 await copyFile(join(dist, 'maplibre-gl.css'), join(vendor, 'maplibre-gl.css'))

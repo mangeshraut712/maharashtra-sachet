@@ -7,7 +7,7 @@ const SHELL = [
   '/ui-model.js',
   '/map-model.js',
   '/map-view.js',
-  '/vendor/maplibre-gl.js',
+  '/vendor/maplibre-gl.mjs',
   '/vendor/maplibre-gl.css',
   '/manifest.webmanifest',
   '/icon.svg',

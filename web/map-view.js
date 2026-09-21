@@ -1,4 +1,4 @@
-import maplibregl from '/vendor/maplibre-gl.js'
+import maplibregl from '/vendor/maplibre-gl.mjs'
 import { alertsToMapGeoJSON, mapFitBounds, MH_BBOX } from './map-model.js'
 
 const STYLE_URL = 'https://demotiles.maplibre.org/style.json'

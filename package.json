@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "fast-xml-parser": "5.11.1",
-    "maplibre-gl": "5.11.0"
+    "maplibre-gl": "6.10.0"
   },
   "devDependencies": {
     "wrangler": "4.134.0",
