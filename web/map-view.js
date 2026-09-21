@@ -51,8 +51,8 @@ function ensureMap(container, maplibregl) {
     dragRotate: false,
     pitchWithRotate: false,
     touchPitch: false,
+    keyboard: false,
   })
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
   map.on('load', () => {
     mapReady = true
     map.addSource('mh-bbox', {
