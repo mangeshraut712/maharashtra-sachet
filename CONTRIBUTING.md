@@ -46,6 +46,8 @@ npm audit
 
 CI (`.github/workflows/verify.yml`) runs the same gate on pull requests. Optional live proof of two advancing production generations: `npm run verify:realtime` (read-only). Deploy, secrets, and rollback: [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
+Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/FORKING.md](docs/FORKING.md) before large geography or collector changes. TypeSafe live calls require `JEV_USE_LIVE=true` plus `JEV_API_KEY` or the `cursor` secret; CI must stay on fixtures.
+
 ## Pull request norms
 
 - One concern per PR when practical (docs, collector, UI, ops).
@@ -65,8 +67,26 @@ Use the templates under `.github/ISSUE_TEMPLATE`:
 - **Bug** — product/API/UI defects.
 - **Source health** — feed outages, schema drift, false empty “all clear” presentation.
 - **Docs** — CONTRIBUTING, architecture, forking, README accuracy.
+- **Collector or region pack** — source, district/LGD, or fork geography.
 
 Questions and fork coordination can go to [GitHub Discussions](https://github.com/mangeshraut712/maharashtra-sachet/discussions) when that forum is enabled; do not file “make this official” requests.
+
+Suggested issue labels (maintainers: create them on GitHub if missing):
+
+| Label | For |
+| --- | --- |
+| `good first issue` | Small, well-scoped first contributions |
+| `docs` | README, architecture, forking, translations of docs |
+| `collectors` | SACHET / IMD / INCOIS / CWC / CPCB ingestion |
+| `map` | Optional MapLibre, CAP polygons, region pack |
+| `situational` | Optional USGS / FIRMS layers (never official alerts) |
+| `jev-shadow` | Ops-only System One triage; no public bulletin mutation |
+| `a11y` | Keyboard, contrast, axe failures |
+| `i18n` | English / Marathi (or a fork's languages) |
+| `bug` | Incorrect relay, unsafe rendering, false all-clear |
+| `fork-help` | Questions from people adapting this to another jurisdiction |
+
+Suggested repository **topics**: `civic-tech`, `cap-alerts`, `cloudflare-workers`, `open-data`, `disaster-preparedness`, `india`, `mit-license`.
 
 ## Security
 

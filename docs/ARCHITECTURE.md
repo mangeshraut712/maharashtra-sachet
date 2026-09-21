@@ -96,9 +96,21 @@ There is no public refresh, write, citizen-report, or Web Push subscription endp
 - Optional foreground `Notification` while the tab is open; closing the page stops polling.
 - May cache the last public snapshot in `localStorage` for labelled offline/stale display.
 
-**MapLibre** (open work on the map PR, not required on `main` at the time of this doc): a map view consumes the **same** GET snapshots. Official CAP polygons are drawn when present; district centroids are approximate navigation only. Bulletin text, issuer links, and CAP `areaDesc` remain authoritative. The list UI must still work without WebGL.
+**MapLibre** (`web/map-view.js`): a map view consumes the **same** GET snapshots. Official CAP polygons are drawn when present; district centroids from the **region pack** (`web/region.json`) are approximate navigation only. Bulletin text, issuer links, and CAP `areaDesc` remain authoritative. MapLibre loads dynamically so a missing library cannot blank the bulletin. The list UI must still work without WebGL.
 
-**Situational layers** and **Jev shadow triage** (stacked PRs, flags off): optional overlays or ops-only pipelines. They must not be enabled by default, must not look like CAP, and must not be ingested as official alerts.
+**Situational layers** (`SITUATIONAL_LAYERS_ENABLED`) and **Jev shadow triage** (`JEV_SHADOW_ENABLED`) stay **off by default**. They must not look like CAP and must not be ingested as official alerts. Optional Jev / TypeSafe System One runs after a successful ingest, writes `jev_shadow_log` only, and never mutates `/api/alerts`.
+
+## Optional modules (forks)
+
+| Piece | Location | Production default |
+| --- | --- | --- |
+| Region pack (bbox, centroids, emergency number) | `web/region.json` | Maharashtra sample |
+| Bbox helpers | `web/modules/geo.mjs` | — |
+| Map feature builder | `web/modules/map-model.mjs` | — |
+| USGS / FIRMS clip | `server/situational.mjs` | **off** (`SITUATIONAL_LAYERS_ENABLED`) |
+| Jev System One shadow | `server/jev-shadow.mjs` | **off** (`JEV_SHADOW_ENABLED`) |
+
+See [FORKING.md](FORKING.md) and [packages/README.md](../packages/README.md).
 
 ## Runtimes
 

@@ -6,7 +6,7 @@ Start here if you are choosing a file. Dated plans and old verification notes li
 | --- | --- |
 | [Contributing](../CONTRIBUTING.md) | Setup, tests, PR norms, unofficial-status rules |
 | [Architecture](ARCHITECTURE.md) | Sources → collectors → merge → D1 → GET API → web poll / MapLibre |
-| [Forking](FORKING.md) | Another Indian state or region: LGD, adapters, Workers, flags |
+| [Forking](FORKING.md) | Another Indian state or region: region pack, LGD, adapters, Workers, flags |
 | [How to use](HOW-TO.md) | Resident / demo walkthrough with screenshots |
 | [Event pitch](../web/pitch.html) | Codex Build House slides (live at `/pitch.html`) |
 | [Current snapshot](STATUS.md) | Latest production numbers and screenshot results |

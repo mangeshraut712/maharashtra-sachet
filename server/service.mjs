@@ -7,7 +7,7 @@ import { mergeAlerts, snapshotStats } from './merge.mjs'
 import { DISTRICTS, HELPLINES, OFFICIAL_LINKS, REGIONS, AQI_CITIES_DEFAULT, coverageFromAlerts, districtsInRegion } from './districts.mjs'
 import { SITUATION_KINDS, WEA_CLASSES } from './wea.mjs'
 import { SERVICE_CATEGORIES, LOCALITY_COVERAGE, searchLocalities } from './coverage-catalog.mjs'
-import { DISTRICT_CENTROIDS, MH_BBOX } from './mh-geo.mjs'
+import { DISTRICT_CENTROIDS, MH_BBOX, REGION } from './mh-geo.mjs'
 import { buildSituationalSnapshot, situationalDisclaimer } from './situational.mjs'
 
 export const SOURCE_IDS = ['sachet', 'imd', 'incois', 'cwc', 'cpcb']
@@ -195,12 +195,25 @@ export async function handleApi(request, state, { now = Date.now(), environment 
         weaClasses: Object.values(WEA_CLASSES).map(({ id, en, mr, hint }) => ({ id, en, mr, hint })),
         situationKinds: SITUATION_KINDS.map(([id, en]) => ({ id, en })),
         serviceCategories: SERVICE_CATEGORIES, localityCoverage: LOCALITY_COVERAGE,
+        region: {
+          id: REGION.id,
+          nameEn: REGION.nameEn,
+          emergencyNumber: REGION.emergencyNumber,
+          unofficial: true,
+        },
         map: {
+          optional: true,
           bbox: MH_BBOX,
           districtCentroids: DISTRICT_CENTROIDS,
           disclaimer: 'Map assists orientation only. Official CAP text and issuer links remain the source of truth.',
         },
         features: {
+          mapLibre: {
+            optional: true,
+            loadedDynamically: true,
+            defaultOn: true,
+            disclaimer: 'Optional orientation map. CAP polygons when present; approximate centroids otherwise. Not government mapping.',
+          },
           situationalLayers: {
             enabled: situationalEnabled,
             defaultOn: false,

@@ -6,12 +6,12 @@ body:
   - type: markdown
     attributes:
       value: |
-        This project is an **independent CAP relay**, not a government website. Do not request official status. In danger call **112**.
+        This project is an **independent CAP relay**, not a government website. Do not request official status. In danger call **112**. Do not include secrets, private CAP XML, or exploit payloads against the public deployment.
   - type: textarea
     id: what
     attributes:
       label: What happened
-      description: Expected vs actual. Include unofficial/banner behaviour if relevant.
+      description: Expected vs actual. Include unofficial/banner behaviour if relevant. Mention whether `/api/alerts` or only the map/layers were wrong.
     validations:
       required: true
   - type: input

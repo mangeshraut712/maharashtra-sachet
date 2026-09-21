@@ -22,7 +22,7 @@ The bulletin text, issuer, expiry and official links remain the only authoritati
 
 When `SITUATIONAL_LAYERS_ENABLED=true` on the worker, `/api/situational` proxies:
 
-- **USGS** earthquake GeoJSON (last 7 days, M≥2.5) clipped to the Maharashtra bounding box.
+- **USGS** earthquake GeoJSON (last 7 days, M≥2.5) clipped to the **region pack** bounding box (`web/region.json`; Maharashtra in this sample).
 - **NASA FIRMS** VIIRS heat detections when `FIRMS_MAP_KEY` is configured.
 
 These layers use distinct map styling from official CAP alerts and are **off by default in production**. They do not create or modify relayed alert records.
