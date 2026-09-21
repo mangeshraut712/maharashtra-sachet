@@ -10,7 +10,7 @@ import {
   validSnapshot,
   validMeta,
 } from './ui-model.js'
-import { bindLazyMap, refreshMap } from './map-view.js'
+import { bindLazyMap, refreshMap, updateSituationalMap } from './map-view.js'
 
 const $ = (id) => document.getElementById(id)
 const node = (tag, text, className) => {
@@ -54,6 +54,11 @@ const MR = {
   mapDisclaimer:
     'हा नकाशा रिले केलेल्या सूचना क्षेत्रे दाखवतो. हे अधिकृत शासकीय नकाशन नाही. खालील सूचना फलक व जारीकर्त्याचे दुवे हे विश्वासार्ह स्रोत आहेत. CAP बहुभुज नसल्यास जिल्हा बिंदू अंदाजे आहेत.',
   mapCaption: 'उपलब्ध असल्यास अधिकृत CAP भूमिती वापरली जाते.',
+  situationalEyebrow: 'पर्यायी संदर्भ',
+  situationalNote:
+    'हे अधिकृत Sachet सूचना नाहीत. महाराष्ट्रात क्लिप केलेले तृतीय-पक्षीय भूकंप व आग शोध फक्त संदर्भासाठी आहेत.',
+  layerQuakes: 'USGS भूकंप (७ दिवस)',
+  layerFires: 'NASA FIRMS उष्णता शोध',
   coverageNav: 'व्याप्ती',
   servicesNav: 'नागरिक सेवा',
   sourcesNav: 'स्रोतांची स्थिती',
@@ -168,6 +173,10 @@ const state = {
   notify: false,
   metaError: false,
   saveFailed: false,
+  situational: null,
+  situationalBusy: false,
+  layerQuakes: false,
+  layerFires: false,
 }
 const tx = (en, mr) => (state.lang === 'mr' ? mr : en)
 const label = (row) =>
@@ -699,6 +708,50 @@ function mapInput() {
   }
 }
 
+function renderSituationalControls() {
+  const feature = state.meta?.features?.situationalLayers
+  const panel = $('situationalControls')
+  if (!feature?.enabled) {
+    panel.hidden = true
+    return
+  }
+  panel.hidden = false
+  $('layerQuakes').checked = state.layerQuakes
+  $('layerFires').checked = state.layerFires
+  $('situationalStatus').textContent = state.situationalBusy
+    ? tx('Loading situational layers…', 'पर्यायी थर लोड होत आहेत…')
+    : state.situational?.sources
+      ? tx(
+          `Sources: USGS ${state.situational.sources.usgs?.status || '—'}, FIRMS ${state.situational.sources.firms?.status || '—'}`,
+          `स्रोत: USGS ${state.situational.sources.usgs?.status || '—'}, FIRMS ${state.situational.sources.firms?.status || '—'}`,
+        )
+      : ''
+  updateSituationalMap({
+    snapshot: state.situational,
+    showQuakes: state.layerQuakes,
+    showFires: state.layerFires,
+  })
+}
+
+async function ensureSituational() {
+  const feature = state.meta?.features?.situationalLayers
+  if (!feature?.enabled || (!state.layerQuakes && !state.layerFires)) return
+  if (state.situational || state.situationalBusy) return
+  state.situationalBusy = true
+  renderSituationalControls()
+  try {
+    state.situational = await request(feature.endpoint || '/api/situational')
+  } catch {
+    $('situationalStatus').textContent = tx(
+      'Situational layers unavailable.',
+      'पर्यायी थर उपलब्ध नाहीत.',
+    )
+  } finally {
+    state.situationalBusy = false
+    renderSituationalControls()
+  }
+}
+
 function render() {
   applyLanguage()
   const mode = renderStatus()
@@ -706,6 +759,7 @@ function render() {
   renderSources()
   renderCoverage()
   renderServices()
+  renderSituationalControls()
   refreshMap(mapInput)
 }
 
@@ -1028,6 +1082,16 @@ if ('serviceWorker' in navigator)
     )
   })
 bindLazyMap($('alertMap'), mapInput)
+$('layerQuakes').addEventListener('change', () => {
+  state.layerQuakes = $('layerQuakes').checked
+  void ensureSituational()
+  renderSituationalControls()
+})
+$('layerFires').addEventListener('change', () => {
+  state.layerFires = $('layerFires').checked
+  void ensureSituational()
+  renderSituationalControls()
+})
 restoreSnapshot()
 applyLanguage()
 render()

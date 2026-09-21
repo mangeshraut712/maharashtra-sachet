@@ -8,6 +8,7 @@ import { DISTRICTS, HELPLINES, OFFICIAL_LINKS, REGIONS, AQI_CITIES_DEFAULT, cove
 import { SITUATION_KINDS, WEA_CLASSES } from './wea.mjs'
 import { SERVICE_CATEGORIES, LOCALITY_COVERAGE, searchLocalities } from './coverage-catalog.mjs'
 import { DISTRICT_CENTROIDS, MH_BBOX } from './mh-geo.mjs'
+import { buildSituationalSnapshot, situationalDisclaimer } from './situational.mjs'
 
 export const SOURCE_IDS = ['sachet', 'imd', 'incois', 'cwc', 'cpcb']
 export const STALE_MS = 5 * 60_000
@@ -169,7 +170,7 @@ function snapshotVersion(snapshot) {
   return `${snapshot.generatedAt || 'uninitialized'}:${(hash >>> 0).toString(16)}`
 }
 
-export function handleApi(request, state, { now = Date.now(), environment = 'local' } = {}) {
+export async function handleApi(request, state, { now = Date.now(), environment = 'local', situationalEnabled = false, firmsMapKey = '' } = {}) {
   const url = new URL(request.url)
   const path = url.pathname.replace(/^\/api\/v1(?=\/|$)/, '/api')
   if (!path.startsWith('/api/') && path !== '/api') return null
@@ -198,6 +199,14 @@ export function handleApi(request, state, { now = Date.now(), environment = 'loc
           bbox: MH_BBOX,
           districtCentroids: DISTRICT_CENTROIDS,
           disclaimer: 'Map assists orientation only. Official CAP text and issuer links remain the source of truth.',
+        },
+        features: {
+          situationalLayers: {
+            enabled: situationalEnabled,
+            defaultOn: false,
+            endpoint: situationalEnabled ? '/api/situational' : null,
+            disclaimer: situationalDisclaimer(),
+          },
         },
       })
     } else if (path === '/api/alerts') {
@@ -233,6 +242,9 @@ export function handleApi(request, state, { now = Date.now(), environment = 'loc
       response = jsonResponse(200, { locations: searchLocalities(query, limit), coverage: LOCALITY_COVERAGE })
     } else if (path === '/api/alerts/live') {
       response = jsonResponse(410, { error: 'Live streaming is unavailable. Poll /api/alerts every 60 seconds.', intervalMs: 60_000 })
+    } else if (path === '/api/situational') {
+      if (!situationalEnabled) response = jsonResponse(404, { error: 'Situational layers are disabled in this environment.' })
+      else response = jsonResponse(200, await buildSituationalSnapshot({ enabled: true, firmsKey: firmsMapKey, now }))
     } else response = jsonResponse(404, { error: 'Not found' })
   } catch (error) {
     response = jsonResponse(400, { error: error.message })

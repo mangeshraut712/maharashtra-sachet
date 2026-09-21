@@ -39,7 +39,9 @@ export default {
         const staticApi = /^\/api(?:\/v1)?\/(?:meta|locations)$/.test(path)
         const state = staticApi ? emptyState() : await readState(env.DB)
         if (!staticApi) maybeScheduleRecovery(env, state, ctx)
-        const response = handleApi(request, state, { environment: env.ENVIRONMENT }) || jsonResponse(404, { error: 'Not found' })
+        const firmsKey = 'FIRMS_MAP_KEY' in env && typeof env.FIRMS_MAP_KEY === 'string' ? env.FIRMS_MAP_KEY : ''
+        const situationalEnabled = String(env.SITUATIONAL_LAYERS_ENABLED) === 'true'
+        const response = await handleApi(request, state, { environment: env.ENVIRONMENT, situationalEnabled, firmsMapKey: firmsKey }) || jsonResponse(404, { error: 'Not found' })
         if (new URL(request.url).protocol === 'https:') response.headers.set('strict-transport-security', 'max-age=31536000')
         return response
       }

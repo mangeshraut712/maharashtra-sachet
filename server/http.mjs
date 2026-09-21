@@ -5,6 +5,8 @@ const ALLOWED_PATHS = {
   'tsunami.incois.gov.in': /^\/itews\/DSSProducts\/OPR\/past90days\.json$/,
   'ffs.india-water.gov.in': /^\/iam\/api\/new-alert-public$/,
   'api.data.gov.in': /^\/resource\/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69$/,
+  'earthquake.usgs.gov': /^\/fdsnws\/event\/1\/query$/,
+  'firms.modaps.eosdis.nasa.gov': /^\/api\/area\/csv\//,
 }
 export function assertAllowedUrl(value) {
   let url

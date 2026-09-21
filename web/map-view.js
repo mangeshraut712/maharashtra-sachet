@@ -6,6 +6,7 @@ let map = null
 let mapReady = false
 let mapFailed = false
 let pendingUpdate = null
+let pendingSituational = null
 let observer = null
 let mapLibrePromise = null
 
@@ -105,15 +106,75 @@ function ensureMap(container, maplibregl) {
         'circle-stroke-width': 1.5,
       },
     })
+    map.addSource('situational-quakes', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+    map.addLayer({
+      id: 'situational-quakes-circle',
+      type: 'circle',
+      source: 'situational-quakes',
+      paint: {
+        'circle-radius': 5,
+        'circle-color': '#6b4c9a',
+        'circle-stroke-color': '#fff',
+        'circle-stroke-width': 1,
+      },
+      layout: { visibility: 'none' },
+    })
+    map.addSource('situational-fires', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+    map.addLayer({
+      id: 'situational-fires-circle',
+      type: 'circle',
+      source: 'situational-fires',
+      paint: {
+        'circle-radius': 4,
+        'circle-color': '#c45c26',
+        'circle-opacity': 0.75,
+      },
+      layout: { visibility: 'none' },
+    })
     if (pendingUpdate) {
       applyData(pendingUpdate)
       pendingUpdate = null
+    }
+    if (pendingSituational) {
+      applySituational(pendingSituational)
+      pendingSituational = null
     }
   })
   map.on('error', () => {
     /* Tile/style errors must not surface as page errors that fail the bulletin. */
   })
   return map
+}
+
+function applySituational({ snapshot, showQuakes, showFires }) {
+  if (!mapReady || !map) return
+  const quakeSource = map.getSource('situational-quakes')
+  const fireSource = map.getSource('situational-fires')
+  if (quakeSource) quakeSource.setData(snapshot?.quakes || { type: 'FeatureCollection', features: [] })
+  if (fireSource) fireSource.setData(snapshot?.fires || { type: 'FeatureCollection', features: [] })
+  if (map.getLayer('situational-quakes-circle')) {
+    map.setLayoutProperty('situational-quakes-circle', 'visibility', showQuakes ? 'visible' : 'none')
+  }
+  if (map.getLayer('situational-fires-circle')) {
+    map.setLayoutProperty('situational-fires-circle', 'visibility', showFires ? 'visible' : 'none')
+  }
+}
+
+export function updateSituationalMap({ snapshot, showQuakes, showFires }) {
+  const container = document.getElementById('alertMap')
+  if (!container || mapFailed) return
+  void (async () => {
+    try {
+      const maplibregl = await loadMapLibre()
+      if (!maplibregl) return
+      ensureMap(container, maplibregl)
+      const payload = { snapshot, showQuakes, showFires }
+      if (!mapReady) pendingSituational = payload
+      else applySituational(payload)
+    } catch {
+      mapFailed = true
+    }
+  })()
 }
 
 function applyData({ alerts, selectedDistrictId }) {
