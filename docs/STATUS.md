@@ -41,7 +41,7 @@ Place search on production:
 | `JEV_SHADOW_ENABLED` | `false` | Shadow Jev triage logs at `/api/jev/shadow` — ops only, no bulletin mutation |
 | `JEV_SHADOW_KILL` | unset | Emergency halt for shadow triage when `true` |
 | `FIRMS_MAP_KEY` | unset | NASA FIRMS when situational layers are enabled |
-| `JEV_API_KEY` / `JEV_USE_LIVE` | unset / `false` | Optional live Gateway; CI uses mock fixtures |
+| `JEV_API_KEY` / `cursor` / `JEV_USE_LIVE` | unset / unset / `false` | Optional live TypeSafe System One (`POST /v1/systemone`, model `jev-latest`). Key is `JEV_API_KEY` or the `cursor` secret. CI stays on mock fixtures. |
 
 ## Staging
 

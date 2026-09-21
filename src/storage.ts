@@ -81,8 +81,18 @@ export type JevShadowEntry = { alertKey: string; generatedAt: string; payload: R
 export async function appendJevShadowEntries(db: D1Database, entries: JevShadowEntry[]): Promise<void> {
   if (!entries.length) return
   const statements = entries.map((entry) =>
-    db.prepare('INSERT INTO jev_shadow_log (alert_key, generated_at, payload) VALUES (?, ?, ?)')
-      .bind(entry.alertKey, entry.generatedAt, JSON.stringify(entry.payload)),
+    db.prepare(
+      'INSERT INTO jev_shadow_log (alert_key, generated_at, recommendation, confidence, hazard_family, hazard_mismatch, model, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    ).bind(
+      entry.alertKey,
+      entry.generatedAt,
+      typeof entry.payload.recommendation === 'string' ? entry.payload.recommendation : null,
+      typeof entry.payload.confidence === 'number' ? entry.payload.confidence : null,
+      typeof entry.payload.hazardFamily === 'string' ? entry.payload.hazardFamily : null,
+      entry.payload.hazardMismatch ? 1 : 0,
+      typeof entry.payload.model === 'string' ? entry.payload.model : null,
+      JSON.stringify(entry.payload),
+    ),
   )
   statements.push(db.prepare('DELETE FROM jev_shadow_log WHERE id NOT IN (SELECT id FROM jev_shadow_log ORDER BY id DESC LIMIT 200)'))
   await db.batch(statements)

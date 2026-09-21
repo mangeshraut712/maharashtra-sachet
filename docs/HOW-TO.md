@@ -47,7 +47,7 @@ npx wrangler d1 migrations apply maharashtra-sachet-local --local
 npm run dev:worker
 ```
 
-Useful reads: [contributing](../CONTRIBUTING.md), [architecture](ARCHITECTURE.md), [forking](FORKING.md), [API](API.md), [operations](OPERATIONS.md), [coverage](COVERAGE.md).
+Useful reads: [contributing](../CONTRIBUTING.md), [architecture](ARCHITECTURE.md), [forking](FORKING.md), [API](API.md), [operations](OPERATIONS.md), [coverage](COVERAGE.md), [shadow Jev](JEV-SHADOW.md).
 
 ## Honest limits while you use it
 

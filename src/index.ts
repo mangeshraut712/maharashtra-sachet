@@ -17,7 +17,13 @@ export async function ingest(env: Env, collectors?: ReturnType<typeof sourceColl
       for (const alert of alerts) {
         const payload = await triageAlertShadow(alert, env)
         entries.push({ alertKey: payload.alertKey, generatedAt, payload })
-        console.log(JSON.stringify({ event: 'jev_shadow_triage', alertKey: payload.alertKey, provider: payload.provider }))
+        console.log(JSON.stringify({
+          event: 'jev_shadow_triage',
+          alertKey: payload.alertKey,
+          provider: payload.provider,
+          recommendation: payload.recommendation,
+          hazardMismatch: payload.hazardMismatch,
+        }))
       }
       await appendJevShadowEntries(env.DB, entries)
     }
