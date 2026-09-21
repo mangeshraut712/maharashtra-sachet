@@ -9,6 +9,7 @@ All routes are read-only. `GET` and `HEAD` are supported; mutation methods retur
 | `/api/alerts` | Active public Actual CAP alerts and current supported nowcasts. Observations, expired/future alerts, cancelled and superseded records are excluded. |
 | `/api/coverage` | Listed districts, current relayed counts, source health and locality/service coverage gaps. |
 | `/api/situational` | Optional USGS earthquake + NASA FIRMS detections clipped to Maharashtra. **Disabled by default** (`SITUATIONAL_LAYERS_ENABLED`); not official Sachet alerts. |
+| `/api/jev/shadow` | Ops-only shadow Jev triage log (`JEV_SHADOW_ENABLED`, default off). Does not alter `/api/alerts` records. |
 | `/api/sources` | Per-source health, last attempt/success, age and safe error code. |
 | `/api/locations?q=Sawantwadi` | District-alias candidates; `q` has 2–80 characters; optional integer `limit` 1–20. |
 | `/api/alerts/live` | `410` with polling guidance. This scoped release replaces legacy truncated streaming with complete paginated snapshots. |

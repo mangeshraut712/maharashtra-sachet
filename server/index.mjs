@@ -25,7 +25,7 @@ export function createRelay({ collectors = sourceCollectors(), initialState = em
   return { pollOnce, getState: () => state }
 }
 
-export function createRelayServer({ relay = createRelay(), webRoot = WEB, environment = 'local', controlHandler = null, now = () => Date.now(), situationalEnabled = false, firmsMapKey = '' } = {}) {
+export function createRelayServer({ relay = createRelay(), webRoot = WEB, environment = 'local', controlHandler = null, now = () => Date.now(), situationalEnabled = false, firmsMapKey = '', jevShadowEnabled = false } = {}) {
   return createServer(async (req, res) => {
     try {
       const request = new Request(new URL(req.url || '/', 'http://localhost'), { method: req.method || 'GET' })
@@ -36,6 +36,7 @@ export function createRelayServer({ relay = createRelay(), webRoot = WEB, enviro
           now: now(),
           situationalEnabled,
           firmsMapKey,
+          jevShadowEnabled,
         })
       }
       if (!response) {
@@ -76,6 +77,7 @@ export function startServer(env = process.env) {
     environment,
     situationalEnabled: env.SITUATIONAL_LAYERS_ENABLED === 'true',
     firmsMapKey: env.FIRMS_MAP_KEY || '',
+    jevShadowEnabled: env.JEV_SHADOW_ENABLED === 'true' && env.JEV_SHADOW_KILL !== 'true',
   })
   let timer
   const poll = async () => {

@@ -75,3 +75,25 @@ export async function saveState(db: D1Database, token: string, state: RelayState
   const results = await db.batch(statements)
   return results[results.length - 1].meta.changes === 1
 }
+
+export type JevShadowEntry = { alertKey: string; generatedAt: string; payload: Record<string, unknown> }
+
+export async function appendJevShadowEntries(db: D1Database, entries: JevShadowEntry[]): Promise<void> {
+  if (!entries.length) return
+  const statements = entries.map((entry) =>
+    db.prepare('INSERT INTO jev_shadow_log (alert_key, generated_at, payload) VALUES (?, ?, ?)')
+      .bind(entry.alertKey, entry.generatedAt, JSON.stringify(entry.payload)),
+  )
+  statements.push(db.prepare('DELETE FROM jev_shadow_log WHERE id NOT IN (SELECT id FROM jev_shadow_log ORDER BY id DESC LIMIT 200)'))
+  await db.batch(statements)
+}
+
+export async function readRecentJevShadowEntries(db: D1Database, limit = 50): Promise<JevShadowEntry[]> {
+  const bounded = Math.min(Math.max(limit, 1), 100)
+  const result = await db.prepare('SELECT alert_key, generated_at, payload FROM jev_shadow_log ORDER BY id DESC LIMIT ?').bind(bounded).all()
+  return result.results.map((row) => ({
+    alertKey: String(row.alert_key),
+    generatedAt: String(row.generated_at),
+    payload: JSON.parse(String(row.payload)) as Record<string, unknown>,
+  }))
+}

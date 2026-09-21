@@ -33,6 +33,16 @@ Place search on production:
 | `Marunji` | 200 | Pune (`precision: district-alias`) |
 | `Panaji` | 200 | No Maharashtra district match |
 
+## Feature flags (upgrade sequence)
+
+| Flag | Default (prod/staging) | Purpose |
+| --- | --- | --- |
+| `SITUATIONAL_LAYERS_ENABLED` | `false` | USGS/FIRMS map layers via `/api/situational` — not official alerts |
+| `JEV_SHADOW_ENABLED` | `false` | Shadow Jev triage logs at `/api/jev/shadow` — ops only, no bulletin mutation |
+| `JEV_SHADOW_KILL` | unset | Emergency halt for shadow triage when `true` |
+| `FIRMS_MAP_KEY` | unset | NASA FIRMS when situational layers are enabled |
+| `JEV_API_KEY` / `JEV_USE_LIVE` | unset / `false` | Optional live Gateway; CI uses mock fixtures |
+
 ## Staging
 
 Version `d4af16ea-0bdc-41c4-bb52-35f416ce58d1` passed the same desktop/mobile deployed suite. Its observer saw healthy generations advance from `2026-09-05T19:29:58.101Z` to `2026-09-05T19:30:58.545Z`.

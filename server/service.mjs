@@ -170,7 +170,7 @@ function snapshotVersion(snapshot) {
   return `${snapshot.generatedAt || 'uninitialized'}:${(hash >>> 0).toString(16)}`
 }
 
-export async function handleApi(request, state, { now = Date.now(), environment = 'local', situationalEnabled = false, firmsMapKey = '' } = {}) {
+export async function handleApi(request, state, { now = Date.now(), environment = 'local', situationalEnabled = false, firmsMapKey = '', jevShadowEnabled = false } = {}) {
   const url = new URL(request.url)
   const path = url.pathname.replace(/^\/api\/v1(?=\/|$)/, '/api')
   if (!path.startsWith('/api/') && path !== '/api') return null
@@ -206,6 +206,12 @@ export async function handleApi(request, state, { now = Date.now(), environment 
             defaultOn: false,
             endpoint: situationalEnabled ? '/api/situational' : null,
             disclaimer: situationalDisclaimer(),
+          },
+          jevShadow: {
+            enabled: jevShadowEnabled,
+            defaultOn: false,
+            endpoint: jevShadowEnabled ? '/api/jev/shadow' : null,
+            disclaimer: 'Shadow AI triage for operators only. Never overrides CAP fields on the public bulletin.',
           },
         },
       })
