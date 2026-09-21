@@ -1,6 +1,12 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { assertAllowedUrl } from '../server/http.mjs'
 import { fetchMaharashtraQuakes, fetchMaharashtraFires, resetSituationalCache, buildSituationalSnapshot } from '../server/situational.mjs'
+
+function isUsgsEarthquakeQuery(value) {
+  const url = assertAllowedUrl(String(value))
+  return url.hostname === 'earthquake.usgs.gov'
+}
 
 test.beforeEach(() => resetSituationalCache())
 
@@ -22,9 +28,16 @@ test('FIRMS without key reports disabled without network', async () => {
   assert.equal(result.status, 'disabled')
 })
 
+test('substring USGS host in path does not match hostname allowlist', () => {
+  assert.throws(
+    () => isUsgsEarthquakeQuery('https://evil.example/earthquake.usgs.gov/fdsnws/event/1/query'),
+    /Upstream URL not allowed/,
+  )
+})
+
 test('buildSituationalSnapshot caches successful proxy payload', async () => {
   const fetch = async (url) => {
-    if (String(url).includes('earthquake.usgs.gov')) {
+    if (isUsgsEarthquakeQuery(url)) {
       return new Response(JSON.stringify({ features: [{ geometry: { coordinates: [76, 19] } }] }), {
         headers: { 'content-type': 'application/json' },
       })
