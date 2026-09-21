@@ -10,6 +10,7 @@ import {
   validSnapshot,
   validMeta,
 } from './ui-model.js'
+import { bindLazyMap, refreshMap } from './map-view.js'
 
 const $ = (id) => document.getElementById(id)
 const node = (tag, text, className) => {
@@ -47,6 +48,12 @@ const MR = {
   officialSachet: 'अधिकृत NDMA SACHET ↗',
   brandSub: 'स्वतंत्र सार्वजनिक माहिती संकेतस्थळ',
   alertsNav: 'सूचना',
+  mapNav: 'नकाशा',
+  mapEyebrow: 'दिशा समजून घेण्यासाठी',
+  mapTitle: 'सूचना नकाशा',
+  mapDisclaimer:
+    'हा नकाशा रिले केलेल्या सूचना क्षेत्रे दाखवतो. हे अधिकृत शासकीय नकाशन नाही. खालील सूचना फलक व जारीकर्त्याचे दुवे हे विश्वासार्ह स्रोत आहेत. CAP बहुभुज नसल्यास जिल्हा बिंदू अंदाजे आहेत.',
+  mapCaption: 'उपलब्ध असल्यास अधिकृत CAP भूमिती वापरली जाते.',
   coverageNav: 'व्याप्ती',
   servicesNav: 'नागरिक सेवा',
   sourcesNav: 'स्रोतांची स्थिती',
@@ -685,6 +692,13 @@ function renderServices() {
     if (link) $('officialLinks').append(link)
   }
 }
+function mapInput() {
+  return {
+    alerts: selectedAlerts(),
+    selectedDistrictId: $('district').value || '',
+  }
+}
+
 function render() {
   applyLanguage()
   const mode = renderStatus()
@@ -692,6 +706,7 @@ function render() {
   renderSources()
   renderCoverage()
   renderServices()
+  refreshMap(mapInput)
 }
 
 async function request(url, { method = 'GET' } = {}) {
@@ -1012,6 +1027,7 @@ if ('serviceWorker' in navigator)
       'ऑफलाइन पृष्ठ उपलब्ध नाही; ऑनलाइन वापर सुरू आहे.',
     )
   })
+bindLazyMap($('alertMap'), mapInput)
 restoreSnapshot()
 applyLanguage()
 render()

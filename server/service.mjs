@@ -7,6 +7,7 @@ import { mergeAlerts, snapshotStats } from './merge.mjs'
 import { DISTRICTS, HELPLINES, OFFICIAL_LINKS, REGIONS, AQI_CITIES_DEFAULT, coverageFromAlerts, districtsInRegion } from './districts.mjs'
 import { SITUATION_KINDS, WEA_CLASSES } from './wea.mjs'
 import { SERVICE_CATEGORIES, LOCALITY_COVERAGE, searchLocalities } from './coverage-catalog.mjs'
+import { DISTRICT_CENTROIDS, MH_BBOX } from './mh-geo.mjs'
 
 export const SOURCE_IDS = ['sachet', 'imd', 'incois', 'cwc', 'cpcb']
 export const STALE_MS = 5 * 60_000
@@ -17,7 +18,7 @@ export const SECURITY_HEADERS = {
   'referrer-policy': 'strict-origin-when-cross-origin',
   'x-frame-options': 'DENY',
   'permissions-policy': 'camera=(), microphone=(), geolocation=()',
-  'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+  'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://demotiles.maplibre.org; worker-src blob:; font-src 'self' https://demotiles.maplibre.org; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
 }
 
 export function emptyState() {
@@ -193,6 +194,11 @@ export function handleApi(request, state, { now = Date.now(), environment = 'loc
         weaClasses: Object.values(WEA_CLASSES).map(({ id, en, mr, hint }) => ({ id, en, mr, hint })),
         situationKinds: SITUATION_KINDS.map(([id, en]) => ({ id, en })),
         serviceCategories: SERVICE_CATEGORIES, localityCoverage: LOCALITY_COVERAGE,
+        map: {
+          bbox: MH_BBOX,
+          districtCentroids: DISTRICT_CENTROIDS,
+          disclaimer: 'Map assists orientation only. Official CAP text and issuer links remain the source of truth.',
+        },
       })
     } else if (path === '/api/alerts') {
       const limit = integerParam(params, 'limit', 200, 1, 500)

@@ -15,16 +15,17 @@ This is an independent relay of public official feeds. It does not dispatch help
    ![Navi Mumbai returns both Raigad and Thane](screenshots/desktop-search-navi-mumbai.png)
 
 4. **Pick one district** when a name spans two (Navi Mumbai). Then read the bulletin for that district.
-5. **Check Source health** before sharing “there are no alerts”. A healthy source can still have zero active messages.
+5. **Use the alert map** (Map view) to orient yourself. Orange shapes are official CAP polygons when the feed includes them; blue dots are approximate district markers when geometry is missing. The map is **not** government mapping — always read the bulletin text and issuer links.
+6. **Check Source health** before sharing “there are no alerts”. A healthy source can still have zero active messages.
 
    ![Source health: SACHET checked, CWC and CPCB not connected](screenshots/desktop-source-health.png)
 
-6. **Open Citizen services** for weather, fire, health, transport, water, power and other official portals. Coverage details say whether a live feed is connected.
-7. **Switch language** with मराठी / English. District names stay searchable in both.
+7. **Open Citizen services** for weather, fire, health, transport, water, power and other official portals. Coverage details say whether a live feed is connected.
+8. **Switch language** with मराठी / English. District names stay searchable in both.
 
    ![Marathi interface](screenshots/desktop-marathi.png)
 
-8. **Phone alert guide** explains device government-alert settings. This site cannot send a carrier cell broadcast.
+9. **Phone alert guide** explains device government-alert settings. This site cannot send a carrier cell broadcast.
 
    ![Phone readiness guide on a mobile viewport](screenshots/mobile-phone-guide.png)
 

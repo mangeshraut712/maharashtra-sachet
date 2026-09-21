@@ -34,6 +34,7 @@ function runtime({
         'mh-sachet-shell-v3',
         'mh-sachet-shell-v4',
         'mh-sachet-shell-v5',
+        'mh-sachet-shell-v6',
         'mh-sachet-user-data',
       ],
       delete: async (key) => deleted.push(key),
@@ -51,7 +52,7 @@ test('service worker activation removes only superseded shell caches owned by th
     },
   })
   await work
-  assert.deepEqual(deleted, ['mh-sachet-shell-v1', 'mh-sachet-shell-v3', 'mh-sachet-shell-v4', 'mh-sachet-shell-v5'])
+  assert.deepEqual(deleted, ['mh-sachet-shell-v1', 'mh-sachet-shell-v3', 'mh-sachet-shell-v4', 'mh-sachet-shell-v5', 'mh-sachet-shell-v6'])
 })
 test('service worker leaves APIs, foreign origins and arbitrary same-origin paths untouched', () => {
   const { handlers } = runtime()

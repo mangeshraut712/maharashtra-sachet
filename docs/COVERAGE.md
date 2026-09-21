@@ -8,6 +8,16 @@ A place search returns district candidates. For example, Navi Mumbai returns bot
 
 Always read the original CAP affected-area description and geometry. Geography from an alert identifies its stated affected area, whereas a place-search alias is navigation metadata. The two are not interchangeable.
 
+## Alert map (CAP geometry)
+
+The homepage map plots **active relayed alerts** from `/api/alerts`:
+
+- **Orange polygons** use official CAP `polygon` rings when the collector includes them.
+- **Blue district dots** are approximate representative points when an alert lists districts but no polygon — they are not village or ward boundaries.
+- Basemap tiles are from [MapLibre demo tiles](https://demotiles.maplibre.org/) for orientation only; they are not government survey data.
+
+The bulletin text, issuer, expiry and official links remain the only authoritative presentation of an alert.
+
 ## Border policy
 
 Maharashtra border locations remain part of their Maharashtra districts. An incident outside the state can still have an officially declared impact within it; use the issuing authority's affected-area data. Never fabricate a Maharashtra impact from distance, earthquake magnitude or neighboring-state names. Goa and other neighboring states are not listed as Maharashtra districts.
