@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { parseCapAlert, collectSachet } from '../server/sachet.mjs'
 import { mergeAlerts } from '../server/merge.mjs'
 import { classifyWea, situationKind } from '../server/wea.mjs'
-import { fetchText, fetchTextRelaxedTls } from '../server/http.mjs'
+import { fetchText, fetchTextRelaxedTls, sachetCookieHeader } from '../server/http.mjs'
 import { collectImdNowcast } from '../server/imd.mjs'
 import { collectIncois } from '../server/incois.mjs'
 import { collectCpcb } from '../server/cpcb.mjs'
@@ -92,22 +92,50 @@ test('CPCB pollutant averages remain concentrations, not AQI or warnings', async
   assert.equal(alerts[0].severity,'Unknown')
   assert.doesNotMatch(alerts[0].headlineEn,/severe|AQI/i)
 })
-test('SACHET sessions are scoped per invocation and child snapshots are fetched fully', async () => {
+test('SACHET reads public RSS without a homepage session', async () => {
   let homes = 0
   const seen = []
   const mockFetch = async (url, options) => {
     const path = new URL(url).pathname
-    if(path === '/') return new Response('',{headers:{'set-cookie':`sid=${++homes}; Secure`}})
+    if(path === '/') { homes++; return new Response('',{status:403,headers:{'content-type':'text/html'}}) }
     seen.push(options.headers)
     if(path.endsWith('.xml')) return new Response('<rss><channel><item><link>https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile?identifier=one</link></item></channel></rss>',{headers:{'content-type':'application/xml',etag:'rss-v1'}})
     return new Response(cap(info('en','Pune advisory')),{headers:{'content-type':'application/xml',etag:'cap-v1'}})
   }
   assert.equal((await collectSachet({fetch:mockFetch})).alerts.length,1)
   assert.equal((await collectSachet({fetch:mockFetch})).alerts.length,1)
-  assert.equal(homes,2)
-  assert.equal(seen[0].cookie,'sid=1')
-  assert.equal(seen[2].cookie,'sid=2')
+  assert.equal(homes,0)
+  assert.equal(seen[0].cookie, undefined)
   assert.ok(seen.every(h=>!h['if-none-match']))
+})
+test('SACHET retries RSS with non-empty session cookies after HTTP 403', async () => {
+  let homes = 0
+  const cookies = []
+  const headers = new Headers()
+  headers.append('set-cookie', 'hd_user_http=; Path=/; HttpOnly')
+  headers.append('set-cookie', 'hd_user_https=worker-session; Path=/; Secure')
+  headers.append('set-cookie', 'hd_user_id_http=; Path=/')
+  const mockFetch = async (url, options) => {
+    const path = new URL(url).pathname
+    if(path === '/') { homes++; return new Response('',{headers}) }
+    if(path.includes('rss_')) {
+      cookies.push(options.headers.cookie)
+      if(!options.headers.cookie) return new Response('<error>403</error>',{status:403,headers:{'content-type':'text/html'}})
+      return new Response('<rss><channel><item><link>https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile?identifier=one</link></item></channel></rss>',{headers:{'content-type':'application/xml'}})
+    }
+    return new Response(cap(info('en','Pune advisory')),{headers:{'content-type':'application/xml'}})
+  }
+  assert.equal((await collectSachet({fetch:mockFetch})).alerts.length,1)
+  assert.equal(homes,1)
+  assert.deepEqual(cookies, [undefined, 'hd_user_https=worker-session'])
+})
+test('empty Set-Cookie pairs are omitted from the SACHET Cookie header', () => {
+  const headers = new Headers()
+  headers.append('set-cookie', 'hd_user_http=; Path=/')
+  headers.append('set-cookie', 'hd_user_https=abc; Path=/; Secure')
+  headers.append('set-cookie', 'hd_user_id_http=; Max-Age=0')
+  headers.append('set-cookie', 'hd_user_id_https=def; Path=/')
+  assert.equal(sachetCookieHeader(headers), 'hd_user_https=abc; hd_user_id_https=def')
 })
 
 test('body read deadline also applies after response headers arrive', async () => {
@@ -140,17 +168,42 @@ test('CAP does not lose expiry when only a secondary language supplies it',()=>{
   assert.equal(alert.expires,'2026-09-05T11:00:00Z')
   assert.deepEqual(mergeAlerts([[alert]],{now}),[])
 })
-test('SACHET budget counts all requests and polygon failures cannot become healthy partial data',async()=>{
+test('SACHET budget counts RSS and CAP requests',async()=>{
   let calls=0
-  const fetch=async(url)=>{calls++;if(new URL(url).pathname==='/')return new Response('');if(String(url).includes('rss_'))return new Response('<rss><channel><item><link>https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile?identifier=x</link></item></channel></rss>',{headers:{'content-type':'application/xml'}});return new Response(cap(info('en','Pune notice')),{headers:{'content-type':'application/xml'}})}
-  await assert.rejects(collectSachet({fetch,maxRequests:2}),/budget/i)
-  assert.equal(calls,2)
+  const fetch=async(url)=>{calls++;if(String(url).includes('rss_'))return new Response('<rss><channel><item><link>https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile?identifier=x</link></item></channel></rss>',{headers:{'content-type':'application/xml'}});return new Response(cap(info('en','Pune notice')),{headers:{'content-type':'application/xml'}})}
+  await assert.rejects(collectSachet({fetch,maxRequests:1}),/budget/i)
+  assert.equal(calls,1)
+})
+test('blocked NDMA polygon HTTP keeps official CAP and omits map geometry',async()=>{
+  const seen=[]
+  const fetch=async(url)=>{
+    const path=new URL(url).pathname
+    seen.push(path)
+    if(path==='/')return new Response('')
+    if(path.includes('rss_'))return new Response('<rss><channel><item><link>https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile?identifier=one</link></item><item><link>https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile?identifier=two</link></item></channel></rss>',{headers:{'content-type':'application/xml'}})
+    if(path.includes('FetchPolygonXMLFile'))return new Response('<error><status>403</status><uri>/cap_public_website/FetchPolygonXMLFile</uri></error>',{status:403,headers:{'content-type':'text/html'}})
+    const id=new URL(url).searchParams.get('identifier')
+    return new Response(cap(info('en','Pune notice').replace('</info>',`<parameter><valueName>Polygon URL</valueName><value>https://sachet.ndma.gov.in/cap_public_website/FetchPolygonXMLFile?identifier=${id}</value></parameter></info>`)).replace('<identifier>one</identifier>',`<identifier>${id}</identifier>`),{headers:{'content-type':'application/xml'}})
+  }
+  const result=await collectSachet({fetch,now})
+  assert.equal(result.alerts.length,2)
+  assert.ok(result.alerts.every(a=>a.headlineEn==='Pune notice'))
+  assert.ok(result.alerts.every(a=>a.geometryStatus==='unavailable'))
+  assert.ok(result.alerts.every(a=>!a.polygons.length))
+  assert.equal(seen.filter(path=>path.includes('FetchPolygonXMLFile')).length,1)
+})
+test('polygon 503 cannot drop CAP records',async()=>{
   const polygonFetch=async(url)=>{
     if(String(url).includes('polygon.xml'))return new Response('failed',{status:503})
-    if(String(url).includes('FetchXMLFile'))return new Response(cap(info('en','Pune').replace('</info>','<parameter><valueName>polygon</valueName><value>https://sachet.ndma.gov.in/cap_public_website/polygon.xml</value></parameter></info>')),{headers:{'content-type':'application/xml'}})
-    return fetch(url)
+    if(String(url).includes('FetchXMLFile'))return new Response(cap(info('en','Pune notice').replace('</info>','<parameter><valueName>polygon</valueName><value>https://sachet.ndma.gov.in/cap_public_website/polygon.xml</value></parameter></info>')),{headers:{'content-type':'application/xml'}})
+    if(new URL(url).pathname==='/')return new Response('')
+    if(String(url).includes('rss_'))return new Response('<rss><channel><item><link>https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile?identifier=x</link></item></channel></rss>',{headers:{'content-type':'application/xml'}})
+    return new Response('unexpected',{status:500})
   }
-  await assert.rejects(collectSachet({fetch:polygonFetch}),/polygon.*503/i)
+  const failed=await collectSachet({fetch:polygonFetch,now})
+  assert.equal(failed.alerts.length,1)
+  assert.equal(failed.alerts[0].geometryStatus,'unavailable')
+  assert.deepEqual(failed.alerts[0].polygons,[])
 })
 test('SACHET keeps expired and cancelled CAP lifecycle without dereferencing historical polygons',async()=>{
   const seen=[]
@@ -168,10 +221,22 @@ test('SACHET keeps expired and cancelled CAP lifecycle without dereferencing his
   assert.equal(result.alerts.length,2)
   assert.ok(result.alerts.every(a=>a.geometryStatus==='not_requested_inactive'))
   assert.ok(result.alerts.every(a=>a.polygonUrl))
-  assert.equal(seen.length,4)
+  assert.equal(seen.length,3)
   assert.equal(result.alerts[1].msgType,'Cancel')
 })
-test('active external geometry fails if even one polygon ring is malformed',async()=>{
+test('successful external polygon XML remains map geometry',async()=>{
+  const fetch=async(url)=>{
+    const path=new URL(url).pathname
+    if(path==='/')return new Response('')
+    if(path.includes('rss_'))return new Response('<rss><channel><item><link>https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile?identifier=active</link></item></channel></rss>',{headers:{'content-type':'application/xml'}})
+    if(path.includes('polygon'))return new Response('<alert><polygon>18,73 19,73 19,74 18,73</polygon></alert>',{headers:{'content-type':'application/xml'}})
+    return new Response(cap(info('en','Pune notice').replace('</info>','<parameter><valueName>polygon</valueName><value>https://sachet.ndma.gov.in/cap_public_website/polygon.xml</value></parameter></info>')),{headers:{'content-type':'application/xml'}})
+  }
+  const result=await collectSachet({fetch,now})
+  assert.equal(result.alerts[0].geometryStatus,'available')
+  assert.deepEqual(result.alerts[0].polygons,[[[18,73],[19,73],[19,74],[18,73]]])
+})
+test('malformed external polygon rings omit geometry instead of dropping CAP',async()=>{
   const fetch=async(url)=>{
     const path=new URL(url).pathname
     if(path==='/')return new Response('')
@@ -179,7 +244,10 @@ test('active external geometry fails if even one polygon ring is malformed',asyn
     if(path.includes('polygon'))return new Response('<alert><polygon>18,73 19,73 19,74 18,73</polygon><polygon>18,73 invalid 19,74 18,73</polygon></alert>',{headers:{'content-type':'application/xml'}})
     return new Response(cap(info('en','Pune notice').replace('</info>','<parameter><valueName>polygon</valueName><value>https://sachet.ndma.gov.in/cap_public_website/polygon.xml</value></parameter></info>')),{headers:{'content-type':'application/xml'}})
   }
-  await assert.rejects(collectSachet({fetch,now}),/polygon/i)
+  const result=await collectSachet({fetch,now})
+  assert.equal(result.alerts[0].headlineEn,'Pune notice')
+  assert.equal(result.alerts[0].geometryStatus,'unavailable')
+  assert.deepEqual(result.alerts[0].polygons,[])
 })
 test('missing-child keywords remain public safety rather than assigning AMBER status',()=>{
   assert.equal(classifyWea({category:'Rescue',event:'Missing child'}),'PUBLIC_SAFETY')
@@ -204,6 +272,6 @@ test('malformed or partial upstream feeds fail visibly rather than replacing sna
   await assert.rejects(collectImdNowcast({fetch:async()=>new Response('<html/>',{headers:{'content-type':'application/xml'}})}),/schema/)
   await assert.rejects(collectIncois({fetch:async()=>new Response('{}',{headers:{'content-type':'application/json'}})}),/schema/)
   let count=0
-  const fetch=async()=>{count++;if(count===1)return new Response('');if(count===2)return new Response('<rss><channel><item><link>https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile?identifier=x</link></item></channel></rss>',{headers:{'content-type':'application/xml'}});return new Response('failed',{status:503})}
+  const fetch=async(url)=>{count++;if(String(url).includes('rss_'))return new Response('<rss><channel><item><link>https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile?identifier=x</link></item></channel></rss>',{headers:{'content-type':'application/xml'}});return new Response('failed',{status:503})}
   await assert.rejects(collectSachet({fetch}),/HTTP 503/)
 })
