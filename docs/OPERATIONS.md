@@ -70,7 +70,7 @@ Ops-only. Does **not** change `/api/alerts`, rewrite CAP text, or send SMS/push/
 - CI and local default: `JEV_USE_LIVE` not `true` → deterministic mock/fixture scorer (no key).
 - Live: `JEV_USE_LIVE=true` plus `JEV_API_KEY` **or** the Cloudflare secret named `cursor` (env `cursor`). Endpoint is `POST https://api.typesafe.ai/v1/systemone` with `Authorization: Bearer …` and model `jev-latest`.
 - Store the key with `npx wrangler secret put JEV_API_KEY --env staging` (and production). If the dashboard secret is named `cursor`, that binding is accepted as a fallback.
-- Code owns routing: one System One request per alert with parallel atomic questions; `escalate_human` or low confidence becomes `human_review`.
+- Code owns routing: one System One request per alert with parallel atomic questions; high confidence may keep `log_only` / `surface_ops_badge`, medium becomes `needs_stronger_check`, low / mismatch / escalate becomes `human_review`.
 
 See [JEV-SHADOW.md](JEV-SHADOW.md).
 

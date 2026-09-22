@@ -82,7 +82,7 @@ export async function appendJevShadowEntries(db: D1Database, entries: JevShadowE
   if (!entries.length) return
   const statements = entries.map((entry) =>
     db.prepare(
-      'INSERT INTO jev_shadow_log (alert_key, generated_at, recommendation, confidence, hazard_family, hazard_mismatch, model, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO jev_shadow_log (alert_key, generated_at, recommendation, confidence, hazard_family, hazard_mismatch, model, requested_model, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     ).bind(
       entry.alertKey,
       entry.generatedAt,
@@ -91,6 +91,7 @@ export async function appendJevShadowEntries(db: D1Database, entries: JevShadowE
       typeof entry.payload.hazardFamily === 'string' ? entry.payload.hazardFamily : null,
       entry.payload.hazardMismatch ? 1 : 0,
       typeof entry.payload.model === 'string' ? entry.payload.model : null,
+      typeof entry.payload.requestedModel === 'string' ? entry.payload.requestedModel : null,
       JSON.stringify(entry.payload),
     ),
   )

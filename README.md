@@ -93,4 +93,4 @@ Other groups can fork it under MIT:
 3. Leave `SITUATIONAL_LAYERS_ENABLED` and `JEV_SHADOW_ENABLED` **false** in production until you opt in.
 4. Keep CAP as the only public alert authority. No SMS/push. No claiming to be the government.
 
-Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Optional modules: [packages/README.md](packages/README.md).
+Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Optional modules: [packages/README.md](packages/README.md). Ops-only Jev shadow (default off): [docs/JEV-SHADOW.md](docs/JEV-SHADOW.md).

@@ -83,3 +83,63 @@ test('Worker D1 integration: startup, atomic snapshots, expired lease fencing, a
   assert.equal(sources.sources.sachet.errorCode, 'request_budget')
   assert.doesNotMatch(JSON.stringify(sources), /fixture-private-value/)
 })
+
+test('Worker ingest writes Jev shadow rows when enabled and leaves /api/alerts CAP-only', async t => {
+  const result = await build({ stdin: { contents: `
+    import worker, {ingest} from './src/index.ts';
+    export default {async fetch(request,env,ctx) {
+      const url = new URL(request.url);
+      if(url.pathname === '/fixture/ingest') {
+        const records = await request.json();
+        return Response.json(await ingest(env,['sachet','imd','incois','cwc','cpcb'].map(id=>({id,collect:async()=>id==='sachet'?records:[]}))));
+      }
+      return worker.fetch(request,env,ctx);
+    }};`, resolveDir: process.cwd(), loader: 'ts' }, bundle: true, write: false, format: 'esm', platform: 'browser', target: 'es2022', external: ['node:*'] })
+  const mf = new Miniflare({ workers: [{ config: { name: 'relay-jev-shadow-test', type: 'worker', compatibilityDate: '2026-09-05', compatibilityFlags: ['nodejs_compat'], manifest: { mainModule: 'index.js', modules: { 'index.js': { type: 'esm', contents: result.outputFiles[0].text } } }, env: { DB: { type: 'd1', id: 'relay-jev-shadow' }, ENVIRONMENT: { type: 'text', value: 'test' }, CPCB_ENABLED: { type: 'text', value: 'false' }, JEV_SHADOW_ENABLED: { type: 'text', value: 'true' } } } }] })
+  t.after(() => mf.dispose())
+  const db = await mf.getD1Database('DB')
+  for (const name of ['0001_relay.sql', '0002_jev_shadow.sql', '0003_jev_shadow_model.sql']) {
+    const migration = await readFile(new URL(`../migrations/${name}`, import.meta.url), 'utf8')
+    for (const sql of migration.split(';').map(s => s.trim()).filter(Boolean)) await db.prepare(sql).run()
+  }
+  const request = (path, options) => mf.dispatchFetch(`https://example.test${path}`, options)
+  const now = Date.now()
+  const timestamp = new Date(now).toISOString()
+  const record = {
+    id: 'shadow-fixture',
+    source: 'sachet',
+    sender: 'official',
+    status: 'Actual',
+    scope: 'Public',
+    msgType: 'Alert',
+    effective: new Date(now - 1000).toISOString(),
+    sent: new Date(now - 1000).toISOString(),
+    expires: new Date(now + 60_000).toISOString(),
+    districts: [{ id: 'pune', en: 'Pune' }],
+    weaClass: 'WEATHER_ADVISORY',
+    kind: 'rain',
+    headlineEn: 'Heavy rainfall expected in Pune. Avoid waterlogged roads.',
+    descriptionEn: 'Stay away from low-lying areas.',
+    headlineMr: 'पुणे जिल्ह्यात मुसळधार पाऊस अपेक्षित.',
+    descriptionMr: 'पाणी साचलेल्या रस्त्यांपासून दूर राहा.',
+  }
+  assert.equal((await request('/fixture/ingest', { method: 'POST', body: JSON.stringify([record]) })).status, 200)
+  const disabled = await request('/api/jev/shadow')
+  assert.equal(disabled.status, 200)
+  const shadow = await disabled.json()
+  assert.equal(shadow.opsOnly, true)
+  assert.equal(shadow.public, false)
+  assert.equal(shadow.requestedModel, 'jev-latest')
+  assert.ok(shadow.entries.length >= 1)
+  assert.equal(shadow.entries[0].payload.requestedModel, 'jev-latest')
+  assert.ok(shadow.entries[0].payload.model)
+  const alerts = await (await request('/api/alerts')).json()
+  assert.equal(alerts.count, 1)
+  assert.equal(alerts.alerts[0].id, 'shadow-fixture')
+  assert.equal('recommendation' in alerts.alerts[0], false)
+  assert.equal('confidenceBand' in alerts.alerts[0], false)
+  const logged = await db.prepare('SELECT model, requested_model, recommendation FROM jev_shadow_log').first()
+  assert.equal(logged.requested_model, 'jev-latest')
+  assert.ok(logged.model)
+})
+

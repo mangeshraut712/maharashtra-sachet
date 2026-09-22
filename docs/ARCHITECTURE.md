@@ -98,7 +98,7 @@ There is no public refresh, write, citizen-report, or Web Push subscription endp
 
 **MapLibre** (`web/map-view.js`): a map view consumes the **same** GET snapshots. Official CAP polygons are drawn when present; district centroids from the **region pack** (`web/region.json`) are approximate navigation only. Bulletin text, issuer links, and CAP `areaDesc` remain authoritative. MapLibre loads dynamically so a missing library cannot blank the bulletin. The list UI must still work without WebGL.
 
-**Situational layers** (`SITUATIONAL_LAYERS_ENABLED`) and **Jev shadow triage** (`JEV_SHADOW_ENABLED`) stay **off by default**. They must not look like CAP and must not be ingested as official alerts. Optional Jev / TypeSafe System One runs after a successful ingest, writes `jev_shadow_log` only, and never mutates `/api/alerts`.
+**Situational layers** (`SITUATIONAL_LAYERS_ENABLED`) and **Jev shadow triage** (`JEV_SHADOW_ENABLED`) stay **off by default**. They must not look like CAP and must not be ingested as official alerts. Optional Jev / TypeSafe System One runs after a successful ingest, writes `jev_shadow_log` only (requested `jev-latest` plus resolved model id), and never mutates `/api/alerts`. Code applies high/medium/low confidence gates; see [JEV-SHADOW.md](JEV-SHADOW.md).
 
 ## Optional modules (forks)
 

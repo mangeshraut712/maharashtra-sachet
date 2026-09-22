@@ -56,5 +56,6 @@ test('meta describes optional map/Jev/situational modules and the region pack', 
   assert.equal(meta.delivery.webPush, 'unavailable')
   assert.equal(meta.features.situationalLayers.defaultOn, false)
   assert.equal(meta.features.jevShadow.defaultOn, false)
+  assert.equal(meta.features.jevShadow.public, false)
   assert.equal(meta.features.mapLibre.optional, true)
 })

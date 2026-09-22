@@ -1,0 +1,44 @@
+{
+  "model": "jev-1.13.0",
+  "answers": {
+    "hazard_family": {
+      "type": "choice",
+      "choice": "flood",
+      "probabilities": {
+        "flood": 0.7,
+        "cyclone": 0.12,
+        "heat": 0.04,
+        "earthquake": 0.02,
+        "air_quality": 0.02,
+        "other": 0.1
+      },
+      "confidence": 0.68
+    },
+    "citizen_urgency_clarity_en": {
+      "type": "score",
+      "score": 1,
+      "legend": { "0": "unclear", "1": "usable", "2": "clear action" },
+      "probabilities": { "0": 0.1, "1": 0.7, "2": 0.2 },
+      "confidence": 0.71
+    },
+    "citizen_urgency_clarity_mr": {
+      "type": "score",
+      "score": 1,
+      "legend": { "0": "unclear", "1": "usable", "2": "clear action" },
+      "probabilities": { "0": 0.12, "1": 0.72, "2": 0.16 },
+      "confidence": 0.66
+    },
+    "bilingual_gap": { "type": "noul", "noul": 0.22, "confidence": 0.7 },
+    "needs_human_ops_review": { "type": "noul", "noul": 0.24, "confidence": 0.69 },
+    "recommendation": {
+      "type": "choice",
+      "choice": "log_only",
+      "probabilities": {
+        "log_only": 0.62,
+        "surface_ops_badge": 0.28,
+        "escalate_human": 0.1
+      },
+      "confidence": 0.65
+    }
+  }
+}
