@@ -165,6 +165,7 @@ export async function collectSachet(options = {}) {
   if (items.length > maxRequests - requestCount) { const error = new Error('SACHET feed exceeds upstream request budget'); error.code = 'SOURCE_BUDGET_EXCEEDED'; throw error }
   const alerts = []
   const cache = {}
+  let skipExternalPolygons = false
   async function cachedXml(url) {
     const previous = options.cache?.[url]
     const usable = previous && typeof previous.etag === 'string' && previous.etag.length <= 512 && typeof previous.xml === 'string'
@@ -193,17 +194,36 @@ export async function collectSachet(options = {}) {
       if (inactive) {
         // Keep every CAP lifecycle message; historical map geometry is optional.
         alert.geometryStatus = 'not_requested_inactive'
+      } else if (skipExternalPolygons) {
+        alert.geometryStatus = 'unavailable'
       } else {
-        const poly = await sachetGet(alert.polygonUrl, session)
-        if (!poly.ok) throw new Error(`SACHET polygon HTTP ${poly.status}`)
-        const doc = parseXml(poly.text)
-        alert.polygons = parsePolygons(doc.alert?.polygon ?? doc.polygon, { strict: true })
-        if (!alert.polygons.length) throw new Error('Invalid SACHET polygon schema')
-        alert.geometryStatus = 'available'
+        const attached = await attachExternalPolygon(alert, session)
+        if (attached.skipRemaining) skipExternalPolygons = true
       }
     }
     alerts.push(alert)
   }
 
   return { unchanged: false, alerts, cache }
+}
+
+async function attachExternalPolygon(alert, session) {
+  try {
+    const poly = await sachetGet(alert.polygonUrl, session)
+    if (!poly.ok) {
+      alert.polygons = []
+      alert.geometryStatus = 'unavailable'
+      return { skipRemaining: poly.status === 403 || poly.status === 429 }
+    }
+    const doc = parseXml(poly.text)
+    alert.polygons = parsePolygons(doc.alert?.polygon ?? doc.polygon, { strict: true })
+    if (!alert.polygons.length) throw new Error('Invalid SACHET polygon schema')
+    alert.geometryStatus = 'available'
+    return { skipRemaining: false }
+  } catch (error) {
+    alert.polygons = []
+    alert.geometryStatus = 'unavailable'
+    const message = typeof error?.message === 'string' ? error.message : ''
+    return { skipRemaining: error?.code === 'SOURCE_BUDGET_EXCEEDED' || /SACHET polygon HTTP (?:403|429)$/.test(message) }
+  }
 }

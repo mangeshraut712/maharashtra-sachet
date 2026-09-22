@@ -13,7 +13,7 @@ Always read the original CAP affected-area description and geometry. Geography f
 The homepage map plots **active relayed alerts** from `/api/alerts`:
 
 - **Orange polygons** use official CAP `polygon` rings when the collector includes them.
-- **Blue district dots** are approximate representative points when an alert lists districts but no polygon — they are not village or ward boundaries.
+- **Blue district dots** are approximate representative points when an alert lists districts but no polygon — they are not village or ward boundaries. This includes active CAP whose external `FetchPolygonXMLFile` URL is blocked (HTTP 403) or invalid; bulletin text and LGD districts remain.
 - Basemap tiles are from [MapLibre demo tiles](https://demotiles.maplibre.org/) for orientation only; they are not government survey data.
 
 The bulletin text, issuer, expiry and official links remain the only authoritative presentation of an alert.
