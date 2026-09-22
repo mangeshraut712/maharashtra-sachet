@@ -47,6 +47,7 @@ Failed collections keep the previous records and surface `degraded` / `stale` / 
 - Timeouts, response-size caps, content-type checks, no TLS bypass (`server/http.mjs`).
 - XML parsers disable entity expansion; CAP polygons and geocodes (LGD district codes) are validated.
 - External SACHET polygon files (`FetchPolygonXMLFile`) are **optional map geometry**. HTTP 403/429 or invalid rings omit polygons (`geometryStatus: unavailable`) and keep CAP text, districts, and LGD codes. A blocked geometry URL must not stale the official bulletin.
+- SACHET reads `rss_maharashtra.xml` first. A homepage session is only opened after RSS/CAP **401/403**, and empty `Set-Cookie` pairs (`hd_user_http=`) are not forwarded. A Worker-only 403 on `/` must not prevent ingesting a public 200 RSS/CAP body.
 - SACHET persists `{etag, xml}` in the source snapshot so `304` reuses cached CAP.
 - Per-source JSON in D1 is bounded (`MAX_SOURCE_BYTES`, 900 000). Hitting the cap **fails closed**; do not drop Cancel records to make health green.
 

@@ -1,6 +1,6 @@
 import { XMLParser, XMLValidator } from 'fast-xml-parser'
 import { DISTRICT_BY_LGD, matchDistricts, isGoaLgd } from './districts.mjs'
-import { sachetGet, ensureSachetSession } from './http.mjs'
+import { sachetGet } from './http.mjs'
 import { classifyWea, situationKind } from './wea.mjs'
 
 const parser = new XMLParser({
@@ -154,8 +154,9 @@ export async function collectSachet(options = {}) {
     requestCount++
     return (options.fetch || globalThis.fetch)(...args)
   }
-  const session = { ...options, fetch, signal, cookie: await ensureSachetSession({...options,fetch,signal}) }
+  const session = { ...options, fetch, signal, cookie: '' }
   const rss = await sachetGet(RSS, session)
+  session.cookie = rss.cookie || ''
   if (rss.status === 304) throw new Error('Unexpected SACHET 304 without retained snapshot')
   if (!rss.ok) throw new Error(`SACHET RSS HTTP ${rss.status}`)
 
