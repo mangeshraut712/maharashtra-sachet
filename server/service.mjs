@@ -223,6 +223,8 @@ export async function handleApi(request, state, { now = Date.now(), environment 
           jevShadow: {
             enabled: jevShadowEnabled,
             defaultOn: false,
+            public: false,
+            opsSurface: jevShadowEnabled ? '/api/jev/shadow' : null,
             endpoint: jevShadowEnabled ? '/api/jev/shadow' : null,
             disclaimer: 'Shadow AI triage for operators only. Never overrides CAP fields on the public bulletin.',
           },

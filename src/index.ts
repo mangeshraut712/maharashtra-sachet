@@ -1,6 +1,6 @@
 import { collectSnapshot, emptyState, handleApi, jsonResponse, publicSnapshot, SECURITY_HEADERS, snapshotNeedsIngest, sourceCollectors } from '../server/service.mjs'
 import { acquireLease, appendJevShadowEntries, readRecentJevShadowEntries, readState, releaseLease, saveState } from './storage'
-import { jevShadowEnabled, triageAlertShadow } from '../server/jev-shadow.mjs'
+import { jevShadowEnabled, shadowOpsEnvelope, triageAlertShadow } from '../server/jev-shadow.mjs'
 
 export async function ingest(env: Env, collectors?: ReturnType<typeof sourceCollectors>): Promise<{ status: string }> {
   const token = crypto.randomUUID()
@@ -21,7 +21,11 @@ export async function ingest(env: Env, collectors?: ReturnType<typeof sourceColl
           event: 'jev_shadow_triage',
           alertKey: payload.alertKey,
           provider: payload.provider,
+          requestedModel: payload.requestedModel,
+          model: payload.model,
           recommendation: payload.recommendation,
+          confidenceBand: payload.confidenceBand,
+          gate: payload.gate,
           hazardMismatch: payload.hazardMismatch,
         }))
       }
@@ -56,12 +60,7 @@ export default {
         if (!jevShadowEnabled(env)) return jsonResponse(404, { error: 'Jev shadow triage is disabled.' })
         const limit = Math.min(Math.max(Number(new URL(request.url).searchParams.get('limit') || 20), 1), 100)
         const entries = await readRecentJevShadowEntries(env.DB, limit)
-        return jsonResponse(200, {
-          unofficial: true,
-          mode: 'shadow',
-          disclaimer: 'Ops-only shadow triage. Does not change public CAP bulletin truth.',
-          entries,
-        })
+        return jsonResponse(200, shadowOpsEnvelope(entries))
       }
       if (path === '/api' || path.startsWith('/api/')) {
         if (request.method !== 'GET' && request.method !== 'HEAD') return jsonResponse(405, { error: 'Method not allowed' }, { allow: 'GET, HEAD', ...(new URL(request.url).protocol === 'https:' ? { 'strict-transport-security': 'max-age=31536000' } : {}) })

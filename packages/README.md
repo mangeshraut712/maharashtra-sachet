@@ -11,4 +11,4 @@ Logical packages inside this MIT relay. They are not published to npm; forks cop
 | Situational (USGS/FIRMS) | `server/situational.mjs` | **Off** in production |
 | Jev System One shadow | `server/jev-shadow.mjs` | **Off** in production |
 
-Enable situational or Jev only after reading [ARCHITECTURE.md](../docs/ARCHITECTURE.md) and [FORKING.md](../docs/FORKING.md). CAP remains the sole public alert authority.
+Enable situational or Jev only after reading [ARCHITECTURE.md](../docs/ARCHITECTURE.md), [FORKING.md](../docs/FORKING.md), and [JEV-SHADOW.md](../docs/JEV-SHADOW.md). CAP remains the sole public alert authority. Jev is a System One decision model, not a coding-agent LLM.

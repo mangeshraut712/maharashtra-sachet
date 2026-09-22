@@ -12,7 +12,7 @@
         "air_quality": 0.01,
         "other": 0.06
       },
-      "confidence": 0.79
+      "confidence": 0.86
     },
     "citizen_urgency_clarity_en": {
       "type": "score",
@@ -26,10 +26,10 @@
       "score": 1.1,
       "legend": { "0": "unclear", "1": "usable", "2": "clear action" },
       "probabilities": { "0": 0.05, "1": 0.8, "2": 0.15 },
-      "confidence": 0.74
+      "confidence": 0.84
     },
-    "bilingual_gap": { "type": "noul", "noul": 0.12 },
-    "needs_human_ops_review": { "type": "noul", "noul": 0.18 },
+    "bilingual_gap": { "type": "noul", "noul": 0.12, "confidence": 0.86 },
+    "needs_human_ops_review": { "type": "noul", "noul": 0.18, "confidence": 0.84 },
     "recommendation": {
       "type": "choice",
       "choice": "log_only",
@@ -38,7 +38,7 @@
         "surface_ops_badge": 0.14,
         "escalate_human": 0.05
       },
-      "confidence": 0.72
+      "confidence": 0.85
     }
   },
   "usage": { "input_tokens": 400, "output_tokens": 40 }

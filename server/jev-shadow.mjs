@@ -7,14 +7,23 @@
  *
  * Live path: POST https://api.typesafe.ai/v1/systemone (model jev-latest).
  * CI uses the mock/fixture scorer unless JEV_USE_LIVE=true.
+ *
+ * Jev is a System One decision model, not a coding-agent / chat LLM.
  */
 
 export const SYSTEM_ONE_DEFAULT_URL = 'https://api.typesafe.ai/v1/systemone'
 export const JEV_MODEL = 'jev-latest'
-export const LOW_CONFIDENCE = 0.6
+/** Documented alias resolution; live responses pin the versioned id in `model`. */
+export const JEV_LATEST_RESOLVES_TO = 'jev-1.13.0'
+export const MEDIUM_CONFIDENCE = 0.6
+export const HIGH_CONFIDENCE = 0.8
+/** @deprecated Use MEDIUM_CONFIDENCE — kept as the low/medium floor. */
+export const LOW_CONFIDENCE = MEDIUM_CONFIDENCE
 export const CLARITY_LEVELS = ['unclear', 'usable', 'clear action']
 export const HAZARD_FAMILIES = ['flood', 'cyclone', 'heat', 'earthquake', 'air_quality', 'other']
 export const MODEL_RECOMMENDATIONS = ['log_only', 'surface_ops_badge', 'escalate_human']
+export const OPS_RECOMMENDATIONS = ['log_only', 'surface_ops_badge', 'needs_stronger_check', 'human_review']
+export const CONFIDENCE_BANDS = ['high', 'medium', 'low']
 
 const RELAY_KIND_TO_FAMILY = {
   flood: 'flood',
@@ -24,6 +33,17 @@ const RELAY_KIND_TO_FAMILY = {
   earthquake: 'earthquake',
   air: 'air_quality',
 }
+
+const BLOCKED_PUBLIC_CHANNELS = new Set([
+  'sms',
+  'push',
+  'send_sms',
+  'cell_broadcast',
+  'wea',
+  'notify_public',
+  'whatsapp',
+  'web_push',
+])
 
 export function jevShadowEnabled(env = {}) {
   if (String(env.JEV_SHADOW_KILL) === 'true') return false
@@ -70,55 +90,151 @@ export function relayKindToFamily(kind) {
 export const TRIAGE_QUESTIONS = {
   hazard_family: {
     type: 'choice',
-    instructions:
-      'Which hazard family best matches this official CAP bulletin using only the supplied state fields? Do not invent hazards that are not in the text.',
+    instructions: {
+      question: 'Which hazard family best matches this official CAP bulletin?',
+      focus: 'Use only `headlineEn`, `descriptionEn`, `headlineMr`, `descriptionMr`, and `kind`. Do not invent a hazard that is not in the text.',
+    },
     criteria: {
-      flood: 'Flood, heavy rain, dam/lake release, inundation',
-      cyclone: 'Cyclone, storm surge, severe cyclonic storm',
-      heat: 'Heat wave or extreme heat',
-      earthquake: 'Earthquake or seismic shaking',
-      air_quality: 'Air quality, AQI, pollution, smog',
-      other: 'Any other hazard, mixed signals, or not enough text to classify',
+      flood: {
+        what: 'Flood, heavy rain, dam/lake release, or inundation',
+        not_for: 'Cyclone/storm surge as the primary hazard, heat, quake, or AQI',
+        examples: ['Heavy rainfall and waterlogging in Pune', 'Dam release warning for downstream villages'],
+      },
+      cyclone: {
+        what: 'Cyclone, storm surge, or severe cyclonic storm',
+        not_for: 'Inland heavy rain with no cyclone/surge language',
+        examples: ['Cyclonic storm over the Arabian Sea', 'Storm surge alert for the Konkan coast'],
+      },
+      heat: {
+        what: 'Heat wave or extreme heat',
+        not_for: 'Warm-weather wording that is actually a flood, cyclone, or AQI bulletin',
+        examples: ['Heat wave warning for Vidarbha', 'Avoid outdoor work during peak heat'],
+      },
+      earthquake: {
+        what: 'Earthquake or seismic shaking',
+        not_for: 'Non-seismic building or landslide text without a quake',
+        examples: ['Earthquake reported near the district', 'Seismic intensity advisory'],
+      },
+      air_quality: {
+        what: 'Air quality, AQI, pollution, or smog',
+        not_for: 'Weather hazards that mention haze only in passing',
+        examples: ['AQI in the very poor range', 'Smog advisory for Mumbai'],
+      },
+      other: {
+        what: 'Any other hazard, mixed signals, or not enough text to classify',
+        not_for: 'A clear single family already listed',
+        examples: ['Mixed flood and cyclone cues', 'Headline too short to classify'],
+      },
     },
   },
   citizen_urgency_clarity_en: {
     type: 'score',
-    instructions:
-      'How clearly do the English CAP fields tell a Maharashtra resident what is happening and what to do? Judge only existing English text. Do not invent missing actions.',
-    criteria: [...CLARITY_LEVELS],
+    instructions: {
+      question: 'How clearly do the English CAP fields tell a Maharashtra resident what is happening and what to do?',
+      focus: 'Judge only `headlineEn` and `descriptionEn`. Do not invent missing protective actions.',
+    },
+    criteria: [
+      {
+        what: 'unclear',
+        signals: ['Empty or fragmentary English', 'No usable what/where/do'],
+        examples: ['Alert', 'Weather update'],
+      },
+      {
+        what: 'usable',
+        signals: ['Hazard and area are stated', 'Action is implied or weak'],
+        examples: ['Heavy rain expected in Pune district tonight'],
+      },
+      {
+        what: 'clear action',
+        signals: ['Hazard, geography, and a protective action are all present'],
+        examples: ['Avoid waterlogged roads in Pune. Stay away from low-lying areas.'],
+      },
+    ],
   },
   citizen_urgency_clarity_mr: {
     type: 'score',
-    instructions:
-      'How clearly do the Marathi CAP fields tell a Maharashtra resident what is happening and what to do? Judge only existing Marathi text. Do not invent missing actions.',
-    criteria: [...CLARITY_LEVELS],
+    instructions: {
+      question: 'How clearly do the Marathi CAP fields tell a Maharashtra resident what is happening and what to do?',
+      focus: 'Judge only `headlineMr` and `descriptionMr`. Do not invent missing protective actions.',
+    },
+    criteria: [
+      {
+        what: 'unclear',
+        signals: ['Empty or fragmentary Marathi', 'No usable what/where/do'],
+        examples: ['सूचना'],
+      },
+      {
+        what: 'usable',
+        signals: ['Hazard and area are stated', 'Action is implied or weak'],
+        examples: ['पुणे जिल्ह्यात मुसळधार पाऊस अपेक्षित'],
+      },
+      {
+        what: 'clear action',
+        signals: ['Hazard, geography, and a protective action are all present'],
+        examples: ['पाणी साचलेल्या रस्त्यांपासून दूर राहा'],
+      },
+    ],
   },
   bilingual_gap: {
     type: 'noul',
-    instructions:
-      'Do the English and Marathi headlines/descriptions say materially different things (different hazard, geography, or protective action)? An empty language when the other has those facts is a gap. Wording differences that preserve meaning are not.',
+    instructions: {
+      question: 'Do the English and Marathi headlines/descriptions say materially different things?',
+      compare: ['`headlineEn`', '`descriptionEn`', '`headlineMr`', '`descriptionMr`'],
+      focus: 'Different hazard, geography, or protective action is a gap. An empty language when the other has those facts is a gap. Wording differences that preserve meaning are not.',
+    },
     criteria: {
-      true: 'EN and MR materially disagree, or one language omits facts the other states',
-      false: 'Both languages convey the same material facts, or both are similarly sparse',
+      true: {
+        what: 'EN and MR materially disagree, or one language omits facts the other states',
+        not_for: 'Equivalent meaning with different wording',
+        examples: ['English names a district the Marathi text omits', 'Marathi tells people to leave while English does not'],
+      },
+      false: {
+        what: 'Both languages convey the same material facts, or both are similarly sparse',
+        examples: ['Both say heavy rain in Pune with the same caution', 'Both headlines are equally short'],
+      },
     },
   },
   needs_human_ops_review: {
     type: 'noul',
-    instructions:
-      'Should a human operator review this bulletin for citizen UX (ambiguous geography, missing action, or conflicting Cancel/Update cues in the text)? Do not treat normal official wording as a defect. Never recommend changing CAP text or sending SMS/push.',
+    instructions: {
+      question: 'Should a human operator review this bulletin for citizen UX?',
+      inspect: ['`headlineEn`', '`descriptionEn`', '`headlineMr`', '`descriptionMr`', '`districts`', '`kind`'],
+      focus: 'Look for ambiguous geography, missing action, or conflicting Cancel/Update cues. Do not treat normal official wording as a defect. Never recommend changing CAP text or sending SMS/push.',
+    },
     criteria: {
-      true: 'Ambiguous districts, missing protective action, or cancel/update language that conflicts',
-      false: 'Geography and action are coherent enough as relayed',
+      true: {
+        what: 'Ambiguous districts, missing protective action, or cancel/update language that conflicts',
+        examples: ['Cancel that still reads as an active warning', 'No districts and no area in the text'],
+      },
+      false: {
+        what: 'Geography and action are coherent enough as relayed',
+        not_for: 'Routine official phrasing that a resident can still act on',
+        examples: ['Pune rainfall advisory with a stay-away instruction'],
+      },
     },
   },
   recommendation: {
     type: 'choice',
-    instructions:
-      'Ops-only routing. Never recommend SMS, push, cell broadcast, WEA, or rewriting CAP. log_only = keep in the ops log; surface_ops_badge = optional future ops UI flag; escalate_human = a person should inspect the bulletin.',
+    instructions: {
+      question: 'Which ops-only routing should apply to this relayed bulletin?',
+      focus: 'Never recommend SMS, push, WhatsApp, cell broadcast, WEA, or rewriting CAP. Code will still discard public-notify choices. Use `kind` plus the bilingual headlines only as already-relayed context.',
+    },
     criteria: {
-      log_only: 'Bulletin is coherent; ops log only',
-      surface_ops_badge: 'Clarity or bilingual issue worth a non-public ops badge',
-      escalate_human: 'Human review for mismatch, missing action, or conflicting cues',
+      log_only: {
+        what: 'Bulletin is coherent; keep it in the ops log only',
+        not_for: 'Material bilingual gap, kind/hazard mismatch, or conflicting cancel/update cues',
+        examples: ['Clear bilingual rainfall advisory with districts'],
+      },
+      surface_ops_badge: {
+        what: 'Clarity or bilingual issue worth a non-public ops badge',
+        not_for: 'A case that already needs a person, or a fully coherent bulletin',
+        examples: ['Usable English but thin Marathi action text'],
+      },
+      escalate_human: {
+        what: 'A person should inspect the bulletin',
+        not_for: 'Coherent log-only cases or a badge-only clarity niggle',
+        examples: ['Hazard family disagrees with `kind`', 'Cancel/Update language conflicts'],
+      },
     },
   },
 }
@@ -172,18 +288,81 @@ export function collectAnswerConfidence(answers = {}) {
   return Math.min(...scores)
 }
 
+export function confidenceBand(confidence) {
+  const value = finiteOr(confidence, 0)
+  if (value >= HIGH_CONFIDENCE) return 'high'
+  if (value >= MEDIUM_CONFIDENCE) return 'medium'
+  return 'low'
+}
+
+function assertConfidenceBand(band) {
+  switch (band) {
+    case 'high':
+    case 'medium':
+    case 'low':
+      return band
+    default: {
+      const exhaustive = band
+      throw new Error(`Unhandled confidence band: ${exhaustive}`)
+    }
+  }
+}
+
 export function composeOpsRecommendation(answers = {}, { hazardMismatch = false } = {}) {
-  const blocked = new Set(['sms', 'push', 'send_sms', 'cell_broadcast', 'wea', 'notify_public'])
   let modelChoice = answers.recommendation?.choice
-  if (!MODEL_RECOMMENDATIONS.includes(modelChoice) || blocked.has(modelChoice)) {
+  const blockedChoice = BLOCKED_PUBLIC_CHANNELS.has(modelChoice)
+  if (!MODEL_RECOMMENDATIONS.includes(modelChoice) || blockedChoice) {
     modelChoice = 'escalate_human'
   }
   const confidence = collectAnswerConfidence(answers)
-  const needsReview = noulValue(answers.needs_human_ops_review) >= LOW_CONFIDENCE
-  if (modelChoice === 'escalate_human' || confidence < LOW_CONFIDENCE || needsReview || hazardMismatch) {
-    return { recommendation: 'human_review', confidence, modelChoice }
+  const band = assertConfidenceBand(confidenceBand(confidence))
+  const needsReview = noulValue(answers.needs_human_ops_review) >= MEDIUM_CONFIDENCE
+  const escalate = modelChoice === 'escalate_human'
+
+  if (hazardMismatch || needsReview || escalate || band === 'low') {
+    let gate = 'low_confidence'
+    if (hazardMismatch) gate = 'hazard_mismatch'
+    else if (needsReview) gate = 'needs_human_ops_review'
+    else if (escalate) gate = 'escalate_or_blocked_channel'
+    return {
+      recommendation: 'human_review',
+      confidence,
+      modelChoice,
+      confidenceBand: band,
+      gate,
+    }
   }
-  return { recommendation: modelChoice, confidence, modelChoice }
+
+  switch (band) {
+    case 'medium':
+      return {
+        recommendation: 'needs_stronger_check',
+        confidence,
+        modelChoice,
+        confidenceBand: band,
+        gate: 'medium_confidence',
+      }
+    case 'high':
+      return {
+        recommendation: modelChoice,
+        confidence,
+        modelChoice,
+        confidenceBand: band,
+        gate: 'high_confidence',
+      }
+    case 'low':
+      return {
+        recommendation: 'human_review',
+        confidence,
+        modelChoice,
+        confidenceBand: band,
+        gate: 'low_confidence',
+      }
+    default: {
+      const exhaustive = band
+      throw new Error(`Unhandled confidence band: ${exhaustive}`)
+    }
+  }
 }
 
 export function parseSystemOneResponse(body, alert) {
@@ -199,11 +378,16 @@ export function parseSystemOneResponse(body, alert) {
   const composed = composeOpsRecommendation(answers, { hazardMismatch })
   const enScore = answers.citizen_urgency_clarity_en
   const mrScore = answers.citizen_urgency_clarity_mr
+  const resolvedModel = typeof body.model === 'string' && body.model.trim() ? body.model.trim() : JEV_MODEL
   return {
     provider: 'jev-systemone',
     mode: 'shadow',
+    public: false,
+    opsOnly: true,
     alertKey: alertShadowKey(alert),
-    model: body.model || JEV_MODEL,
+    requestedModel: JEV_MODEL,
+    model: resolvedModel,
+    modelAlias: JEV_MODEL,
     kind: alert.kind || 'other',
     hazardFamily,
     relayedFamily,
@@ -220,6 +404,8 @@ export function parseSystemOneResponse(body, alert) {
     modelRecommendation: composed.modelChoice,
     recommendation: composed.recommendation,
     confidence: composed.confidence,
+    confidenceBand: composed.confidenceBand,
+    gate: composed.gate,
     answers,
     note: 'Shadow triage only — does not change relayed CAP text; never sends SMS/push.',
   }
@@ -247,7 +433,7 @@ function mockAnswers(alert) {
   const missingGeo = !state.districts.length
   const needsReview = missingGeo || cancelCue || enIndex === 0 || mrIndex === 0 ? 0.71 : 0.18
   let recommendation = 'log_only'
-  if (needsReview >= LOW_CONFIDENCE || bilingual >= LOW_CONFIDENCE) recommendation = 'escalate_human'
+  if (needsReview >= MEDIUM_CONFIDENCE || bilingual >= MEDIUM_CONFIDENCE) recommendation = 'escalate_human'
   else if (enIndex < 2 || mrIndex < 2) recommendation = 'surface_ops_badge'
   return {
     hazard_family: {
@@ -270,8 +456,8 @@ function mockAnswers(alert) {
       probabilities: Object.fromEntries(CLARITY_LEVELS.map((_, index) => [String(index), index === mrIndex ? 0.9 : 0.05])),
       confidence: 0.8,
     },
-    bilingual_gap: { type: 'noul', noul: bilingual },
-    needs_human_ops_review: { type: 'noul', noul: needsReview },
+    bilingual_gap: { type: 'noul', noul: bilingual, confidence: 0.81 },
+    needs_human_ops_review: { type: 'noul', noul: needsReview, confidence: 0.83 },
     recommendation: {
       type: 'choice',
       choice: recommendation,
@@ -321,4 +507,22 @@ export async function triageAlertShadow(alert, env = {}, fetchImpl = globalThis.
 
 export function retainShadowLogRows(rows, limit = 200) {
   return rows.slice(-limit)
+}
+
+export function shadowOpsEnvelope(entries = []) {
+  return {
+    unofficial: true,
+    mode: 'shadow',
+    public: false,
+    opsOnly: true,
+    opsBadge: {
+      visible: true,
+      publicBulletin: false,
+      label: 'Jev shadow (ops only)',
+    },
+    requestedModel: JEV_MODEL,
+    modelAliasResolvesTo: JEV_LATEST_RESOLVES_TO,
+    disclaimer: 'Ops-only shadow triage. Does not change public CAP bulletin truth.',
+    entries,
+  }
 }
