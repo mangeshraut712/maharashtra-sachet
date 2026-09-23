@@ -50,6 +50,8 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/FORKING.md](docs/FOR
 
 ## Pull request norms
 
+Grok Bot and Cursor follow one contract: [docs/pr-setup.md](docs/pr-setup.md) and [`.cursor/skills/pr-setup/SKILL.md`](.cursor/skills/pr-setup/SKILL.md). Title is `type(scope): subject`. Body sections are Why, Scope, Tradeoffs, Blast Radius, and Verification. Open the pull request ready. Bugbot reviews [`.cursor/BUGBOT.md`](.cursor/BUGBOT.md). Do not merge unless the maintainer asked to ship.
+
 - One concern per PR when practical (docs, collector, UI, ops).
 - Add or extend tests in `test/` for behaviour changes; keep live fetches behind `RUN_LIVE_TESTS=1`.
 - Preserve CAP identity (`source` + identifier), issuer-matched Update/Cancel, expiry, and last-good snapshots on collector failure.

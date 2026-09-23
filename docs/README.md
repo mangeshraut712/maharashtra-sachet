@@ -5,6 +5,7 @@ Start here if you are choosing a file. Dated plans and old verification notes li
 | Doc | Use it for |
 | --- | --- |
 | [Contributing](../CONTRIBUTING.md) | Setup, tests, PR norms, unofficial-status rules |
+| [Pull request setup](pr-setup.md) | Shared Grok Bot and Cursor loop: open, Bugbot, babysit, ship |
 | [Architecture](ARCHITECTURE.md) | Sources → collectors → merge → D1 → GET API → web poll / MapLibre |
 | [Forking](FORKING.md) | Another Indian state or region: region pack, LGD, adapters, Workers, flags |
 | [How to use](HOW-TO.md) | Resident / demo walkthrough with screenshots |

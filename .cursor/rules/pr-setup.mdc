@@ -1,0 +1,12 @@
+---
+description: Shared pull-request contract for Cursor agents on maharashtra-sachet
+alwaysApply: true
+---
+
+When you open, update, review, or land a pull request, read and follow `.cursor/skills/pr-setup/SKILL.md`.
+
+Grok Bot is the outer loop. It gathers context and writes the prompt. It does not edit the product patch.
+
+A Cursor cloud agent is the inner loop. It applies that prompt and opens the pull request.
+
+Open every pull request ready, never as a draft. Do not babysit when the pull request opens. Do not merge unless the user explicitly asked to ship, land, or merge.
