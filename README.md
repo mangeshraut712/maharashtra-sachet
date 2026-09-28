@@ -8,7 +8,21 @@ Independent English/Marathi hub for official Maharashtra public alerts, district
 
 **Event pitch:** [live slides](https://maharashtra-sachet.mangeshraut712.workers.dev/pitch.html) · [PPTX](https://maharashtra-sachet.mangeshraut712.workers.dev/pitch.pptx) · [submission notes](docs/history/SUBMISSION.md)
 
-![Production homepage, 5 Sept 2026](docs/screenshots/desktop-home.png)
+## Screenshots
+
+Framed captures of the live hub (current UI). An empty or partial bulletin is not an all-clear. In danger, call **112**.
+
+<div align="center">
+
+<img src="docs/screenshots/01-home.webp" alt="Homepage: independent civic alert hub and Maharashtra map" width="720" />
+
+<img src="docs/screenshots/02-search.webp" alt="Place search for Navi Mumbai mapping to Raigad and Thane" width="720" />
+
+<img src="docs/screenshots/03-bulletin.webp" alt="Public alert bulletin with source health and Emergency 112" width="720" />
+
+<img src="docs/screenshots/04-marathi.webp" alt="Same hub in Marathi" width="720" />
+
+</div>
 
 ## How to use (in short)
 
