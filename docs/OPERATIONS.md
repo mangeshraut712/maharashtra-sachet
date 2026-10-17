@@ -78,6 +78,8 @@ Ops-only. Does **not** change `/api/alerts`, rewrite CAP text, or send SMS/push/
 
 See [JEV-SHADOW.md](JEV-SHADOW.md).
 
+- `GEMINI_API_KEY` (optional secret) enables Gemini explanations on `/explain`: `npx wrangler secret put GEMINI_API_KEY --env staging` / `--env production`. Model is the `GEMINI_MODEL` var (default `gemini-3.8-flash`). Without it, `/api/explain` serves the offline keyword fallback.
+
 ## Rollback
 
 Run `npx wrangler versions list --env production` and `npx wrangler deployments list --env production` to identify the previously verified version. Inspect `npx wrangler rollback --help`, then roll back to that explicit version when authorized. A Worker rollback does not revert a D1 migration. The first deployment has no previous production version; never invent a rollback ID or delete the database as a rollback substitute.

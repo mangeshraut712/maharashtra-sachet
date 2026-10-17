@@ -8,7 +8,7 @@ test('public-service design keeps independent identity and narrow layouts clear'
   await expect(page.locator('#demoBanner')).toContainText('LABELLED DEMO')
   await expect(page.locator('.independent')).toContainText('Not a government website')
   await expect(page.locator('.brand-marathi')).toContainText('महाराष्ट्र')
-  await expect(page.getByRole('navigation', {name:'Main navigation'}).getByRole('link')).toHaveCount(6)
+  await expect(page.getByRole('navigation', {name:'Main navigation'}).getByRole('link')).toHaveCount(7)
   await page.screenshot({path:`output/playwright/portal-${testInfo.project.name}.png`,fullPage:testInfo.project.name==='desktop'})
   for (const width of [320, 768, 1440]) {
     await page.setViewportSize({width,height:900})
@@ -154,4 +154,10 @@ test('phone readiness guide is accessible and never offers to trigger a broadcas
   const axe = await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()
   expect(axe.violations.map(v=>v.id)).toEqual([])
   expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+})
+
+test('alert explainer page renders input and required footer', async ({ page }) => {
+  await page.goto('/explain.html')
+  await expect(page.locator('footer')).toContainText('Not a government site. Verify with official sources (sachet.ndma.gov.in, IMD). Emergency: call 112.')
+  await expect(page.locator('#alertText')).toBeVisible()
 })

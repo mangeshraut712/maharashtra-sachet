@@ -1178,3 +1178,11 @@ footer.container {
     height: 44vh;
   }
 }
+
+/* Alert explainer (/explain) */
+.explain-input { width: 100%; box-sizing: border-box; font: inherit; padding: 10px; border: 1px solid currentColor; border-radius: 8px; }
+.severity-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-weight: 700; background: #e5e5e5; color: #222; }
+.severity-badge[data-level='red'] { background: #b42318; color: #fff; }
+.severity-badge[data-level='orange'] { background: #c2410c; color: #fff; }
+.severity-badge[data-level='yellow'] { background: #facc15; color: #222; }
+.severity-badge[data-level='green'] { background: #15803d; color: #fff; }

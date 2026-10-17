@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#a44b13">
+  <title>Alert explainer — Maharashtra Civic Alerts</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip" href="#explainer">Skip to explainer</a>
+  <header class="site-header container"><a class="brand" href="/">Maharashtra Civic Alerts</a><a href="/">← Alert bulletin</a></header>
+  <main id="explainer" class="container">
+    <section class="location-panel">
+      <p class="eyebrow">SACHET EXPLAINER · BUILT WITH GOOGLE AI STUDIO + GEMINI</p>
+      <h1>Understand a public alert in plain words.</h1>
+      <p>Paste an official alert (SACHET, IMD, SDMA) or pick a labelled sample. You get a short summary, what it means for the named district, three safety steps, and Marathi and Hindi versions. The explanation can be wrong: the original alert is the authority.</p>
+      <p lang="mr">अधिकृत सूचना येथे चिकटवा किंवा नमुना निवडा. सोपा सारांश, जिल्ह्यासाठी अर्थ, तीन सुरक्षा उपाय व मराठी/हिंदी आवृत्ती मिळेल. मूळ सूचनाच अंतिम आहे.</p>
+    </section>
+    <section class="location-panel">
+      <h2><label for="alertText">Alert text / <span lang="mr">सूचनेचा मजकूर</span></label></h2>
+      <p class="small">Samples (not live alerts):
+        <button type="button" class="text-button" data-sample="rain">Sample: Konkan heavy rain (Red)</button> ·
+        <button type="button" class="text-button" data-sample="heat">Sample: Vidarbha heatwave (Orange)</button> ·
+        <button type="button" class="text-button" data-sample="aqi">Sample: MMR air quality (Yellow)</button> ·
+        <button type="button" class="text-button" data-sample="nolevel">Sample: thunderstorm (no level)</button>
+      </p>
+      <textarea id="alertText" class="explain-input" rows="9" maxlength="6000" placeholder="Paste the official alert text here"></textarea>
+      <p><button type="button" id="explainButton" class="call-button">Explain / <span lang="mr">समजावून सांगा</span></button> <span id="explainStatus" class="small" role="status" aria-live="polite"></span></p>
+    </section>
+    <section id="explainResult" class="location-panel" hidden>
+      <p><span class="severity-badge" id="severityBadge"></span> <strong id="hazardType"></strong></p>
+      <p class="alert-meta" id="explainMeta"></p>
+      <p class="language-note" id="fallbackNote" hidden></p>
+      <div id="langBlocks"></div>
+    </section>
+  </main>
+  <footer class="container">Not a government site. Verify with official sources (<a href="https://sachet.ndma.gov.in/" target="_blank" rel="noopener noreferrer">sachet.ndma.gov.in</a>, <a href="https://mausam.imd.gov.in/" target="_blank" rel="noopener noreferrer">IMD</a>). Emergency: call <a href="tel:112">112</a>.</footer>
+  <script type="module" src="/explain.js"></script>
+</body>
+</html>

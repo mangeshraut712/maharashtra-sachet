@@ -530,6 +530,10 @@ function makeCard(alert) {
         'small',
       ),
     )
+  const explainText = [content.headline, content.description, content.instruction, (alert.districts || []).map(label).join(', ')].filter(Boolean).join('\n').slice(0, 2000)
+  const explain = node('a', tx('Explain in plain words', 'सोप्या शब्दांत समजून घ्या'))
+  explain.href = `/explain.html#${new URLSearchParams({ alert: explainText })}`
+  actions.append(explain)
   body.append(actions)
   card.append(bar, body)
   return card
