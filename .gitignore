@@ -11,3 +11,6 @@ dist/
 test-results/
 playwright-report/
 output/playwright/
+# Local agent tooling
+.agents/
+skills-lock.json
