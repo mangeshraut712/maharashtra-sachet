@@ -214,7 +214,7 @@
                   Public alert bulletin
                 </h2>
               </div>
-              <span id="alertCount" class="count-badge">—</span>
+              <span id="alertCount" class="count-badge" aria-live="polite" aria-atomic="true">—</span>
             </div>
             <p id="feedNote" class="hint"></p>
             <div id="feed" class="feed" aria-busy="true">
@@ -297,7 +297,7 @@
               A successful check can return zero alerts. Unavailable sources
               leave gaps.
             </p>
-            <div id="sourceList"></div>
+            <ul id="sourceList"></ul>
             <p id="snapshotTime" class="small"></p>
           </section>
           <section class="notification-panel" aria-labelledby="notificationsTitle">

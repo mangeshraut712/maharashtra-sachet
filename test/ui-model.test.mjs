@@ -11,6 +11,7 @@ import {
   alertKey,
   validSnapshot,
   validMeta,
+  readAlertSnapshot,
 } from '../web/ui-model.js'
 
 test('official links reject executable URLs, deceptive hosts, credentials and non-HTTPS', () => {
@@ -162,5 +163,40 @@ test('malformed stored snapshots and metadata are rejected before state assignme
       'mr',
     ).headline,
     '',
+  )
+})
+
+test('alert pagination restarts when the snapshot token expires', async () => {
+  const page = (alerts, extra = {}) => ({
+    alerts,
+    generatedAt: extra.generatedAt || '2026-09-05T10:00:00.000Z',
+    sources: {},
+    count: extra.total || alerts.length,
+    pagination: {
+      total: extra.total || alerts.length,
+      nextOffset: extra.nextOffset ?? null,
+      snapshot: extra.snapshot || 'snap-a',
+    },
+  })
+  let calls = 0
+  const body = await readAlertSnapshot(async (params) => {
+    calls += 1
+    const offset = params.get('offset')
+    if (calls === 1) return page([{ id: 'a', source: 'sachet' }], { total: 2, nextOffset: 1, snapshot: 'snap-a' })
+    if (calls === 2 && offset === '1') return { statusCode: 409 }
+    if (offset === '0') return page(
+      [{ id: 'b', source: 'sachet' }, { id: 'c', source: 'sachet' }],
+      { total: 2, nextOffset: null, snapshot: 'snap-b' },
+    )
+    throw new Error(`unexpected offset ${offset}`)
+  })
+  assert.equal(calls, 3)
+  assert.deepEqual(body.alerts.map((alert) => alert.id), ['b', 'c'])
+  await assert.rejects(
+    () => readAlertSnapshot(async (params) => {
+      if (params.get('offset') === '0') return page([{ id: 'a', source: 'sachet' }], { total: 2, nextOffset: 1 })
+      return page([{ id: 'b', source: 'sachet' }], { generatedAt: '2026-09-05T11:00:00.000Z', total: 1 })
+    }),
+    /Snapshot changed during pagination/,
   )
 })

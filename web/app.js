@@ -9,6 +9,7 @@ import {
   isCurrent,
   validSnapshot,
   validMeta,
+  readAlertSnapshot,
 } from './ui-model.js'
 import { bindLazyMap, refreshMap, updateSituationalMap } from './map-view.js'
 
@@ -366,7 +367,7 @@ function renderSources() {
   if (!entries.length)
     list.append(
       node(
-        'p',
+        'li',
         tx(
           'No source health report is available yet.',
           'स्रोतांच्या स्थितीचा अहवाल अद्याप उपलब्ध नाही.',
@@ -376,7 +377,7 @@ function renderSources() {
     )
   for (const [id, source] of entries) {
     const status = sourceStatus(source)
-    const row = node('div', undefined, 'source-row')
+    const row = node('li', undefined, 'source-row')
     const top = node('div', undefined, 'source-row-top')
     top.append(node('span', SOURCES[id] || source.name || id))
     const badgeText =
@@ -910,37 +911,22 @@ async function request(url, { method = 'GET' } = {}) {
   }
 }
 async function fullSnapshot() {
-  const first = await request('/api/alerts?limit=500')
-  if (!validSnapshot(first)) throw new Error('Invalid alert snapshot')
-  const alerts = [...first.alerts]
-  let next = first.pagination?.nextOffset
-  let pages = 0
-  while (next != null) {
-    if (++pages > 50) throw new Error('Snapshot exceeds supported page count')
-    const query = new URLSearchParams({
-      limit: '500',
-      offset: String(next),
-      snapshot: first.pagination.snapshot || first.generatedAt || '',
-    })
-    const page = await request(`/api/alerts?${query}`)
-    if (
-      page.generatedAt !== first.generatedAt ||
-      !validSnapshot(page) ||
-      (page.pagination?.nextOffset != null &&
-        page.pagination.nextOffset <= next)
-    )
-      throw new Error('Snapshot changed during pagination')
-    alerts.push(...page.alerts)
-    next = page.pagination?.nextOffset
-  }
-  if (
-    first.pagination?.total != null &&
-    alerts.length !== first.pagination.total
-  )
-    throw new Error('Incomplete alert snapshot')
-  if (!first.pagination && first.count > alerts.length)
-    throw new Error('Truncated alert snapshot')
-  return { ...first, alerts }
+  return readAlertSnapshot(async (params) => {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15_000)
+    try {
+      const response = await fetch(`/api/alerts?${params}`, {
+        cache: 'no-store',
+        signal: controller.signal,
+        headers: { accept: 'application/json' },
+      })
+      if (response.status === 409) return { statusCode: 409 }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      return await response.json()
+    } finally {
+      clearTimeout(timeout)
+    }
+  })
 }
 function notifyNew(alerts) {
   const fresh = new Set(
@@ -1051,7 +1037,6 @@ let searchSequence = 0
 function placeMessage(message, invalid = false) {
   const status = node('p', message, 'hint')
   status.id = 'placeStatus'
-  status.setAttribute('role', 'status')
   $('placeResults').replaceChildren(status)
   $('place').setAttribute('aria-describedby', 'placeNote placeStatus')
   if (invalid) $('place').setAttribute('aria-invalid', 'true')
@@ -1091,7 +1076,6 @@ $('locationForm').addEventListener('submit', async (event) => {
       'hint',
     )
     status.id = 'placeStatus'
-    status.setAttribute('role', 'status')
     const list = document.createElement('ul')
     for (const place of places) {
       const item = document.createElement('li')
