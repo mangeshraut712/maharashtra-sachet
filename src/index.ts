@@ -1,19 +1,20 @@
 import { collectSnapshot, emptyState, handleApi, jsonResponse, publicSnapshot, SECURITY_HEADERS, snapshotNeedsIngest, sourceCollectors } from '../server/service.mjs'
 import { acquireLease, appendJevShadowEntries, readRecentJevShadowEntries, readState, releaseLease, saveState } from './storage'
 import { jevShadowEnabled, shadowOpsEnvelope, triageAlertShadow } from '../server/jev-shadow.mjs'
+import type { JevShadowEntry } from './relay-types'
 
 export async function ingest(env: Env, collectors?: ReturnType<typeof sourceCollectors>): Promise<{ status: string }> {
   const token = crypto.randomUUID()
   if (!await acquireLease(env.DB, token, Date.now())) return { status: 'already-running' }
   try {
     const previous = await readState(env.DB)
-    const apiKey = 'DATA_GOV_IN_API_KEY' in env && typeof env.DATA_GOV_IN_API_KEY === 'string' ? env.DATA_GOV_IN_API_KEY : undefined
+    const apiKey = typeof env.DATA_GOV_IN_API_KEY === 'string' ? env.DATA_GOV_IN_API_KEY : undefined
     const next = await collectSnapshot(previous, collectors || sourceCollectors({ apiKey, cpcbEnabled: String(env.CPCB_ENABLED) === 'true' }))
     if (!await saveState(env.DB, token, next)) throw new Error('Ingestion lease expired')
     if (jevShadowEnabled(env)) {
       const { alerts } = publicSnapshot(next, Date.now())
       const generatedAt = next.generatedAt || new Date().toISOString()
-      const entries = []
+      const entries: JevShadowEntry[] = []
       for (const alert of alerts) {
         const payload = await triageAlertShadow(alert, env)
         entries.push({ alertKey: payload.alertKey, generatedAt, payload })
@@ -67,7 +68,7 @@ export default {
         const staticApi = /^\/api(?:\/v1)?\/(?:meta|locations)$/.test(path)
         const state = staticApi ? emptyState() : await readState(env.DB)
         if (!staticApi) maybeScheduleRecovery(env, state, ctx)
-        const firmsKey = 'FIRMS_MAP_KEY' in env && typeof env.FIRMS_MAP_KEY === 'string' ? env.FIRMS_MAP_KEY : ''
+        const firmsKey = typeof env.FIRMS_MAP_KEY === 'string' ? env.FIRMS_MAP_KEY : ''
         const situationalEnabled = String(env.SITUATIONAL_LAYERS_ENABLED) === 'true'
         const response = await handleApi(request, state, {
           environment: env.ENVIRONMENT,

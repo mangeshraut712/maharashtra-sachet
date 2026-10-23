@@ -10,9 +10,11 @@ import { SERVICE_CATEGORIES, LOCALITY_COVERAGE, searchLocalities } from './cover
 import { DISTRICT_CENTROIDS, MH_BBOX, REGION } from './mh-geo.mjs'
 import { buildSituationalSnapshot, situationalDisclaimer } from './situational.mjs'
 
+/** @type {readonly import('../src/relay-types.ts').SourceId[]} */
 export const SOURCE_IDS = ['sachet', 'imd', 'incois', 'cwc', 'cpcb']
 export const STALE_MS = 5 * 60_000
 export const MAX_SOURCE_BYTES = 900_000
+/** @type {readonly import('../src/relay-types.ts').SourceErrorCode[]} */
 export const SOURCE_ERROR_CODES = ['timeout', 'request_budget', 'invalid_cap', 'schema_invalid', 'http_error', 'tls_error', 'unavailable']
 export const SECURITY_HEADERS = {
   'x-content-type-options': 'nosniff',
@@ -22,10 +24,17 @@ export const SECURITY_HEADERS = {
   'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://demotiles.maplibre.org; connect-src 'self' https://demotiles.maplibre.org; worker-src 'self' blob:; font-src 'self' https://demotiles.maplibre.org; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
 }
 
+/** @returns {import('../src/relay-types.ts').RelayState} */
 export function emptyState() {
   return { generatedAt: null, sources: {} }
 }
 
+/**
+ * @param {import('../src/relay-types.ts').RelayState | null | undefined} state
+ * @param {number} [now]
+ * @param {number} [cooldownMs]
+ * @returns {boolean}
+ */
 export function snapshotNeedsIngest(state, now = Date.now(), cooldownMs = 60_000) {
   if (!state?.generatedAt) return true
   const enabled = SOURCE_IDS
@@ -60,6 +69,10 @@ export function classifySourceError(error) {
   return 'unavailable'
 }
 
+/**
+ * @param {{ apiKey?: string, cpcbEnabled?: boolean, aqiCities?: string[] }} [config]
+ * @returns {import('../src/relay-types.ts').SourceCollector[]}
+ */
 export function sourceCollectors(config = {}) {
   const key = config.apiKey
   const enabled = config.cpcbEnabled ?? Boolean(key)
@@ -87,6 +100,12 @@ export function retainLifecycle(previous, incoming) {
   return [...records.values()]
 }
 
+/**
+ * @param {import('../src/relay-types.ts').RelayState} previous
+ * @param {import('../src/relay-types.ts').SourceCollector[]} [collectors]
+ * @param {{ now?: number, concurrency?: number }} [options]
+ * @returns {Promise<import('../src/relay-types.ts').RelayState>}
+ */
 export async function collectSnapshot(previous, collectors = sourceCollectors(), { now = Date.now(), concurrency = 3 } = {}) {
   const sources = { ...previous.sources }
   let cursor = 0
@@ -123,6 +142,11 @@ export async function collectSnapshot(previous, collectors = sourceCollectors(),
   return { generatedAt: new Date(now).toISOString(), sources }
 }
 
+/**
+ * @param {import('../src/relay-types.ts').RelayState} state
+ * @param {number} [now]
+ * @returns {import('../src/relay-types.ts').PublicSnapshot}
+ */
 export function publicSnapshot(state, now = Date.now()) {
   const sources = Object.fromEntries(SOURCE_IDS.map(id => {
     const source = state.sources[id]
@@ -143,6 +167,12 @@ export function publicSnapshot(state, now = Date.now()) {
   }
 }
 
+/**
+ * @param {number} status
+ * @param {unknown} body
+ * @param {Record<string, string>} [extraHeaders]
+ * @returns {Response}
+ */
 export function jsonResponse(status, body, extraHeaders = {}) {
   return new Response(JSON.stringify(body), { status, headers: { ...SECURITY_HEADERS, 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extraHeaders } })
 }
@@ -170,6 +200,12 @@ function snapshotVersion(snapshot) {
   return `${snapshot.generatedAt || 'uninitialized'}:${(hash >>> 0).toString(16)}`
 }
 
+/**
+ * @param {Request} request
+ * @param {import('../src/relay-types.ts').RelayState} state
+ * @param {{ now?: number, environment?: string, situationalEnabled?: boolean, firmsMapKey?: string, jevShadowEnabled?: boolean }} [options]
+ * @returns {Promise<Response | null>}
+ */
 export async function handleApi(request, state, { now = Date.now(), environment = 'local', situationalEnabled = false, firmsMapKey = '', jevShadowEnabled = false } = {}) {
   const url = new URL(request.url)
   const path = url.pathname.replace(/^\/api\/v1(?=\/|$)/, '/api')
