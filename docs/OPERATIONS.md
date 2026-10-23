@@ -78,6 +78,9 @@ Ops-only. Does **not** change `/api/alerts`, rewrite CAP text, or send SMS/push/
 
 See [JEV-SHADOW.md](JEV-SHADOW.md).
 
+- `GEMINI_API_KEY` (optional secret) enables Gemini explanations on `/explain`: `npx wrangler secret put GEMINI_API_KEY --env staging` / `--env production`. Model is the `GEMINI_MODEL` var (default `gemini-3.8-flash`; values outside `[A-Za-z0-9][A-Za-z0-9._-]{0,63}` are rejected). `npm start` reads both from the environment. The labelled demo does not, so browser tests stay on the offline fallback.
+- Without a key, with a rejected model, or when Gemini returns an error, times out, or sends an unexpected body, `POST /api/explain` returns `200` and `source: "offline-fallback"`. It does not log the alert text or the key. Callers are limited to 15 requests per minute, with 60 per minute for the whole runtime instance. See [Privacy](PRIVACY.md).
+
 ## Rollback
 
 Run `npx wrangler versions list --env production` and `npx wrangler deployments list --env production` to identify the previously verified version. Inspect `npx wrangler rollback --help`, then roll back to that explicit version when authorized. A Worker rollback does not revert a D1 migration. The first deployment has no previous production version; never invent a rollback ID or delete the database as a rollback substitute.

@@ -1,5 +1,6 @@
 import { collectSnapshot, emptyState, handleApi, jsonResponse, publicSnapshot, SECURITY_HEADERS, snapshotNeedsIngest, sourceCollectors } from '../server/service.mjs'
 import { acquireLease, appendJevShadowEntries, readRecentJevShadowEntries, readState, releaseLease, saveState } from './storage'
+import { explainClientKey, handleExplainRequest } from '../server/explain.mjs'
 import { jevShadowEnabled, shadowOpsEnvelope, triageAlertShadow } from '../server/jev-shadow.mjs'
 
 export async function ingest(env: Env, collectors?: ReturnType<typeof sourceCollectors>): Promise<{ status: string }> {
@@ -61,6 +62,13 @@ export default {
         const limit = Math.min(Math.max(Number(new URL(request.url).searchParams.get('limit') || 20), 1), 100)
         const entries = await readRecentJevShadowEntries(env.DB, limit)
         return jsonResponse(200, shadowOpsEnvelope(entries))
+      }
+      if (path === '/api/explain') {
+        const secrets = env as unknown as { GEMINI_API_KEY?: string, GEMINI_MODEL?: string }
+        return handleExplainRequest(request, {
+          GEMINI_API_KEY: secrets.GEMINI_API_KEY,
+          GEMINI_MODEL: secrets.GEMINI_MODEL,
+        }, { clientKey: explainClientKey(request.headers.get('cf-connecting-ip')) })
       }
       if (path === '/api' || path.startsWith('/api/')) {
         if (request.method !== 'GET' && request.method !== 'HEAD') return jsonResponse(405, { error: 'Method not allowed' }, { allow: 'GET, HEAD', ...(new URL(request.url).protocol === 'https:' ? { 'strict-transport-security': 'max-age=31536000' } : {}) })

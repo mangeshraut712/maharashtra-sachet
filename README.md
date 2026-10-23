@@ -73,6 +73,18 @@ npm run verify:realtime  # read-only proof of two advancing production generatio
 
 Deploy, rollback and secrets: [operations](docs/OPERATIONS.md). API: [docs/API.md](docs/API.md). All docs: [docs/README.md](docs/README.md).
 
+## Alert explainer (Gemini)
+
+`/explain` (served from `web/explain.html`; API `POST /api/explain`) turns a pasted public alert, or a labelled sample, into a plain-language summary, what it means for the named district, three safety steps, and Marathi and Hindi versions. The severity badge shows only a level stated in the alert ("Not stated" otherwise). Each alert card has an "Explain in plain words" link that prefills the page.
+
+Built with Google AI Studio + Gemini. The model defaults to `gemini-3.8-flash` (override with the `GEMINI_MODEL` var). The key is read only from the Worker secret; caller-supplied keys are ignored:
+
+```sh
+npx wrangler secret put GEMINI_API_KEY --env production
+```
+
+Without a key, or if Gemini fails, the API returns a keyword-based offline fallback and the page shows a visible note. The same route is served by the Worker and by `npm start`. Requests are JSON, size-capped, same-origin when a browser sends `Origin`, and rate-limited. Not a government site. Verify with official sources (sachet.ndma.gov.in, IMD). Emergency: call 112.
+
 ## Open source / Fork this
 
 This is an **MIT** civic CAP relay meant to be forked, and it is **not a government website**. Another Indian state or region can reuse the pipeline by replacing district/LGD tables, feed adapters, and branding—while keeping the same safety rules: unofficial relay, **CAP is the sole authority**, call **112**, no cell-broadcast / WEA / IPAWS origination.

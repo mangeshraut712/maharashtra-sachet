@@ -1,6 +1,6 @@
 # Public API
 
-All routes are read-only. `GET` and `HEAD` are supported; mutation methods return `405`. `/api/v1/...` aliases the corresponding `/api/...` route. Responses are JSON with explicit error status codes, security headers and `Cache-Control: no-store` to avoid masking changing alert expiry or source freshness.
+Bulletin routes are read-only. `GET` and `HEAD` are supported; other methods return `405`. `POST /api/explain` is the exception: it explains pasted alert text and does not write alerts. `/api/v1/...` aliases the corresponding `/api/...` route. Responses are JSON with explicit error status codes, security headers and `Cache-Control: no-store` to avoid masking changing alert expiry or source freshness.
 
 | Route | Meaning |
 | --- | --- |
@@ -13,8 +13,9 @@ All routes are read-only. `GET` and `HEAD` are supported; mutation methods retur
 | `/api/sources` | Per-source health, last attempt/success, age and safe error code. |
 | `/api/locations?q=Sawantwadi` | District-alias candidates; `q` has 2–80 characters; optional integer `limit` 1–20. |
 | `/api/alerts/live` | `410` with polling guidance. This scoped release replaces legacy truncated streaming with complete paginated snapshots. |
+| `POST /api/explain` | Plain-language explanation of pasted alert text. `alertText` is a string of at most 6,000 characters. JSON only, same-origin when `Origin` is sent, 20,000-byte body cap, and 15 requests per minute per client (60 per runtime instance). Missing `GEMINI_API_KEY`, an invalid model, or a Gemini error returns `200` with `source: "offline-fallback"`. Invalid input returns `400`, an oversized body `413`, the wrong method `405`, the wrong content type `415`, a cross-origin browser call `403`, and a full rate limit `429`. The text is not stored. |
 
-Unknown routes return `404`. Unknown/duplicate query keys and invalid filter values return `400`. There is no public refresh, write, report or notification-subscription endpoint.
+Unknown routes return `404`. Unknown/duplicate query keys and invalid filter values return `400`. There is no public refresh, report or notification-subscription endpoint. Pasted explainer text is not stored.
 
 On production and staging, a read of a dynamic API route may schedule a background recovery when enabled-source data is uninitialized or stale. The response is never rewritten as fresh before that recovery commits, and the 60-second attempt cooldown plus D1 lease prevent request amplification. Clients should read the returned status and timestamp, then use the advertised 60-second healthy/degraded or 15-second stale/error polling interval.
 
