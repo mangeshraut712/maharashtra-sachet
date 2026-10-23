@@ -125,14 +125,15 @@ export function createExplainLimiter({
 } = {}) {
   const clients = new Map()
   let globalHits = []
-  return function allow(clientKey) {
+  function allow(clientKey) {
     const time = now()
     const key = String(clientKey || 'anonymous').slice(0, 128)
     const fresh = stamps => stamps.filter(stamp => time - stamp < windowMs)
     globalHits = fresh(globalHits)
     const clientHits = fresh(clients.get(key) || [])
     if (clientHits.length >= perClient || globalHits.length >= globalLimit) {
-      clients.set(key, clientHits)
+      if (clientHits.length) clients.set(key, clientHits)
+      else clients.delete(key)
       return { ok: false, retryAfterSeconds: Math.max(1, Math.ceil(windowMs / 1000)) }
     }
     clientHits.push(time)
@@ -144,9 +145,16 @@ export function createExplainLimiter({
         if (kept.length) clients.set(id, kept)
         else clients.delete(id)
       }
+      while (clients.size > 2000) {
+        const oldest = clients.keys().next().value
+        if (oldest === undefined) break
+        clients.delete(oldest)
+      }
     }
     return { ok: true }
   }
+  allow.clientCount = () => clients.size
+  return allow
 }
 
 const defaultExplainLimiter = createExplainLimiter()
@@ -238,6 +246,7 @@ export async function geminiExplanation(text, { apiKey, model = DEFAULT_GEMINI_M
   if (!MODEL_PATTERN.test(model)) throw new Error('invalid model')
   const response = await fetchImpl(`${GEMINI_ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
     method: 'POST',
+    redirect: 'manual',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
     signal: AbortSignal.timeout(timeoutMs),
     body: JSON.stringify({

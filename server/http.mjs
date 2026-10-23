@@ -32,7 +32,8 @@ export async function fetchText(value, options = {}) {
   const headers = { 'user-agent': DEFAULT_UA, accept: options.accept || '*/*', ...options.headers }
   if (options.referer) headers.referer = options.referer
   if (options.etag) headers['if-none-match'] = options.etag
-  if (typeof options.cookie === 'string' && options.cookie) headers.cookie = options.cookie
+  const cookie = safeCookieHeader(options.cookie)
+  if (cookie) headers.cookie = cookie
   try {
     for (let redirects = 0; ; redirects++) {
       signal.throwIfAborted()
@@ -70,15 +71,27 @@ export async function fetchText(value, options = {}) {
     }
   } finally { clearTimeout(timer) }
 }
+function cookiePair(cookie) {
+  const pair = String(cookie).split(';')[0].trim()
+  if (!pair || /[\u0000-\u001F\u007F]/.test(pair)) return ''
+  const separator = pair.indexOf('=')
+  if (separator <= 0) return ''
+  const name = pair.slice(0, separator)
+  const value = pair.slice(separator + 1)
+  // RFC 6265 token / cookie-octet. Control characters would split the next request's headers.
+  if (!value || !/^[-!#$%&'*+.^_`|~0-9A-Za-z]+$/.test(name)) return ''
+  if (!/^[\u0021\u0023-\u002B\u002D-\u003A\u003C-\u005B\u005D-\u007E]+$/.test(value)) return ''
+  return `${name}=${value}`
+}
+
+export function safeCookieHeader(value) {
+  if (typeof value !== 'string' || !value) return ''
+  return value.split(';').map((part) => cookiePair(part)).filter(Boolean).join('; ')
+}
+
 export function sachetCookieHeader(headers) {
   const lines = typeof headers?.getSetCookie === 'function' ? headers.getSetCookie() : []
-  return lines
-    .map((cookie) => String(cookie).split(';')[0].trim())
-    .filter((pair) => {
-      const i = pair.indexOf('=')
-      return i > 0 && pair.slice(i + 1) !== ''
-    })
-    .join('; ')
+  return lines.map((cookie) => cookiePair(cookie)).filter(Boolean).join('; ')
 }
 
 function sachetAuthBlocked(result) {

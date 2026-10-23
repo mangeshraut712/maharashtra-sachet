@@ -124,7 +124,7 @@ export function situationKind(alert) {
     ['lightning', /lightning|thunderstorm|विज/],
     ['heat', /heatwave|heat wave|उष्णतेची/],
     ['cold', /cold wave|शीत लहर|थंडी/],
-    ['chemical', /chemical|gas leak|cbrne|midc|विषारी|industrial (?:accident|leak|hazard)/],
+    ['chemical', /chemical|gas leak|cbrne|विषारी|industrial (?:accident|leak|hazard)/],
     ['fire', /fire|आग/],
     ['health', /outbreak|pandemic|dengue|cholera|health/],
     ['child', /missing|abduct|child|बाल/],

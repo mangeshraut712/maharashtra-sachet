@@ -73,12 +73,13 @@ test('missing key uses offline fallback; invalid input rejected', async () => {
 test('Gemini call uses server key, configurable model, and falls back on error', async () => {
   let seen
   const ok = async (url, init) => {
-    seen = { url, key: init.headers['x-goog-api-key'] }
+    seen = { url, key: init.headers['x-goog-api-key'], redirect: init.redirect }
     return geminiResponse()
   }
   const result = await explainAlert({ alertText: 'Rain in Pune', apiKey: 'caller-key' }, { GEMINI_API_KEY: 'server-key' }, ok)
   assert.equal(result.body.source, 'gemini')
   assert.equal(seen.key, 'server-key')
+  assert.equal(seen.redirect, 'manual')
   assert.match(seen.url, new RegExp(DEFAULT_GEMINI_MODEL))
   assert.doesNotMatch(seen.url, /server-key|caller-key/)
   assert.equal(result.body.data.severity, 'Not stated')
@@ -103,6 +104,7 @@ test('Gemini network, shape, timeout, and oversized responses fall back without 
       async () => { throw Object.assign(new Error('The operation was aborted'), { name: 'TimeoutError' }) },
       async () => new Response('x'.repeat(MAX_GEMINI_RESPONSE_BYTES + 1), { status: 200 }),
       async () => new Response('upstream', { status: 500 }),
+      async () => new Response(null, { status: 302, headers: { location: 'https://evil.example/steal?key=super-secret-key' } }),
     ]
     for (const fetchImpl of cases) {
       const result = await explainAlert({ alertText: 'SECRET-ALERT-TEXT' }, { GEMINI_API_KEY: 'super-secret-key' }, fetchImpl)
@@ -205,6 +207,11 @@ test('explain rate limit is per client and expires', () => {
   const blocked = globalLimiter('c')
   assert.equal(blocked.ok, false)
   assert.equal(blocked.retryAfterSeconds, 60)
+  const flooded = createExplainLimiter({ perClient: 1, globalLimit: 1, now: () => 5 })
+  assert.equal(flooded('a').ok, true)
+  assert.equal(flooded.clientCount(), 1)
+  for (let i = 0; i < 100; i++) assert.equal(flooded(`k${i}`).ok, false)
+  assert.equal(flooded.clientCount(), 1)
 })
 
 test('HTTP handler rate-limits before Gemini and falls back when Gemini fails', async () => {

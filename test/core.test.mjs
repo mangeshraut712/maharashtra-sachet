@@ -91,6 +91,16 @@ test('CPCB pollutant averages remain concentrations, not AQI or warnings', async
   assert.equal(alerts[0].recordType,'observation')
   assert.equal(alerts[0].severity,'Unknown')
   assert.doesNotMatch(alerts[0].headlineEn,/severe|AQI/i)
+  await assert.rejects(
+    collectCpcb('super-secret-key', ['Pune'], {
+      fetch: async () => new Response('not-json super-secret-key', { headers: { 'content-type': 'application/json' } }),
+    }),
+    (error) => {
+      assert.equal(error.name, 'SyntaxError')
+      assert.doesNotMatch(String(error.message), /super-secret-key/)
+      return true
+    },
+  )
 })
 test('SACHET reads public RSS without a homepage session', async () => {
   let homes = 0
@@ -136,6 +146,16 @@ test('empty Set-Cookie pairs are omitted from the SACHET Cookie header', () => {
   headers.append('set-cookie', 'hd_user_id_http=; Max-Age=0')
   headers.append('set-cookie', 'hd_user_id_https=def; Path=/')
   assert.equal(sachetCookieHeader(headers), 'hd_user_https=abc; hd_user_id_https=def')
+})
+test('SACHET cookies drop header injection and control characters', async () => {
+  const headers = { getSetCookie: () => ['ok=value', 'bad=a\r\nX-Injected: 1', 'also=two'] }
+  assert.equal(sachetCookieHeader(headers), 'ok=value; also=two')
+  let cookie
+  await fetchText('https://sachet.ndma.gov.in/', {
+    fetch: async (_url, init) => { cookie = init.headers.cookie; return new Response('ok') },
+    cookie: 'ok=1; bad=a\r\nX: 1',
+  })
+  assert.equal(cookie, 'ok=1')
 })
 
 test('body read deadline also applies after response headers arrive', async () => {
@@ -267,6 +287,22 @@ test('IMD preserves official text without inventing severity or Marathi', async 
   assert.equal(rows[0].urgency,'Unknown')
   assert.equal(rows[0].description,'Red warning: take shelter')
   assert.equal(rows[0].headlineMr,'')
+})
+test('IMD guid attributes stay distinct and unsafe links are dropped', async () => {
+  const xml = `<rss><channel>
+    <item><guid isPermaLink="false">pune-1</guid><title>PUNE</title><link>javascript:alert(1)</link><description>Light rain</description><pubDate>Sat, 05 Sep 2026 10:00:00 GMT</pubDate></item>
+    <item><guid isPermaLink="false">nagpur-2</guid><title>NAGPUR</title><link>https://mausam.imd.gov.in/imd_latest/contents/districtwise-warning.php</link><description>Thunderstorm</description><pubDate>Sat, 05 Sep 2026 11:00:00 GMT</pubDate></item>
+  </channel></rss>`
+  const rows = await collectImdNowcast({ fetch: async () => new Response(xml, { headers: { 'content-type': 'application/xml' } }) })
+  assert.deepEqual(rows.map((row) => row.id), ['imd-pune-1', 'imd-nagpur-2'])
+  assert.equal(rows[0].capUrl, undefined)
+  assert.equal(rows[1].capUrl, 'https://mausam.imd.gov.in/imd_latest/contents/districtwise-warning.php')
+  assert.equal(rows[0].sent, 'Sat, 05 Sep 2026 10:00:00 GMT')
+})
+test('industrial fire is not classified as a chemical hazard', () => {
+  assert.equal(situationKind({ event: 'Fire at MIDC Chandrapur', headlineEn: 'Industrial fire' }), 'fire')
+  assert.equal(situationKind({ event: 'MIDC gas leak', headlineEn: '' }), 'chemical')
+  assert.equal(situationKind({ event: 'Industrial accident', headlineEn: '' }), 'chemical')
 })
 test('malformed or partial upstream feeds fail visibly rather than replacing snapshots',async()=>{
   await assert.rejects(collectImdNowcast({fetch:async()=>new Response('<html/>',{headers:{'content-type':'application/xml'}})}),/schema/)

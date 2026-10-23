@@ -1,7 +1,7 @@
+import { shadowEntryFromRow } from '../server/jev-shadow.mjs'
 import { emptyState, MAX_SOURCE_BYTES, SOURCE_IDS, SOURCE_ERROR_CODES } from '../server/service.mjs'
 import {
   isRecord,
-  parseShadowPayload,
   type AlertRecord,
   type CapCacheEntry,
   type JevShadowEntry,
@@ -135,9 +135,10 @@ export async function appendJevShadowEntries(db: D1Database, entries: JevShadowE
 export async function readRecentJevShadowEntries(db: D1Database, limit = 50): Promise<JevShadowEntry[]> {
   const bounded = Math.min(Math.max(limit, 1), 100)
   const result = await db.prepare('SELECT alert_key, generated_at, payload FROM jev_shadow_log ORDER BY id DESC LIMIT ?').bind(bounded).all<Record<string, unknown>>()
-  return result.results.map((row) => ({
-    alertKey: String(row.alert_key),
-    generatedAt: String(row.generated_at),
-    payload: parseShadowPayload(JSON.parse(String(row.payload))),
-  }))
+  const entries: JevShadowEntry[] = []
+  for (const row of result.results) {
+    const entry = shadowEntryFromRow(row)
+    if (entry) entries.push(entry)
+  }
+  return entries
 }

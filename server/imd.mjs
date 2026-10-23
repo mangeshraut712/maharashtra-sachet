@@ -1,4 +1,5 @@
 import { XMLParser, XMLValidator } from 'fast-xml-parser'
+import { safeOfficialUrl } from '../web/ui-model.js'
 import { matchImdDistrictTitle } from './districts.mjs'
 import { fetchText } from './http.mjs'
 import { classifyWea, situationKind } from './wea.mjs'
@@ -35,12 +36,14 @@ export async function collectImdNowcast(options = {}) {
     const desc = xmlText(item.description) || xmlText(item['dc:description'])
     const districts = matchImdDistrictTitle(title)
     if (districts.length === 0) continue
+    const guid = xmlText(item.guid)
+    const link = safeOfficialUrl(xmlText(item.link))
     const body = {
-      id: `imd-${item.guid || title}`,
+      id: `imd-${guid || title}`,
       source: 'imd',
       official: true,
       sender: 'IMD',
-      sent: item.pubDate || item.sent,
+      sent: xmlText(item.pubDate) || xmlText(item.sent),
       status: 'Actual',
       scope: 'Public',
       msgType: 'Alert',
@@ -55,7 +58,7 @@ export async function collectImdNowcast(options = {}) {
       description: desc,
       instruction: '',
       districts: districts.map((d) => ({ id: d.id, en: d.en, mr: d.mr, lgd: d.lgd })),
-      capUrl: item.link,
+      ...(link ? { capUrl: link } : {}),
       author: 'IMD',
     }
     body.weaClass = classifyWea(body)

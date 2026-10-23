@@ -60,9 +60,16 @@ export default {
       const path = new URL(request.url).pathname
       if (path === '/api/jev/shadow') {
         if (!jevShadowEnabled(env)) return jsonResponse(404, { error: 'Jev shadow triage is disabled.' })
+        const secure: Record<string, string> = new URL(request.url).protocol === 'https:'
+          ? { 'strict-transport-security': 'max-age=31536000' }
+          : {}
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return jsonResponse(405, { error: 'Method not allowed' }, { allow: 'GET, HEAD', ...secure })
+        }
         const limit = Math.min(Math.max(Number(new URL(request.url).searchParams.get('limit') || 20), 1), 100)
         const entries = await readRecentJevShadowEntries(env.DB, limit)
-        return jsonResponse(200, shadowOpsEnvelope(entries))
+        const response = jsonResponse(200, shadowOpsEnvelope(entries), secure)
+        return request.method === 'HEAD' ? new Response(null, response) : response
       }
       if (path === '/api/explain') {
         const secrets = env as unknown as { GEMINI_API_KEY?: string, GEMINI_MODEL?: string }

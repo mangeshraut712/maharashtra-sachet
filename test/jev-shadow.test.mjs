@@ -17,6 +17,7 @@ import {
   MEDIUM_CONFIDENCE,
   JEV_MODEL,
   shadowOpsEnvelope,
+  shadowEntryFromRow,
 } from '../server/jev-shadow.mjs'
 
 const alert = {
@@ -53,6 +54,9 @@ test('System One URL never appends /score', () => {
   assert.equal(systemOneUrl({ JEV_GATEWAY_URL: 'https://api.typesafe.ai/v1/systemone' }), 'https://api.typesafe.ai/v1/systemone')
   assert.equal(systemOneUrl({ JEV_GATEWAY_URL: 'https://api.typesafe.ai/v1' }), 'https://api.typesafe.ai/v1/systemone')
   assert.equal(systemOneUrl({ JEV_GATEWAY_URL: 'https://api.typesafe.ai/v1/score' }), 'https://api.typesafe.ai/v1/systemone')
+  assert.throws(() => systemOneUrl({ JEV_GATEWAY_URL: 'http://169.254.169.254/latest' }), /not allowed/)
+  assert.throws(() => systemOneUrl({ JEV_GATEWAY_URL: 'https://evil.example/v1/systemone' }), /not allowed/)
+  assert.throws(() => systemOneUrl({ JEV_GATEWAY_URL: 'https://user:secret@api.typesafe.ai/v1/systemone' }), /not allowed/)
 })
 
 test('shadow state is only existing CAP fields', () => {
@@ -176,6 +180,7 @@ test('live path POSTs System One with jev-latest and Bearer key from cursor', as
   assert.equal(calls.length, 1)
   assert.equal(calls[0].url, 'https://api.typesafe.ai/v1/systemone')
   assert.equal(calls[0].options.headers.authorization, 'Bearer secret-cursor-key')
+  assert.equal(calls[0].options.redirect, 'manual')
   const body = JSON.parse(calls[0].options.body)
   assert.equal(body.model, 'jev-latest')
   assert.deepEqual(Object.keys(body.questions).sort(), [
@@ -212,6 +217,41 @@ test('never recommends public notification channels', () => {
   assert.equal(composed.recommendation, 'human_review')
   assert.equal(composed.modelChoice, 'escalate_human')
   assert.equal(composed.gate, 'escalate_or_blocked_channel')
+})
+
+test('System One redirects and oversized bodies do not return the bearer token', async () => {
+  await assert.rejects(
+    triageViaGateway(alert, { cursor: 'secret-cursor-key' }, async () => ({
+      ok: false,
+      status: 302,
+      headers: { get: () => 'https://evil.example/secret-cursor-key' },
+    })),
+    (error) => {
+      assert.match(error.message, /HTTP 302/)
+      assert.doesNotMatch(error.message, /secret-cursor-key/)
+      return true
+    },
+  )
+  await assert.rejects(
+    triageViaGateway(alert, { cursor: 'secret-cursor-key' }, async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ model: 'jev-1.13.0', answers: {}, pad: 'x'.repeat(120_000) }),
+    })),
+    /too large/,
+  )
+})
+
+test('corrupt shadow rows are skipped instead of failing the ops log', () => {
+  assert.equal(shadowEntryFromRow({ alert_key: 'sachet:a1', generated_at: '2026-09-22T00:00:00.000Z', payload: '{' }), null)
+  assert.equal(shadowEntryFromRow({ alert_key: 'sachet:a1', generated_at: '2026-09-22T00:00:00.000Z', payload: '{"recommendation":"log_only"}' }), null)
+  const entry = shadowEntryFromRow({
+    alert_key: 'sachet:a1',
+    generated_at: '2026-09-22T00:00:00.000Z',
+    payload: JSON.stringify({ alertKey: 'sachet:a1', recommendation: 'log_only' }),
+  })
+  assert.equal(entry.alertKey, 'sachet:a1')
+  assert.equal(entry.payload.recommendation, 'log_only')
 })
 
 test('ops envelope is non-public and does not include CAP bulletin fields', () => {
