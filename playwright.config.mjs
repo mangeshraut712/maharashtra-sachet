@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './test/browser',
-  testMatch: process.env.LIVE_URL ? '**/deployed.spec.mjs' : '**/civic-hub.spec.mjs',
+  testMatch: process.env.LIVE_URL ? '**/deployed.spec.mjs' : '**/civic*.spec.mjs',
   timeout: 30_000,
   fullyParallel: false,
   workers: 1,

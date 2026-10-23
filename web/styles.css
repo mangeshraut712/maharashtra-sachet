@@ -70,9 +70,13 @@ a:hover {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
-select:focus-visible {
-  outline: 3px solid #ba521d;
-  outline-offset: 3px;
+select:focus-visible,
+summary:focus-visible,
+#alerts:focus,
+#guide:focus {
+  outline: 3px solid #1b1b1b;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px #fff;
 }
 h1,
 h2,
@@ -278,10 +282,18 @@ h1 {
   font-size: 0.9rem;
   border-right: 1px solid #c58b26;
 }
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
 .connection button {
   margin-left: auto;
-  min-height: 30px;
-  padding: 3px 9px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 12px;
   font-size: 0.75rem;
   background: transparent;
   border-color: transparent;
@@ -399,6 +411,14 @@ h1 {
 }
 .place-results button {
   font-size: 0.8rem;
+}
+.place-results ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 .dashboard {
   display: grid;
@@ -589,7 +609,7 @@ h1 {
   border: 0;
   text-align: left;
   padding: 4px 0;
-  min-height: 30px;
+  min-height: 44px;
 }
 .service-card details {
   font-size: 0.7rem;
@@ -792,17 +812,32 @@ footer.container {
   color: var(--muted);
   font-size: 0.66rem;
 }
-.skip {
+.skip,
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.skip:focus,
+.skip:focus-visible {
   position: fixed;
   top: 8px;
   left: 8px;
+  width: auto;
+  height: auto;
+  margin: 0;
   padding: 12px;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
   background: #fff;
   z-index: 10;
-  transform: translateY(-160%);
-}
-.skip:focus {
-  transform: translateY(0);
 }
 .notice {
   margin: 15px 0;
@@ -1101,6 +1136,14 @@ footer.container {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 @media print {

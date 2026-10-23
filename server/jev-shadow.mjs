@@ -45,6 +45,10 @@ const BLOCKED_PUBLIC_CHANNELS = new Set([
   'web_push',
 ])
 
+/**
+ * @param {import('../src/relay-types.ts').ShadowEnv} [env]
+ * @returns {boolean}
+ */
 export function jevShadowEnabled(env = {}) {
   if (String(env.JEV_SHADOW_KILL) === 'true') return false
   return String(env.JEV_SHADOW_ENABLED) === 'true'
@@ -493,6 +497,12 @@ export async function triageViaGateway(alert, env, fetchImpl) {
   return parseSystemOneResponse(body, alert)
 }
 
+/**
+ * @param {import('../src/relay-types.ts').AlertRecord} alert
+ * @param {import('../src/relay-types.ts').ShadowEnv} [env]
+ * @param {typeof fetch} [fetchImpl]
+ * @returns {Promise<import('../src/relay-types.ts').ShadowPayload>}
+ */
 export async function triageAlertShadow(alert, env = {}, fetchImpl = globalThis.fetch) {
   if (String(env.JEV_USE_LIVE) === 'true' && resolveJevApiKey(env)) {
     try {
@@ -509,6 +519,10 @@ export function retainShadowLogRows(rows, limit = 200) {
   return rows.slice(-limit)
 }
 
+/**
+ * @param {import('../src/relay-types.ts').JevShadowEntry[]} [entries]
+ * @returns {import('../src/relay-types.ts').ShadowEnvelope}
+ */
 export function shadowOpsEnvelope(entries = []) {
   return {
     unofficial: true,

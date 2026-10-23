@@ -6,10 +6,27 @@ const STYLE_URL = 'https://demotiles.maplibre.org/style.json'
 let map = null
 let mapReady = false
 let mapFailed = false
+let mapActivated = false
 let pendingUpdate = null
 let pendingSituational = null
 let observer = null
 let mapLibrePromise = null
+let lastAlertKey = ''
+let lastSituationalKey = ''
+let alertQueued = null
+let pumping = false
+
+export function mapUpdateKey({ alerts = [], selectedDistrictId = '' } = {}) {
+  return JSON.stringify({
+    selectedDistrictId: selectedDistrictId || '',
+    alerts: alerts.map((alert) => ({
+      source: alert?.source || '',
+      id: alert?.id || '',
+      kind: alert?.kind || '',
+      districts: (alert?.districts || []).map((district) => district?.id || ''),
+    })),
+  })
+}
 
 export function resolveMapLibreModule(mod) {
   const api = mod?.default && typeof mod.default.Map === 'function' ? mod.default : mod
@@ -17,13 +34,27 @@ export function resolveMapLibreModule(mod) {
   return api
 }
 
+function ensureMapStyles() {
+  if (document.querySelector('link[data-map-style]')) return Promise.resolve()
+  return new Promise((resolve) => {
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = '/vendor/maplibre-gl.css'
+    link.dataset.mapStyle = 'true'
+    link.addEventListener('load', () => resolve(), { once: true })
+    link.addEventListener('error', () => resolve(), { once: true })
+    document.head.append(link)
+  })
+}
+
 function loadMapLibre() {
   if (mapFailed) return Promise.resolve(null)
   if (!mapLibrePromise) {
     // Dynamic import keeps MapLibre off the app.js module graph so a vendor/CSP
-    // failure cannot prevent the alert bulletin from rendering.
-    mapLibrePromise = import('/vendor/maplibre-gl.mjs')
-      .then((mod) => {
+    // failure cannot prevent the alert bulletin from rendering. The stylesheet
+    // is injected here so the first paint does not download the map bundle.
+    mapLibrePromise = Promise.all([ensureMapStyles(), import('/vendor/maplibre-gl.mjs')])
+      .then(([, mod]) => {
         const api = resolveMapLibreModule(mod)
         if (!api) {
           mapFailed = true
@@ -49,6 +80,7 @@ function regionBbox(bbox) {
 function ensureMap(container, maplibregl, bbox) {
   if (map) return map
   const box = regionBbox(bbox)
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
   map = new maplibregl.Map({
     container,
     style: STYLE_URL,
@@ -58,7 +90,8 @@ function ensureMap(container, maplibregl, bbox) {
     dragRotate: false,
     pitchWithRotate: false,
     touchPitch: false,
-    keyboard: false,
+    keyboard: true,
+    fadeDuration: reduceMotion ? 0 : 300,
   })
   map.on('load', () => {
     mapReady = true
@@ -161,6 +194,15 @@ function applySituational({ snapshot, showQuakes, showFires }) {
 export function updateSituationalMap({ snapshot, showQuakes, showFires, bbox }) {
   const container = document.getElementById('alertMap')
   if (!container || mapFailed) return
+  const key = JSON.stringify({
+    showQuakes: Boolean(showQuakes),
+    showFires: Boolean(showFires),
+    quakes: snapshot?.quakes?.features?.length || 0,
+    fires: snapshot?.fires?.features?.length || 0,
+  })
+  if (key === lastSituationalKey && mapReady) return
+  lastSituationalKey = key
+  mapActivated = true
   void (async () => {
     try {
       const maplibregl = await loadMapLibre()
@@ -203,19 +245,42 @@ async function loadAndUpdate({ container, alerts, selectedDistrictId, bbox, cent
   }
 }
 
-export function updateAlertMap({ container, alerts, selectedDistrictId }) {
+function enqueueAlertUpdate(args) {
+  alertQueued = args
+  if (pumping) return
+  pumping = true
+  void (async () => {
+    try {
+      while (alertQueued) {
+        const next = alertQueued
+        alertQueued = null
+        await loadAndUpdate(next)
+      }
+    } finally {
+      pumping = false
+      if (alertQueued) enqueueAlertUpdate(alertQueued)
+    }
+  })()
+}
+
+export function updateAlertMap({ container, alerts, selectedDistrictId, bbox, centroids }) {
   if (!container) return
-  void loadAndUpdate({ container, alerts, selectedDistrictId })
+  mapActivated = true
+  const key = mapUpdateKey({ alerts, selectedDistrictId })
+  if (key === lastAlertKey && (mapReady || pumping || alertQueued)) return
+  lastAlertKey = key
+  enqueueAlertUpdate({ container, alerts, selectedDistrictId, bbox, centroids })
 }
 
 export function bindLazyMap(container, getMapInput) {
-  if (!container || observer) return
+  if (!container || observer || mapActivated) return
   observer = new IntersectionObserver(
     (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue
-        updateAlertMap({ container, ...getMapInput() })
-      }
+      if (!entries.some((entry) => entry.isIntersecting)) return
+      mapActivated = true
+      observer.disconnect()
+      observer = null
+      refreshMap(getMapInput)
     },
     { rootMargin: '120px' },
   )
@@ -223,6 +288,7 @@ export function bindLazyMap(container, getMapInput) {
 }
 
 export function refreshMap(getMapInput) {
+  if (!mapActivated) return
   const container = document.getElementById('alertMap')
   if (!container) return
   updateAlertMap({ container, ...getMapInput() })

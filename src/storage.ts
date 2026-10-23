@@ -1,36 +1,71 @@
 import { emptyState, MAX_SOURCE_BYTES, SOURCE_IDS, SOURCE_ERROR_CODES } from '../server/service.mjs'
+import {
+  isRecord,
+  parseShadowPayload,
+  type AlertRecord,
+  type CapCacheEntry,
+  type JevShadowEntry,
+  type RelayState,
+  type SourceErrorCode,
+  type SourceId,
+  type SourceState,
+} from './relay-types'
 
-export type SourceState = {
-  records: Record<string, unknown>[]
-  state: string
-  lastSuccessAt: string | null
-  lastAttemptAt: string | null
-  error: string | null
-  errorCode?: string | null
-  capCache?: Record<string, { etag: string; xml: string }>
+export type { AlertRecord, JevShadowEntry, RelayState, SourceState }
+
+const sourceIds: ReadonlySet<string> = new Set(SOURCE_IDS)
+const errorCodes: ReadonlySet<string> = new Set(SOURCE_ERROR_CODES)
+
+function isSourceId(value: string): value is SourceId {
+  return sourceIds.has(value)
 }
-export type RelayState = { generatedAt: string | null; sources: Record<string, SourceState> }
+
+function isErrorCode(value: string): value is SourceErrorCode {
+  return errorCodes.has(value)
+}
+
+function isAlertRecord(value: unknown): value is AlertRecord {
+  return isRecord(value) && typeof value.id === 'string'
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === 'string'
+}
+
+function parseCapCache(value: unknown): Record<string, CapCacheEntry> | undefined {
+  if (value == null) return undefined
+  if (!isRecord(value)) throw new Error('Invalid CAP cache')
+  const cache: Record<string, CapCacheEntry> = {}
+  for (const [url, entry] of Object.entries(value)) {
+    if (!isRecord(entry) || typeof entry.etag !== 'string' || entry.etag.length > 512 || typeof entry.xml !== 'string') {
+      throw new Error('Invalid CAP cache')
+    }
+    cache[url] = { etag: entry.etag, xml: entry.xml }
+  }
+  return cache
+}
 
 function parseSource(payload: string): SourceState {
   const value: unknown = JSON.parse(payload)
-  if (!value || typeof value !== 'object' || !('records' in value) || !Array.isArray(value.records)
-      || !('state' in value) || typeof value.state !== 'string'
-      || !('lastSuccessAt' in value) || !(value.lastSuccessAt === null || typeof value.lastSuccessAt === 'string')
-      || !('lastAttemptAt' in value) || !(value.lastAttemptAt === null || typeof value.lastAttemptAt === 'string')
-      || !('error' in value) || !(value.error === null || typeof value.error === 'string')
-      || !value.records.every(record => record && typeof record === 'object' && typeof record.id === 'string')) {
+  if (!isRecord(value) || !Array.isArray(value.records) || !value.records.every(isAlertRecord)
+      || typeof value.state !== 'string'
+      || !isNullableString(value.lastSuccessAt)
+      || !isNullableString(value.lastAttemptAt)
+      || !isNullableString(value.error)) {
     throw new Error('Invalid persisted source state')
   }
-  const errorCode = 'errorCode' in value && typeof value.errorCode === 'string' && SOURCE_ERROR_CODES.includes(value.errorCode) ? value.errorCode : null
-  const result: SourceState = { records: value.records, state: value.state, lastSuccessAt: value.lastSuccessAt, lastAttemptAt: value.lastAttemptAt, error: value.error, errorCode }
-  if ('capCache' in value && value.capCache != null) {
-    if (typeof value.capCache !== 'object' || Array.isArray(value.capCache)) throw new Error('Invalid CAP cache')
-    const cache: Record<string, {etag: string; xml: string}> = {}
-    for (const [url, entry] of Object.entries(value.capCache)) {
-      if (!entry || typeof entry !== 'object' || !('etag' in entry) || typeof entry.etag !== 'string' || entry.etag.length > 512 || !('xml' in entry) || typeof entry.xml !== 'string') throw new Error('Invalid CAP cache')
-      cache[url] = {etag: entry.etag, xml: entry.xml}
-    }
-    result.capCache = cache
+  const errorCode = typeof value.errorCode === 'string' && isErrorCode(value.errorCode) ? value.errorCode : null
+  const result: SourceState = {
+    records: value.records,
+    state: value.state,
+    lastSuccessAt: value.lastSuccessAt,
+    lastAttemptAt: value.lastAttemptAt,
+    error: value.error,
+    errorCode,
+  }
+  if ('capCache' in value) {
+    const cache = parseCapCache(value.capCache)
+    if (cache) result.capCache = cache
   }
   return result
 }
@@ -42,10 +77,10 @@ export async function readState(db: D1Database): Promise<RelayState> {
     db.prepare('SELECT source, payload FROM source_snapshots'),
   ])
   const state: RelayState = emptyState()
-  const generated = results[0].results[0]?.generated_at
+  const generated = results[0]?.results[0]?.generated_at
   state.generatedAt = typeof generated === 'string' ? generated : null
-  for (const row of results[1].results) {
-    if (typeof row.source !== 'string' || !SOURCE_IDS.includes(row.source) || typeof row.payload !== 'string') throw new Error('Invalid source row')
+  for (const row of results[1]?.results ?? []) {
+    if (typeof row.source !== 'string' || !isSourceId(row.source) || typeof row.payload !== 'string') throw new Error('Invalid source row')
     state.sources[row.source] = parseSource(row.payload)
   }
   return state
@@ -63,7 +98,7 @@ export async function releaseLease(db: D1Database, token: string): Promise<void>
 
 export async function saveState(db: D1Database, token: string, state: RelayState, now = Date.now()): Promise<boolean> {
   const statements = Object.entries(state.sources).map(([source, value]) => {
-    if (!SOURCE_IDS.includes(source)) throw new Error('Unknown source')
+    if (!isSourceId(source)) throw new Error('Unknown source')
     const payload = JSON.stringify(value)
     if (new TextEncoder().encode(payload).length > MAX_SOURCE_BYTES + 4096) throw new Error('Source state exceeds storage budget')
     return db.prepare(`INSERT INTO source_snapshots (source, payload)
@@ -73,10 +108,8 @@ export async function saveState(db: D1Database, token: string, state: RelayState
   statements.push(db.prepare('UPDATE relay_state SET generated_at = ?, lease_token = NULL, lease_until = 0 WHERE id = 1 AND lease_token = ? AND lease_until > ?')
     .bind(state.generatedAt, token, now))
   const results = await db.batch(statements)
-  return results[results.length - 1].meta.changes === 1
+  return results.at(-1)?.meta.changes === 1
 }
-
-export type JevShadowEntry = { alertKey: string; generatedAt: string; payload: Record<string, unknown> }
 
 export async function appendJevShadowEntries(db: D1Database, entries: JevShadowEntry[]): Promise<void> {
   if (!entries.length) return
@@ -101,10 +134,10 @@ export async function appendJevShadowEntries(db: D1Database, entries: JevShadowE
 
 export async function readRecentJevShadowEntries(db: D1Database, limit = 50): Promise<JevShadowEntry[]> {
   const bounded = Math.min(Math.max(limit, 1), 100)
-  const result = await db.prepare('SELECT alert_key, generated_at, payload FROM jev_shadow_log ORDER BY id DESC LIMIT ?').bind(bounded).all()
+  const result = await db.prepare('SELECT alert_key, generated_at, payload FROM jev_shadow_log ORDER BY id DESC LIMIT ?').bind(bounded).all<Record<string, unknown>>()
   return result.results.map((row) => ({
     alertKey: String(row.alert_key),
     generatedAt: String(row.generated_at),
-    payload: JSON.parse(String(row.payload)) as Record<string, unknown>,
+    payload: parseShadowPayload(JSON.parse(String(row.payload))),
   }))
 }
