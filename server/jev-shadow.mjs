@@ -61,12 +61,68 @@ export function resolveJevApiKey(env = {}) {
   return cursorSecret
 }
 
+const MAX_JEV_RESPONSE_BYTES = 100_000
+const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/
+
 export function systemOneUrl(env = {}) {
   const raw = String(env.JEV_GATEWAY_URL || SYSTEM_ONE_DEFAULT_URL).trim()
-  const trimmed = raw.replace(/\/$/, '')
-  if (trimmed.endsWith('/v1')) return `${trimmed}/systemone`
-  if (trimmed.endsWith('/score')) return trimmed.replace(/\/score$/, '/systemone')
-  return trimmed
+  let url
+  try { url = new URL(raw) } catch { throw new Error('Jev gateway URL is not allowed') }
+  if (url.protocol !== 'https:' || url.username || url.password || url.port || url.hostname !== 'api.typesafe.ai') {
+    throw new Error('Jev gateway URL is not allowed')
+  }
+  let path = url.pathname.replace(/\/$/, '') || '/'
+  if (path === '/v1') path = '/v1/systemone'
+  else if (path.endsWith('/score')) path = path.replace(/\/score$/, '/systemone')
+  if (path !== '/v1/systemone') throw new Error('Jev gateway URL is not allowed')
+  return `${url.origin}/v1/systemone`
+}
+
+export function shadowEntryFromRow(row) {
+  if (!row || typeof row.alert_key !== 'string' || !row.alert_key || typeof row.generated_at !== 'string' || typeof row.payload !== 'string') return null
+  let payload
+  try { payload = JSON.parse(row.payload) } catch { return null }
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload) || typeof payload.alertKey !== 'string' || !payload.alertKey) return null
+  return { alertKey: row.alert_key, generatedAt: row.generated_at, payload }
+}
+
+async function readLimitedJson(response, maxBytes) {
+  const declared = typeof response.headers?.get === 'function' ? response.headers.get('content-length') : null
+  if (declared != null && (!/^\d+$/.test(String(declared)) || Number(declared) > maxBytes)) {
+    try { await response.body?.cancel?.() } catch { /* already closed */ }
+    throw new Error('Jev response too large')
+  }
+  if (response.body && typeof response.body.getReader === 'function') {
+    const reader = response.body.getReader()
+    const chunks = []
+    let total = 0
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        total += value.byteLength
+        if (total > maxBytes) {
+          await reader.cancel()
+          throw new Error('Jev response too large')
+        }
+        chunks.push(value)
+      }
+    } catch (error) {
+      try { await reader.cancel() } catch { /* already closed */ }
+      throw error
+    }
+    const bytes = new Uint8Array(total)
+    let offset = 0
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    try { return JSON.parse(new TextDecoder().decode(bytes)) } catch { throw new Error('Invalid System One response') }
+  }
+  if (typeof response.json !== 'function') throw new Error('Invalid System One response')
+  const body = await response.json()
+  if (JSON.stringify(body).length > maxBytes) throw new Error('Jev response too large')
+  return body
 }
 
 export function alertShadowKey(alert) {
@@ -382,7 +438,8 @@ export function parseSystemOneResponse(body, alert) {
   const composed = composeOpsRecommendation(answers, { hazardMismatch })
   const enScore = answers.citizen_urgency_clarity_en
   const mrScore = answers.citizen_urgency_clarity_mr
-  const resolvedModel = typeof body.model === 'string' && body.model.trim() ? body.model.trim() : JEV_MODEL
+  const rawModel = typeof body.model === 'string' ? body.model.trim() : ''
+  const resolvedModel = MODEL_ID.test(rawModel) ? rawModel : JEV_MODEL
   return {
     provider: 'jev-systemone',
     mode: 'shadow',
@@ -482,6 +539,7 @@ export async function triageViaGateway(alert, env, fetchImpl) {
   const url = systemOneUrl(env)
   const response = await fetchImpl(url, {
     method: 'POST',
+    redirect: 'manual',
     headers: {
       authorization: `Bearer ${key}`,
       'content-type': 'application/json',
@@ -489,11 +547,15 @@ export async function triageViaGateway(alert, env, fetchImpl) {
     },
     body: JSON.stringify(buildSystemOneRequest(alert)),
   })
+  if ([301, 302, 303, 307, 308].includes(response.status)) {
+    try { await response.body?.cancel?.() } catch { /* already closed */ }
+    throw new Error(`Jev System One HTTP ${response.status}`)
+  }
   if (response.status === 429 || response.status === 529) {
     throw new Error(`Jev System One HTTP ${response.status}`)
   }
   if (!response.ok) throw new Error(`Jev System One HTTP ${response.status}`)
-  const body = await response.json()
+  const body = await readLimitedJson(response, MAX_JEV_RESPONSE_BYTES)
   return parseSystemOneResponse(body, alert)
 }
 

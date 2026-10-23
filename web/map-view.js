@@ -16,6 +16,38 @@ let lastSituationalKey = ''
 let alertQueued = null
 let pumping = false
 
+function geometryStamp(polygons) {
+  let hash = 2166136261
+  const rings = Array.isArray(polygons) ? polygons : []
+  hash = Math.imul(hash ^ rings.length, 16777619)
+  for (const ring of rings) {
+    if (!Array.isArray(ring)) continue
+    hash = Math.imul(hash ^ ring.length, 16777619)
+    for (const pair of ring) {
+      const lat = Number(pair?.[0])
+      const lon = Number(pair?.[1])
+      hash = Math.imul(hash ^ (Number.isFinite(lat) ? Math.round(lat * 1e4) : 0), 16777619)
+      hash = Math.imul(hash ^ (Number.isFinite(lon) ? Math.round(lon * 1e4) : 0), 16777619)
+    }
+  }
+  return hash >>> 0
+}
+
+function featureStamp(features) {
+  let hash = 2166136261
+  const list = Array.isArray(features) ? features : []
+  hash = Math.imul(hash ^ list.length, 16777619)
+  for (const feature of list) {
+    const coords = feature?.geometry?.coordinates
+    if (!Array.isArray(coords)) continue
+    for (const value of coords) {
+      const number = Number(value)
+      hash = Math.imul(hash ^ (Number.isFinite(number) ? Math.round(number * 1e4) : 0), 16777619)
+    }
+  }
+  return hash >>> 0
+}
+
 export function mapUpdateKey({ alerts = [], selectedDistrictId = '' } = {}) {
   return JSON.stringify({
     selectedDistrictId: selectedDistrictId || '',
@@ -24,7 +56,17 @@ export function mapUpdateKey({ alerts = [], selectedDistrictId = '' } = {}) {
       id: alert?.id || '',
       kind: alert?.kind || '',
       districts: (alert?.districts || []).map((district) => district?.id || ''),
+      geometry: geometryStamp(alert?.polygons),
     })),
+  })
+}
+
+export function situationalUpdateKey({ snapshot, showQuakes, showFires } = {}) {
+  return JSON.stringify({
+    showQuakes: Boolean(showQuakes),
+    showFires: Boolean(showFires),
+    quakes: featureStamp(snapshot?.quakes?.features),
+    fires: featureStamp(snapshot?.fires?.features),
   })
 }
 
@@ -194,12 +236,7 @@ function applySituational({ snapshot, showQuakes, showFires }) {
 export function updateSituationalMap({ snapshot, showQuakes, showFires, bbox }) {
   const container = document.getElementById('alertMap')
   if (!container || mapFailed) return
-  const key = JSON.stringify({
-    showQuakes: Boolean(showQuakes),
-    showFires: Boolean(showFires),
-    quakes: snapshot?.quakes?.features?.length || 0,
-    fires: snapshot?.fires?.features?.length || 0,
-  })
+  const key = situationalUpdateKey({ snapshot, showQuakes, showFires })
   if (key === lastSituationalKey && mapReady) return
   lastSituationalKey = key
   mapActivated = true

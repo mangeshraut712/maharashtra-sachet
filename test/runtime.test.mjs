@@ -136,6 +136,31 @@ test('pagination exposes all counted records and rejects invalid filters', async
   assert.equal((await handleApi(new Request(`http://localhost/api/alerts?snapshot=${encodeURIComponent(first.pagination.snapshot)}`), state, { now: NOW + 600_001 })).status, 409)
 })
 
+test('public alerts omit unofficial and executable links', () => {
+  const state = {
+    generatedAt: new Date(NOW).toISOString(),
+    sources: {
+      sachet: {
+        state: 'healthy',
+        records: [alert('link', {
+          capUrl: 'javascript:alert(1)',
+          url: 'https://evil.example/phish',
+          polygonUrl: 'https://sachet.ndma.gov.in/cap_public_website/polygon.xml',
+        })],
+        lastSuccessAt: new Date(NOW).toISOString(),
+        lastAttemptAt: new Date(NOW).toISOString(),
+        error: null,
+      },
+    },
+  }
+  const snap = publicSnapshot(state, NOW)
+  assert.equal(snap.alerts.length, 1)
+  assert.equal(snap.alerts[0].capUrl, undefined)
+  assert.equal(snap.alerts[0].url, undefined)
+  assert.equal(snap.alerts[0].polygonUrl, 'https://sachet.ndma.gov.in/cap_public_website/polygon.xml')
+  assert.doesNotMatch(JSON.stringify(snap.alerts), /javascript:|evil\.example/)
+})
+
 test('public API is read-only, no refresh route, and errors carry security headers', async () => {
   const request = new Request('http://localhost/api/alerts', { method: 'POST' })
   const response = await handleApi(request, emptyState())

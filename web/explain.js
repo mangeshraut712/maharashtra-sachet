@@ -57,7 +57,7 @@ async function explain() {
     let body
     try { body = await res.json() } catch { throw new Error(`HTTP ${res.status}`) }
     if (!res.ok || !body?.data) throw new Error(typeof body?.error === 'string' ? body.error : `HTTP ${res.status}`)
-    render(body); $('explainStatus').textContent = ''
+    render(body); $('explainStatus').textContent = 'Explanation ready. The original alert is still the authority.'
   } catch (error) {
     $('explainStatus').textContent = `Could not explain: ${error.message}. Read the original alert.`
   } finally { $('explainButton').disabled = false }

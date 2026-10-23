@@ -71,6 +71,7 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
+textarea:focus-visible,
 summary:focus-visible,
 #alerts:focus,
 #guide:focus {
@@ -706,6 +707,11 @@ h1 {
 .notification-panel h2,
 .prepare-panel h2 {
   font-size: 1.05rem;
+}
+#sourceList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 .source-row {
   padding: 14px 0;

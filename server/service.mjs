@@ -9,6 +9,7 @@ import { SITUATION_KINDS, WEA_CLASSES } from './wea.mjs'
 import { SERVICE_CATEGORIES, LOCALITY_COVERAGE, searchLocalities } from './coverage-catalog.mjs'
 import { DISTRICT_CENTROIDS, MH_BBOX, REGION } from './mh-geo.mjs'
 import { buildSituationalSnapshot, situationalDisclaimer } from './situational.mjs'
+import { safeOfficialUrl } from '../web/ui-model.js'
 
 /** @type {readonly import('../src/relay-types.ts').SourceId[]} */
 export const SOURCE_IDS = ['sachet', 'imd', 'incois', 'cwc', 'cpcb']
@@ -142,6 +143,22 @@ export async function collectSnapshot(previous, collectors = sourceCollectors(),
   return { generatedAt: new Date(now).toISOString(), sources }
 }
 
+const PUBLIC_URL_FIELDS = ['capUrl', 'url', 'polygonUrl']
+
+function sanitizePublicAlert(alert) {
+  let copy
+  for (const field of PUBLIC_URL_FIELDS) {
+    const value = alert?.[field]
+    if (typeof value !== 'string' || !value) continue
+    const safe = safeOfficialUrl(value)
+    if (safe === value) continue
+    copy ??= { ...alert }
+    if (safe) copy[field] = safe
+    else delete copy[field]
+  }
+  return copy || alert
+}
+
 /**
  * @param {import('../src/relay-types.ts').RelayState} state
  * @param {number} [now]
@@ -156,7 +173,7 @@ export function publicSnapshot(state, now = Date.now()) {
       : ageMs !== null && ageMs > STALE_MS ? 'stale' : source.state
     return [id, { status, ok: status === 'healthy', count: source?.records?.length || 0, lastSuccessAt, lastAttemptAt: source?.lastAttemptAt || null, ageMs, error: source?.error || null, errorCode: SOURCE_ERROR_CODES.includes(source?.errorCode) ? source.errorCode : null }]
   }))
-  const alerts = mergeAlerts(Object.values(state.sources).filter(s => !['disabled', 'misconfigured'].includes(s.state)).map(s => s.records), { now })
+  const alerts = mergeAlerts(Object.values(state.sources).filter(s => !['disabled', 'misconfigured'].includes(s.state)).map(s => s.records), { now }).map(sanitizePublicAlert)
   const activeSources = Object.values(sources).filter(s => s.status !== 'disabled')
   const status = !state.generatedAt ? 'uninitialized' : activeSources.some(s => s.status === 'stale') ? 'stale'
     : activeSources.every(s => s.status === 'healthy') ? 'healthy' : 'degraded'

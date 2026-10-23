@@ -3,7 +3,29 @@ import { clipPointFeatures, firmsAreaParam, inBbox } from '../web/modules/geo.mj
 import { fetchText } from './http.mjs'
 
 const CACHE_MS = 5 * 60_000
-let cache = { at: 0, payload: null }
+let cache = { at: 0, key: '', payload: null }
+
+function cacheIdentity(bbox, firmsKey) {
+  let hash = 2166136261
+  const material = `${bbox.west},${bbox.south},${bbox.east},${bbox.north}|${firmsKey || ''}`
+  for (const char of material) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619)
+  return (hash >>> 0).toString(16)
+}
+
+export function situationalFailure(error, secrets = []) {
+  const name = error?.name
+  if (name === 'TimeoutError' || name === 'AbortError') return 'timeout'
+  if (name === 'SyntaxError') return 'invalid_response'
+  let message = typeof error?.message === 'string' ? error.message : ''
+  for (const secret of secrets) {
+    if (typeof secret === 'string' && secret.length >= 4) {
+      message = message.split(secret).join('')
+      message = message.split(encodeURIComponent(secret)).join('')
+    }
+  }
+  if (/^(?:USGS|FIRMS) HTTP \d{3}$/.test(message)) return message
+  return 'unavailable'
+}
 
 const USGS_URL = 'https://earthquake.usgs.gov/fdsnws/event/1/query'
 
@@ -103,7 +125,8 @@ export async function buildSituationalSnapshot({
   now = Date.now(),
 } = {}) {
   if (!enabled) return { enabled: false }
-  if (cache.payload && now - cache.at < CACHE_MS) return cache.payload
+  const key = cacheIdentity(bbox, firmsKey)
+  if (cache.payload && cache.key === key && now - cache.at < CACHE_MS) return cache.payload
   const sources = { usgs: { status: 'unknown' }, firms: { status: 'unknown' } }
   let quakes = { type: 'FeatureCollection', features: [] }
   let fires = { type: 'FeatureCollection', features: [] }
@@ -111,7 +134,7 @@ export async function buildSituationalSnapshot({
     quakes = await fetchQuakesInBbox({ bbox, fetch: impl, now })
     sources.usgs = { status: 'healthy', count: quakes.features.length, checkedAt: new Date(now).toISOString() }
   } catch (error) {
-    sources.usgs = { status: 'degraded', error: error.message?.slice(0, 120) || 'unavailable' }
+    sources.usgs = { status: 'degraded', error: situationalFailure(error, [firmsKey]) }
   }
   try {
     const firm = await fetchFiresInBbox({ bbox, mapKey: firmsKey, fetch: impl })
@@ -121,7 +144,7 @@ export async function buildSituationalSnapshot({
       sources.firms = { status: 'healthy', count: firm.features.length, checkedAt: new Date(now).toISOString() }
     }
   } catch (error) {
-    sources.firms = { status: 'degraded', error: error.message?.slice(0, 120) || 'unavailable' }
+    sources.firms = { status: 'degraded', error: situationalFailure(error, [firmsKey]) }
   }
   const payload = {
     enabled: true,
@@ -133,10 +156,10 @@ export async function buildSituationalSnapshot({
     fires,
     sources,
   }
-  cache = { at: now, payload }
+  cache = { at: now, key, payload }
   return payload
 }
 
 export function resetSituationalCache() {
-  cache = { at: 0, payload: null }
+  cache = { at: 0, key: '', payload: null }
 }

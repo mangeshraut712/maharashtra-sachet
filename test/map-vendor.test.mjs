@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { mapUpdateKey, resolveMapLibreModule } from '../web/map-view.js'
+import { mapUpdateKey, resolveMapLibreModule, situationalUpdateKey } from '../web/map-view.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const vendor = join(root, 'web', 'vendor')
@@ -28,6 +28,14 @@ test('unchanged alert maps skip a repeat payload', () => {
   assert.equal(mapUpdateKey({ alerts, selectedDistrictId: 'pune' }), mapUpdateKey({ alerts: alerts.map((alert) => ({ ...alert })), selectedDistrictId: 'pune' }))
   assert.notEqual(mapUpdateKey({ alerts, selectedDistrictId: '' }), mapUpdateKey({ alerts, selectedDistrictId: 'pune' }))
   assert.notEqual(mapUpdateKey({ alerts, selectedDistrictId: 'pune' }), mapUpdateKey({ alerts: [], selectedDistrictId: 'pune' }))
+  const withPolygon = [{ ...alerts[0], polygons: [[[18.5, 73.8], [18.6, 73.8], [18.6, 73.9], [18.5, 73.8]]] }]
+  assert.notEqual(mapUpdateKey({ alerts, selectedDistrictId: 'pune' }), mapUpdateKey({ alerts: withPolygon, selectedDistrictId: 'pune' }))
+  const moved = [{ geometry: { coordinates: [73.8, 18.5] } }]
+  const replacement = [{ geometry: { coordinates: [74.1, 19.2] } }]
+  assert.notEqual(
+    situationalUpdateKey({ snapshot: { quakes: { features: moved }, fires: { features: [] } }, showQuakes: true, showFires: false }),
+    situationalUpdateKey({ snapshot: { quakes: { features: replacement }, fires: { features: [] } }, showQuakes: true, showFires: false }),
+  )
 })
 test('MapLibre v6 namespace export is used when default is missing', () => {
   class Map {}

@@ -124,6 +124,12 @@ test('Worker ingest writes Jev shadow rows when enabled and leaves /api/alerts C
     descriptionMr: 'पाणी साचलेल्या रस्त्यांपासून दूर राहा.',
   }
   assert.equal((await request('/fixture/ingest', { method: 'POST', body: JSON.stringify([record]) })).status, 200)
+  const posted = await request('/api/jev/shadow', { method: 'POST' })
+  assert.equal(posted.status, 405)
+  assert.equal(posted.headers.get('allow'), 'GET, HEAD')
+  const head = await request('/api/jev/shadow', { method: 'HEAD' })
+  assert.equal(head.status, 200)
+  assert.equal(await head.text(), '')
   const disabled = await request('/api/jev/shadow')
   assert.equal(disabled.status, 200)
   const shadow = await disabled.json()

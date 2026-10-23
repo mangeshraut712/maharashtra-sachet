@@ -159,6 +159,49 @@ export function alertKey(alert) {
   return `${alert.source || ''}:${alert.id}`
 }
 
+export async function readAlertSnapshot(fetchPage, { maxPages = 50, maxRestarts = 3 } = {}) {
+  for (let attempt = 0; attempt <= maxRestarts; attempt++) {
+    const first = await fetchPage(new URLSearchParams({ limit: '500', offset: '0' }))
+    if (first?.statusCode === 409) continue
+    if (!validSnapshot(first)) throw new Error('Invalid alert snapshot')
+    const alerts = [...first.alerts]
+    let next = first.pagination?.nextOffset ?? null
+    let pages = 0
+    let restart = false
+    while (next != null) {
+      if (++pages > maxPages) throw new Error('Snapshot exceeds supported page count')
+      const requested = next
+      const page = await fetchPage(new URLSearchParams({
+        limit: '500',
+        offset: String(requested),
+        snapshot: first.pagination?.snapshot || first.generatedAt || '',
+      }))
+      if (page?.statusCode === 409) {
+        restart = true
+        break
+      }
+      if (
+        page?.generatedAt !== first.generatedAt ||
+        !validSnapshot(page) ||
+        (page.pagination?.nextOffset != null && page.pagination.nextOffset <= requested)
+      ) {
+        throw new Error('Snapshot changed during pagination')
+      }
+      alerts.push(...page.alerts)
+      next = page.pagination?.nextOffset ?? null
+    }
+    if (restart) continue
+    if (first.pagination?.total != null && alerts.length !== first.pagination.total) {
+      throw new Error('Incomplete alert snapshot')
+    }
+    if (!first.pagination && first.count > alerts.length) {
+      throw new Error('Truncated alert snapshot')
+    }
+    return { ...first, alerts }
+  }
+  throw new Error('Snapshot changed during pagination')
+}
+
 export function validSnapshot(body) {
   return (
     !!body &&

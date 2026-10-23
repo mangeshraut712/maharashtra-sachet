@@ -1,4 +1,5 @@
 import { XMLParser, XMLValidator } from 'fast-xml-parser'
+import { safeOfficialUrl } from '../web/ui-model.js'
 import { DISTRICT_BY_LGD, matchDistricts, isGoaLgd } from './districts.mjs'
 import { sachetGet } from './http.mjs'
 import { classifyWea, situationKind } from './wea.mjs'
@@ -104,6 +105,7 @@ export function parseCapAlert(xml, meta = {}) {
   const polygonUrl = asArray(en.parameter)
     .concat(asArray(mr.parameter))
     .find(p => /polygon/i.test(p.valueName || ''))?.value
+  const capUrl = safeOfficialUrl(meta.link)
 
   const base = {
     id: String(cap.identifier || meta.guid || ''),
@@ -135,7 +137,7 @@ export function parseCapAlert(xml, meta = {}) {
     districts: districts.map(d => ({ id: d.id, en: d.en, mr: d.mr, lgd: d.lgd })),
     lgdCodes: codes,
     polygonUrl,
-    capUrl: meta.link,
+    ...(capUrl ? { capUrl } : {}),
     author: meta.author,
   }
   base.weaClass = classifyWea(base)

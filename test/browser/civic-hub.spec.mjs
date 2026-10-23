@@ -169,5 +169,5 @@ test('alert explainer uses the offline fallback when Gemini is not configured', 
   await expect(page.locator('#severityBadge')).toContainText('Red')
   await expect(page.locator('#fallbackNote')).toContainText('not configured')
   await expect(page.locator('#langBlocks')).toContainText('112')
-  await expect(page.locator('#explainStatus')).toHaveText('')
+  await expect(page.locator('#explainStatus')).toHaveText('Explanation ready. The original alert is still the authority.')
 })
