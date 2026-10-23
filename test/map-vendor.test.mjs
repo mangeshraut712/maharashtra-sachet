@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { resolveMapLibreModule } from '../web/map-view.js'
+import { mapUpdateKey, resolveMapLibreModule } from '../web/map-view.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const vendor = join(root, 'web', 'vendor')
@@ -23,6 +23,12 @@ test('vendored MapLibre ESM chunks resolve relative imports', async () => {
   assert.equal(existsSync(join(vendor, 'maplibre-gl-worker.mjs')), true)
 })
 
+test('unchanged alert maps skip a repeat payload', () => {
+  const alerts = [{ source: 'sachet', id: 'a', kind: 'water', districts: [{ id: 'pune' }] }]
+  assert.equal(mapUpdateKey({ alerts, selectedDistrictId: 'pune' }), mapUpdateKey({ alerts: alerts.map((alert) => ({ ...alert })), selectedDistrictId: 'pune' }))
+  assert.notEqual(mapUpdateKey({ alerts, selectedDistrictId: '' }), mapUpdateKey({ alerts, selectedDistrictId: 'pune' }))
+  assert.notEqual(mapUpdateKey({ alerts, selectedDistrictId: 'pune' }), mapUpdateKey({ alerts: [], selectedDistrictId: 'pune' }))
+})
 test('MapLibre v6 namespace export is used when default is missing', () => {
   class Map {}
   class NavigationControl {}

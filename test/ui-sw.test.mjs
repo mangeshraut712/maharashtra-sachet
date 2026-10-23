@@ -36,6 +36,8 @@ function runtime({
         'mh-sachet-shell-v5',
         'mh-sachet-shell-v6',
         'mh-sachet-shell-v7',
+        'mh-sachet-shell-v8',
+        'mh-sachet-shell-v9',
         'mh-sachet-user-data',
       ],
       delete: async (key) => deleted.push(key),
@@ -53,7 +55,7 @@ test('service worker activation removes only superseded shell caches owned by th
     },
   })
   await work
-  assert.deepEqual(deleted, ['mh-sachet-shell-v1', 'mh-sachet-shell-v3', 'mh-sachet-shell-v4', 'mh-sachet-shell-v5', 'mh-sachet-shell-v6', 'mh-sachet-shell-v7'])
+  assert.deepEqual(deleted, ['mh-sachet-shell-v1', 'mh-sachet-shell-v3', 'mh-sachet-shell-v4', 'mh-sachet-shell-v5', 'mh-sachet-shell-v6', 'mh-sachet-shell-v7', 'mh-sachet-shell-v8', 'mh-sachet-shell-v9'])
 })
 test('service worker leaves APIs, foreign origins and arbitrary same-origin paths untouched', () => {
   const { handlers } = runtime()
@@ -72,6 +74,24 @@ test('service worker leaves APIs, foreign origins and arbitrary same-origin path
     })
     assert.equal(intercepted, false, url)
   }
+})
+test('install precache omits the map library until a map view requests it', async () => {
+  const { handlers, cached } = runtime()
+  let work
+  handlers.install({ waitUntil: (promise) => { work = promise } })
+  await work
+  assert.equal(cached.some((url) => String(url).includes('maplibre')), false)
+  assert.ok(cached.includes('/app.js'))
+  assert.ok(cached.includes('/styles.css'))
+})
+test('vendor map assets join the shell cache once requested', () => {
+  const { handlers } = runtime()
+  let intercepted = false
+  handlers.fetch({
+    request: { url: 'https://relay.test/vendor/maplibre-gl.mjs', method: 'GET' },
+    respondWith: () => { intercepted = true },
+  })
+  assert.equal(intercepted, true)
 })
 test('network errors serve the cached shell while cache write errors preserve online responses', async () => {
   for (const offline of [true, false]) {
