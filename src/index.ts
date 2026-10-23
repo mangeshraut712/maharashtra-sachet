@@ -1,6 +1,6 @@
 import { collectSnapshot, emptyState, handleApi, jsonResponse, publicSnapshot, SECURITY_HEADERS, snapshotNeedsIngest, sourceCollectors } from '../server/service.mjs'
 import { acquireLease, appendJevShadowEntries, readRecentJevShadowEntries, readState, releaseLease, saveState } from './storage'
-import { explainAlert } from '../server/explain.mjs'
+import { explainClientKey, handleExplainRequest } from '../server/explain.mjs'
 import { jevShadowEnabled, shadowOpsEnvelope, triageAlertShadow } from '../server/jev-shadow.mjs'
 
 export async function ingest(env: Env, collectors?: ReturnType<typeof sourceCollectors>): Promise<{ status: string }> {
@@ -64,16 +64,11 @@ export default {
         return jsonResponse(200, shadowOpsEnvelope(entries))
       }
       if (path === '/api/explain') {
-        const hsts = new URL(request.url).protocol === 'https:' ? { 'strict-transport-security': 'max-age=31536000' } : {}
-        if (request.method !== 'POST') return jsonResponse(405, { error: 'Method not allowed' }, { allow: 'POST', ...hsts })
-        if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) return jsonResponse(415, { error: 'Expected application/json' }, hsts)
-        const raw = await request.text()
-        if (raw.length > 20_000) return jsonResponse(413, { error: 'Request too large' }, hsts)
-        let input: unknown
-        try { input = JSON.parse(raw) } catch { return jsonResponse(400, { error: 'Invalid JSON' }, hsts) }
         const secrets = env as unknown as { GEMINI_API_KEY?: string, GEMINI_MODEL?: string }
-        const result = await explainAlert(input as { alertText?: string }, { GEMINI_API_KEY: secrets.GEMINI_API_KEY, GEMINI_MODEL: secrets.GEMINI_MODEL })
-        return jsonResponse(result.status, result.body, hsts)
+        return handleExplainRequest(request, {
+          GEMINI_API_KEY: secrets.GEMINI_API_KEY,
+          GEMINI_MODEL: secrets.GEMINI_MODEL,
+        }, { clientKey: explainClientKey(request.headers.get('cf-connecting-ip')) })
       }
       if (path === '/api' || path.startsWith('/api/')) {
         if (request.method !== 'GET' && request.method !== 'HEAD') return jsonResponse(405, { error: 'Method not allowed' }, { allow: 'GET, HEAD', ...(new URL(request.url).protocol === 'https:' ? { 'strict-transport-security': 'max-age=31536000' } : {}) })

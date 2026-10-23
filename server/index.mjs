@@ -1,7 +1,9 @@
 import { createServer } from 'node:http'
 import { readFile } from 'node:fs/promises'
 import { extname, resolve, sep } from 'node:path'
+import { Readable } from 'node:stream'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { handleExplainRequest } from './explain.mjs'
 import { collectSnapshot, emptyState, handleApi, jsonResponse, SECURITY_HEADERS, sourceCollectors } from './service.mjs'
 
 const WEB = fileURLToPath(new URL('../web', import.meta.url))
@@ -25,10 +27,36 @@ export function createRelay({ collectors = sourceCollectors(), initialState = em
   return { pollOnce, getState: () => state }
 }
 
-export function createRelayServer({ relay = createRelay(), webRoot = WEB, environment = 'local', controlHandler = null, now = () => Date.now(), situationalEnabled = false, firmsMapKey = '', jevShadowEnabled = false } = {}) {
+function headersFromNode(req) {
+  const headers = new Headers()
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (Array.isArray(value)) for (const item of value) headers.append(key, item)
+    else if (value != null) headers.set(key, value)
+  }
+  return headers
+}
+
+export function createRelayServer({ relay = createRelay(), webRoot = WEB, environment = 'local', controlHandler = null, now = () => Date.now(), situationalEnabled = false, firmsMapKey = '', jevShadowEnabled = false, geminiEnv = null, explainFetch = null, explainLimiter = null } = {}) {
   return createServer(async (req, res) => {
     try {
-      const request = new Request(new URL(req.url || '/', 'http://localhost'), { method: req.method || 'GET' })
+      const requestUrl = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`)
+      const method = req.method || 'GET'
+      if (requestUrl.pathname === '/api/explain') {
+        const init = { method, headers: headersFromNode(req) }
+        if (method !== 'GET' && method !== 'HEAD') {
+          init.body = Readable.toWeb(req)
+          init.duplex = 'half'
+        }
+        const response = await handleExplainRequest(new Request(requestUrl, init), geminiEnv || {}, {
+          clientKey: req.socket?.remoteAddress || 'local',
+          ...(explainFetch ? { fetchImpl: explainFetch } : {}),
+          ...(explainLimiter ? { limiter: explainLimiter } : {}),
+        })
+        res.writeHead(response.status, Object.fromEntries(response.headers))
+        res.end(method === 'HEAD' ? undefined : Buffer.from(await response.arrayBuffer()))
+        return
+      }
+      const request = new Request(requestUrl, { method })
       let response = controlHandler ? await controlHandler(request) : null
       if (!response) {
         response = await handleApi(request, relay.getState(), {
@@ -78,6 +106,10 @@ export function startServer(env = process.env) {
     situationalEnabled: env.SITUATIONAL_LAYERS_ENABLED === 'true',
     firmsMapKey: env.FIRMS_MAP_KEY || '',
     jevShadowEnabled: env.JEV_SHADOW_ENABLED === 'true' && env.JEV_SHADOW_KILL !== 'true',
+    geminiEnv: {
+      GEMINI_API_KEY: typeof env.GEMINI_API_KEY === 'string' ? env.GEMINI_API_KEY : '',
+      GEMINI_MODEL: typeof env.GEMINI_MODEL === 'string' ? env.GEMINI_MODEL : '',
+    },
   })
   let timer
   const poll = async () => {

@@ -54,8 +54,9 @@ async function explain() {
   $('explainButton').disabled = true; $('explainStatus').textContent = 'Explaining…'
   try {
     const res = await fetch('/api/explain', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ alertText }) })
-    const body = await res.json()
-    if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`)
+    let body
+    try { body = await res.json() } catch { throw new Error(`HTTP ${res.status}`) }
+    if (!res.ok || !body?.data) throw new Error(typeof body?.error === 'string' ? body.error : `HTTP ${res.status}`)
     render(body); $('explainStatus').textContent = ''
   } catch (error) {
     $('explainStatus').textContent = `Could not explain: ${error.message}. Read the original alert.`

@@ -161,3 +161,13 @@ test('alert explainer page renders input and required footer', async ({ page }) 
   await expect(page.locator('footer')).toContainText('Not a government site. Verify with official sources (sachet.ndma.gov.in, IMD). Emergency: call 112.')
   await expect(page.locator('#alertText')).toBeVisible()
 })
+
+test('alert explainer uses the offline fallback when Gemini is not configured', async ({ page }) => {
+  await page.goto('/explain.html')
+  await page.getByRole('button', { name: /Konkan heavy rain/ }).click()
+  await expect(page.locator('#explainResult')).toBeVisible()
+  await expect(page.locator('#severityBadge')).toContainText('Red')
+  await expect(page.locator('#fallbackNote')).toContainText('not configured')
+  await expect(page.locator('#langBlocks')).toContainText('112')
+  await expect(page.locator('#explainStatus')).toHaveText('')
+})

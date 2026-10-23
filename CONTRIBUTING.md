@@ -55,7 +55,7 @@ Grok Bot and Cursor follow one contract: [docs/pr-setup.md](docs/pr-setup.md) an
 - One concern per PR when practical (docs, collector, UI, ops).
 - Add or extend tests in `test/` for behaviour changes; keep live fetches behind `RUN_LIVE_TESTS=1`.
 - Preserve CAP identity (`source` + identifier), issuer-matched Update/Cancel, expiry, and last-good snapshots on collector failure.
-- Public HTTP remains **GET/HEAD only**. New mutation, push, or report APIs need auth, abuse controls, and a privacy review.
+- Public HTTP remains **GET/HEAD only**, except `POST /api/explain` (rate limit, body cap, and the privacy note in `docs/PRIVACY.md`). New mutation, push, or report APIs need auth, abuse controls, and a privacy review.
 - Collectors must use bounded sizes/deadlines, approved hosts, schema checks, and allowlisted error codes (never log bodies or credentialed URLs).
 - Feature flags that add non-CAP layers (for example situational overlays or ops shadow pipelines) stay **off by default** in `wrangler.jsonc` for staging and production.
 - Do not enable Jev/situational layers by default. Do not add Osiris-style recon.

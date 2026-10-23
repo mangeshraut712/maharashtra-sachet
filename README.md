@@ -83,7 +83,7 @@ Built with Google AI Studio + Gemini. The model defaults to `gemini-3.8-flash` (
 npx wrangler secret put GEMINI_API_KEY --env production
 ```
 
-Without a key, or if Gemini fails, the API returns a keyword-based offline fallback and the page shows a visible note. Not a government site. Verify with official sources (sachet.ndma.gov.in, IMD). Emergency: call 112.
+Without a key, or if Gemini fails, the API returns a keyword-based offline fallback and the page shows a visible note. The same route is served by the Worker and by `npm start`. Requests are JSON, size-capped, same-origin when a browser sends `Origin`, and rate-limited. Not a government site. Verify with official sources (sachet.ndma.gov.in, IMD). Emergency: call 112.
 
 ## Open source / Fork this
 
