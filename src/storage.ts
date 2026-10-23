@@ -80,10 +80,29 @@ export async function readState(db: D1Database): Promise<RelayState> {
   const generated = results[0]?.results[0]?.generated_at
   state.generatedAt = typeof generated === 'string' ? generated : null
   for (const row of results[1]?.results ?? []) {
-    if (typeof row.source !== 'string' || !isSourceId(row.source) || typeof row.payload !== 'string') throw new Error('Invalid source row')
-    state.sources[row.source] = parseSource(row.payload)
+    if (typeof row.source !== 'string' || !isSourceId(row.source)) continue
+    if (typeof row.payload !== 'string' || row.payload.length > MAX_SOURCE_BYTES + 8192) {
+      state.sources[row.source] = unreadableSource()
+      continue
+    }
+    try {
+      state.sources[row.source] = parseSource(row.payload)
+    } catch {
+      state.sources[row.source] = unreadableSource()
+    }
   }
   return state
+}
+
+function unreadableSource(): SourceState {
+  return {
+    records: [],
+    state: 'degraded',
+    lastSuccessAt: null,
+    lastAttemptAt: null,
+    error: 'Stored source snapshot could not be read.',
+    errorCode: 'schema_invalid',
+  }
 }
 
 export async function acquireLease(db: D1Database, token: string, now: number): Promise<boolean> {

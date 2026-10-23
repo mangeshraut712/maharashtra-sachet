@@ -74,7 +74,8 @@ select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible,
 #alerts:focus,
-#guide:focus {
+#guide:focus,
+#explainer:focus {
   outline: 3px solid #1b1b1b;
   outline-offset: 2px;
   box-shadow: 0 0 0 5px #fff;

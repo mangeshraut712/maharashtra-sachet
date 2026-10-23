@@ -82,6 +82,14 @@ test('Worker D1 integration: startup, atomic snapshots, expired lease fencing, a
   const sources = await (await request('/api/sources')).json()
   assert.equal(sources.sources.sachet.errorCode, 'request_budget')
   assert.doesNotMatch(JSON.stringify(sources), /fixture-private-value/)
+  await db.prepare('UPDATE source_snapshots SET payload = ? WHERE source = ?').bind('{', 'imd').run()
+  const corrupt = await request('/api/alerts')
+  assert.equal(corrupt.status, 200)
+  const afterCorrupt = await corrupt.json()
+  assert.equal(afterCorrupt.sources.imd.status, 'degraded')
+  assert.equal(afterCorrupt.sources.imd.errorCode, 'schema_invalid')
+  assert.equal(afterCorrupt.sources.sachet.errorCode, 'request_budget')
+  assert.doesNotMatch(JSON.stringify(afterCorrupt), /Invalid persisted|unexpected token/i)
 })
 
 test('Worker ingest writes Jev shadow rows when enabled and leaves /api/alerts CAP-only', async t => {

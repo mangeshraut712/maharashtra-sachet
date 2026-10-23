@@ -12,6 +12,7 @@ import {
   validSnapshot,
   validMeta,
   readAlertSnapshot,
+  fingerprint,
 } from '../web/ui-model.js'
 
 test('official links reject executable URLs, deceptive hosts, credentials and non-HTTPS', () => {
@@ -164,6 +165,12 @@ test('malformed stored snapshots and metadata are rejected before state assignme
     ).headline,
     '',
   )
+})
+
+test('bulletin fingerprints change when alert text changes and ignore join ambiguity', () => {
+  assert.equal(fingerprint(['ab', 'c']), fingerprint(['ab', 'c']))
+  assert.notEqual(fingerprint(['ab', 'c']), fingerprint(['a', 'bc']))
+  assert.notEqual(fingerprint(['Heavy rain in Pune']), fingerprint(['Heavy rain in Pune.']))
 })
 
 test('alert pagination restarts when the snapshot token expires', async () => {

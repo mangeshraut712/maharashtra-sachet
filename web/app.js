@@ -10,6 +10,7 @@ import {
   validSnapshot,
   validMeta,
   readAlertSnapshot,
+  fingerprint,
 } from './ui-model.js'
 import { bindLazyMap, refreshMap, updateSituationalMap } from './map-view.js'
 
@@ -663,37 +664,39 @@ function alertToken(alert) {
 }
 function viewSignature() {
   const meta = state.meta
-  return JSON.stringify({
-    lang: state.lang,
-    mode: freshness(),
-    metaError: state.metaError,
-    saveFailed: state.saveFailed,
-    generatedAt: state.generatedAt,
-    offline: state.offline,
-    error: state.error,
-    status: state.status,
-    loaded: state.loaded,
-    notify: state.notify,
-    filters: filters(),
-    layers: [state.layerQuakes, state.layerFires, state.situationalBusy],
-    situational: state.situational?.sources
-      ? [state.situational.sources.usgs?.status || '', state.situational.sources.firms?.status || '']
-      : null,
-    environment: meta?.environment || '',
-    situationalEnabled: Boolean(meta?.features?.situationalLayers?.enabled),
-    districts: (meta?.districts || []).map((row) => row.id).join(','),
-    services: (meta?.serviceCategories || []).map((row) => `${row.id}:${row.note || ''}:${row.officialUrl || ''}`).join('|'),
-    links: (meta?.links || []).map((row) => `${row.id}:${row.href || row.url || ''}`).join('|'),
-    kinds: (meta?.situationKinds || []).map((row) => `${row.id}:${row.en || ''}:${row.mr || ''}`).join('|'),
-    classes: (meta?.weaClasses || []).map((row) => `${row.id}:${row.en || ''}:${row.mr || ''}`).join('|'),
-    alerts: state.alerts.map(alertToken),
-    sources: Object.keys(state.sources)
+  const situational = state.situational?.sources
+  return fingerprint([
+    state.lang,
+    freshness(),
+    state.metaError,
+    state.saveFailed,
+    state.generatedAt,
+    state.offline,
+    state.error,
+    state.status,
+    state.loaded,
+    state.notify,
+    ...Object.values(filters()),
+    state.layerQuakes,
+    state.layerFires,
+    state.situationalBusy,
+    situational?.usgs?.status || '',
+    situational?.firms?.status || '',
+    meta?.environment || '',
+    Boolean(meta?.features?.situationalLayers?.enabled),
+    (meta?.districts || []).map((row) => row.id).join(','),
+    (meta?.serviceCategories || []).map((row) => `${row.id}:${row.note || ''}:${row.officialUrl || ''}`).join('|'),
+    (meta?.links || []).map((row) => `${row.id}:${row.href || row.url || ''}`).join('|'),
+    (meta?.situationKinds || []).map((row) => `${row.id}:${row.en || ''}:${row.mr || ''}`).join('|'),
+    (meta?.weaClasses || []).map((row) => `${row.id}:${row.en || ''}:${row.mr || ''}`).join('|'),
+    ...state.alerts.map(alertToken),
+    ...Object.keys(state.sources)
       .sort()
       .map((id) => {
         const source = state.sources[id]
         return [id, sourceStatus(source), source.status || '', source.count || 0, source.lastSuccessAt || '', source.error || ''].join('|')
       }),
-  })
+  ])
 }
 function renderCoverage() {
   const counts = new Map((state.meta?.districts || []).map((d) => [d.id, 0]))

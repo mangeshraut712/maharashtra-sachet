@@ -1,4 +1,4 @@
-const CACHE = 'mh-sachet-shell-v10'
+const CACHE = 'mh-sachet-shell-v11'
 const SHELL = [
   '/',
   '/index.html',
@@ -12,6 +12,9 @@ const SHELL = [
   '/modules/map-model.mjs',
   '/manifest.webmanifest',
   '/icon.svg',
+  '/explain.html',
+  '/explain.js',
+  '/phone-alerts.html',
 ]
 const VENDOR_PREFIX = '/vendor/'
 

@@ -159,6 +159,22 @@ export function alertKey(alert) {
   return `${alert.source || ''}:${alert.id}`
 }
 
+export function fingerprint(values) {
+  let a = 2166136261
+  let b = 0x811c9dc5
+  for (const value of values) {
+    const text = value == null ? '' : String(value)
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i)
+      a = Math.imul(a ^ code, 16777619)
+      b = Math.imul(b ^ code, 2246822519)
+    }
+    a = Math.imul(a ^ 31, 16777619)
+    b = Math.imul(b ^ 31, 2246822519)
+  }
+  return `${(a >>> 0).toString(16)}-${(b >>> 0).toString(16)}`
+}
+
 export async function readAlertSnapshot(fetchPage, { maxPages = 50, maxRestarts = 3 } = {}) {
   for (let attempt = 0; attempt <= maxRestarts; attempt++) {
     const first = await fetchPage(new URLSearchParams({ limit: '500', offset: '0' }))
