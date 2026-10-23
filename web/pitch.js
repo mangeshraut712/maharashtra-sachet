@@ -26,8 +26,15 @@ function paintDots(current) {
 
 function show(index) {
   const nextIndex = Math.max(0, Math.min(slides.length - 1, index))
+  const active = document.activeElement
   for (const [i, slide] of slides.entries()) {
-    slide.classList.toggle('is-active', i === nextIndex)
+    const current = i === nextIndex
+    slide.classList.toggle('is-active', current)
+    slide.toggleAttribute('inert', !current)
+    slide.setAttribute('aria-hidden', current ? 'false' : 'true')
+  }
+  if (active instanceof HTMLElement && slides.some((slide, i) => i !== nextIndex && slide.contains(active))) {
+    document.getElementById('deck')?.focus()
   }
   progress.textContent = `${nextIndex + 1} / ${slides.length}`
   prev.disabled = nextIndex === 0

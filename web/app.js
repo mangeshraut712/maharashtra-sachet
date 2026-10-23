@@ -196,6 +196,13 @@ const date = (iso) =>
     : tx('Not reported', 'नोंद उपलब्ध नाही')
 const number = (n) =>
   Number(n).toLocaleString(state.lang === 'mr' ? 'mr-IN' : 'en-IN')
+function externalHint() {
+  return node(
+    'span',
+    tx(' (opens in a new tab)', ' (नवीन टॅब उघडते)'),
+    'visually-hidden external-hint',
+  )
+}
 function officialLink(url, text) {
   const href = safeOfficialUrl(url)
   if (!href) return null
@@ -203,7 +210,13 @@ function officialLink(url, text) {
   link.href = href
   link.target = '_blank'
   link.rel = 'noopener noreferrer'
+  link.append(externalHint())
   return link
+}
+function applyExternalHints() {
+  for (const link of document.querySelectorAll('a[target="_blank"]')) {
+    if (!link.querySelector('.external-hint')) link.append(externalHint())
+  }
 }
 function applyLanguage() {
   document.documentElement.lang = state.lang
@@ -217,6 +230,10 @@ function applyLanguage() {
       EN[el.dataset.i18n]
   $('langBtn').textContent = tx('मराठी', 'English')
   $('langBtn').lang = tx('mr', 'en')
+  $('langBtn').setAttribute(
+    'aria-label',
+    state.lang === 'en' ? 'Switch language to मराठी' : 'भाषा English करा',
+  )
   $('place').placeholder = tx(
     'Try Pune, Sawantwadi, Chandgad…',
     'पुणे, सावंतवाडी, चंदगड…',
@@ -224,6 +241,7 @@ function applyLanguage() {
   $('notifyBtn').textContent = state.notify
     ? tx('Turn notifications off', 'ब्राउझर सूचना बंद करा')
     : tx('Enable notifications', 'ब्राउझर सूचना चालू करा')
+  $('notifyBtn').setAttribute('aria-pressed', String(state.notify))
   if (!('Notification' in window)) {
     $('notifyBtn').disabled = true
     $('notificationStatus').textContent = tx(
@@ -231,6 +249,7 @@ function applyLanguage() {
       'या ब्राउझरमध्ये सूचना उपलब्ध नाहीत. सूचना फलक वापरता येईल.',
     )
   }
+  applyExternalHints()
 }
 function fillSelects() {
   const selections = filters()
@@ -534,8 +553,7 @@ function makeCard(alert) {
   card.append(bar, body)
   return card
 }
-function renderBulletin(mode) {
-  const alerts = selectedAlerts()
+function renderBulletin(mode, alerts = selectedAlerts()) {
   const feed = $('feed')
   feed.replaceChildren()
   $('alertCount').textContent =
@@ -585,6 +603,92 @@ function renderBulletin(mode) {
   }
   empty.append(symbol, node('h3', title), node('p', note))
   feed.append(empty)
+}
+function renderMapSummary(alerts) {
+  const summary = $('mapSummary')
+  if (!summary) return
+  if (!alerts.length) {
+    summary.textContent = tx(
+      'No relayed alert areas to plot. An empty map is not an all-clear. Read the bulletin.',
+      'नकाशावर रिले केलेले सूचना क्षेत्र नाही. रिकामा नकाशा म्हणजे सर्व सुरक्षित नाही. सूचना फलक वाचा.',
+    )
+    return
+  }
+  const names = []
+  const seen = new Set()
+  for (const alert of alerts) {
+    for (const district of alert.districts || []) {
+      const name = label(district)
+      if (!district.id || !name || seen.has(district.id)) continue
+      seen.add(district.id)
+      names.push(name)
+    }
+  }
+  const list =
+    names.join(', ') ||
+    tx('areas without a district name', 'जिल्ह्याचे नाव नसलेली क्षेत्रे')
+  summary.textContent = tx(
+    `Map shows ${number(alerts.length)} relayed alert areas: ${list}. The bulletin text is the source of truth.`,
+    `नकाशा ${number(alerts.length)} रिले सूचना क्षेत्रे दाखवतो: ${list}. सूचना फलकातील मजकूर हा विश्वासार्ह स्रोत आहे.`,
+  )
+}
+function alertToken(alert) {
+  const languages = Array.isArray(alert.languages)
+    ? alert.languages
+        .map((block) =>
+          [block?.language, block?.headline, block?.description, block?.instruction].join('\u001f'),
+        )
+        .join('\u001e')
+    : ''
+  return [
+    alert.source,
+    alert.id,
+    alert.msgType,
+    alert.sent,
+    alert.expires,
+    alert.kind,
+    alert.weaClass,
+    alert.headlineEn,
+    alert.headlineMr,
+    alert.description,
+    alert.instruction,
+    (alert.districts || []).map((district) => district.id).join(','),
+    languages,
+  ].join('\u001d')
+}
+function viewSignature() {
+  const meta = state.meta
+  return JSON.stringify({
+    lang: state.lang,
+    mode: freshness(),
+    metaError: state.metaError,
+    saveFailed: state.saveFailed,
+    generatedAt: state.generatedAt,
+    offline: state.offline,
+    error: state.error,
+    status: state.status,
+    loaded: state.loaded,
+    notify: state.notify,
+    filters: filters(),
+    layers: [state.layerQuakes, state.layerFires, state.situationalBusy],
+    situational: state.situational?.sources
+      ? [state.situational.sources.usgs?.status || '', state.situational.sources.firms?.status || '']
+      : null,
+    environment: meta?.environment || '',
+    situationalEnabled: Boolean(meta?.features?.situationalLayers?.enabled),
+    districts: (meta?.districts || []).map((row) => row.id).join(','),
+    services: (meta?.serviceCategories || []).map((row) => `${row.id}:${row.note || ''}:${row.officialUrl || ''}`).join('|'),
+    links: (meta?.links || []).map((row) => `${row.id}:${row.href || row.url || ''}`).join('|'),
+    kinds: (meta?.situationKinds || []).map((row) => `${row.id}:${row.en || ''}:${row.mr || ''}`).join('|'),
+    classes: (meta?.weaClasses || []).map((row) => `${row.id}:${row.en || ''}:${row.mr || ''}`).join('|'),
+    alerts: state.alerts.map(alertToken),
+    sources: Object.keys(state.sources)
+      .sort()
+      .map((id) => {
+        const source = state.sources[id]
+        return [id, sourceStatus(source), source.status || '', source.count || 0, source.lastSuccessAt || '', source.error || ''].join('|')
+      }),
+  })
 }
 function renderCoverage() {
   const counts = new Map((state.meta?.districts || []).map((d) => [d.id, 0]))
@@ -755,15 +859,34 @@ async function ensureSituational() {
   }
 }
 
+let lastSignature = ''
+let appliedLang = ''
 function render() {
-  applyLanguage()
+  const signature = viewSignature()
+  if (signature === lastSignature) {
+    $('feed').setAttribute('aria-busy', String(state.busy))
+    return
+  }
+  if (appliedLang !== state.lang) {
+    applyLanguage()
+    appliedLang = state.lang
+  }
   const mode = renderStatus()
-  renderBulletin(mode)
+  const alerts = selectedAlerts()
+  renderBulletin(mode, alerts)
+  renderMapSummary(alerts)
   renderSources()
   renderCoverage()
   renderServices()
   renderSituationalControls()
-  refreshMap(mapInput)
+  refreshMap(() => ({
+    alerts,
+    selectedDistrictId: $('district').value || '',
+    bbox: state.meta?.map?.bbox,
+    centroids: state.meta?.map?.districtCentroids,
+  }))
+  applyExternalHints()
+  lastSignature = signature
 }
 
 async function request(url, { method = 'GET' } = {}) {
@@ -921,31 +1044,53 @@ async function refresh() {
   }
 }
 let searchSequence = 0
+function placeMessage(message, invalid = false) {
+  const status = node('p', message, 'hint')
+  status.id = 'placeStatus'
+  status.setAttribute('role', 'status')
+  $('placeResults').replaceChildren(status)
+  $('place').setAttribute('aria-describedby', 'placeNote placeStatus')
+  if (invalid) $('place').setAttribute('aria-invalid', 'true')
+  else $('place').removeAttribute('aria-invalid')
+}
+function clearPlaceResults() {
+  $('placeResults').replaceChildren()
+  $('place').setAttribute('aria-describedby', 'placeNote')
+  $('place').removeAttribute('aria-invalid')
+}
 $('locationForm').addEventListener('submit', async (event) => {
   event.preventDefault()
   const query = $('place').value.trim()
   const sequence = ++searchSequence
-  $('placeResults').replaceChildren()
   if (query.length < 2) {
-    $('placeResults').append(
-      node(
-        'p',
-        tx('Enter at least two characters.', 'किमान दोन अक्षरे लिहा.'),
-        'hint',
-      ),
-    )
+    placeMessage(tx('Enter at least two characters.', 'किमान दोन अक्षरे लिहा.'), true)
     return
   }
-  $('placeResults').append(
-    node('p', tx('Finding district matches…', 'जिल्हे शोधत आहोत…'), 'hint'),
-  )
+  placeMessage(tx('Finding district matches…', 'जिल्हे शोधत आहोत…'))
   try {
     const body = await request(
       `/api/locations?${new URLSearchParams({ q: query })}`,
     )
     if (sequence !== searchSequence) return
-    $('placeResults').replaceChildren()
-    for (const place of body.locations || []) {
+    const places = body.locations || []
+    const status = node(
+      'p',
+      places.length
+        ? tx(
+            `${places.length} district matches. Exact village and ward coverage is not verified.`,
+            `${places.length} जिल्हा जुळण्या. अचूक गाव व प्रभाग व्याप्ती सत्यापित नाही.`,
+          )
+        : tx(
+            'No verified place match. Select a district above; this is not a complete village directory.',
+            'ठिकाणाची जुळणी नाही. वरील जिल्हा निवडा; ही सर्व गावांची निर्देशिका नाही.',
+          ),
+      'hint',
+    )
+    status.id = 'placeStatus'
+    status.setAttribute('role', 'status')
+    const list = document.createElement('ul')
+    for (const place of places) {
+      const item = document.createElement('li')
       const button = node(
         'button',
         `${place.name} · ${state.lang === 'mr' ? place.districtMr : place.districtEn}`,
@@ -954,46 +1099,32 @@ $('locationForm').addEventListener('submit', async (event) => {
       button.addEventListener('click', () => {
         $('district').value = place.districtId
         $('region').value = ''
-        $('placeResults').replaceChildren(
-          node(
-            'p',
-            `${place.name}: ${tx('district-level match; exact village/ward coverage is not verified.', 'जिल्हा स्तरावरील जुळणी; अचूक गाव/प्रभाग व्याप्ती सत्यापित नाही.')}`,
-            'hint',
-          ),
+        placeMessage(
+          `${place.name}: ${tx('district-level match; exact village/ward coverage is not verified.', 'जिल्हा स्तरावरील जुळणी; अचूक गाव/प्रभाग व्याप्ती सत्यापित नाही.')}`,
         )
         render()
       })
-      $('placeResults').append(button)
+      item.append(button)
+      list.append(item)
     }
-    if (!$('placeResults').children.length)
-      $('placeResults').append(
-        node(
-          'p',
-          tx(
-            'No verified place match. Select a district above; this is not a complete village directory.',
-            'ठिकाणाची जुळणी नाही. वरील जिल्हा निवडा; ही सर्व गावांची निर्देशिका नाही.',
-          ),
-          'hint',
-        ),
-      )
+    $('placeResults').replaceChildren(status, ...(places.length ? [list] : []))
+    $('place').setAttribute('aria-describedby', 'placeNote placeStatus')
+    $('place').removeAttribute('aria-invalid')
   } catch {
     if (sequence === searchSequence)
-      $('placeResults').replaceChildren(
-        node(
-          'p',
-          tx(
-            'Place search is unavailable. Use the district filter.',
-            'ठिकाण शोध उपलब्ध नाही. जिल्हा फिल्टर वापरा.',
-          ),
-          'hint',
+      placeMessage(
+        tx(
+          'Place search is unavailable. Use the district filter.',
+          'ठिकाण शोध उपलब्ध नाही. जिल्हा फिल्टर वापरा.',
         ),
+        true,
       )
   }
 })
 $('langBtn').addEventListener('click', () => {
   state.lang = state.lang === 'en' ? 'mr' : 'en'
   storage.set('mh-sachet-lang', state.lang)
-  $('placeResults').replaceChildren()
+  clearPlaceResults()
   $('notificationStatus').textContent = ''
   fillSelects()
   render()
@@ -1024,14 +1155,14 @@ $('demoReset').addEventListener('click', () => runDemoControl('reset'))
 $('resetBtn').addEventListener('click', () => {
   for (const id of ['district', 'region', 'kind', 'weaClass']) $(id).value = ''
   $('place').value = ''
-  $('placeResults').replaceChildren()
+  clearPlaceResults()
   searchSequence++
   render()
 })
 for (const id of ['district', 'region', 'kind', 'weaClass'])
   $(id).addEventListener('change', () => {
     if (id === 'region') $('district').value = ''
-    $('placeResults').replaceChildren()
+    clearPlaceResults()
     render()
   })
 $('notifyBtn').addEventListener('click', async () => {
@@ -1096,6 +1227,5 @@ $('layerFires').addEventListener('change', () => {
   renderSituationalControls()
 })
 restoreSnapshot()
-applyLanguage()
 render()
 refresh()

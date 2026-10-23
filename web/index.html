@@ -12,7 +12,6 @@
     <link rel="icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="stylesheet" href="/styles.css" />
-    <link rel="stylesheet" href="/vendor/maplibre-gl.css" />
   </head>
   <body>
     <a class="skip" href="#alerts" data-i18n="skip">Skip to alerts</a>
@@ -30,7 +29,7 @@
       </div>
     </div>
     <header class="site-header container">
-      <a class="brand" href="/" aria-label="Maharashtra Civic Alerts home"
+      <a class="brand" href="/" aria-current="page"
         ><img src="/icon.svg" width="64" height="64" alt="" /><span
           ><span class="brand-marathi" lang="mr">महाराष्ट्र नागरी सतर्कता</span
           ><strong lang="en">Maharashtra Civic Alerts</strong
@@ -78,11 +77,13 @@
           </p>
         </div>
       </section>
-      <div id="connection" class="connection" role="status" aria-live="polite">
+      <div id="connection" class="connection">
         <strong class="update-label" data-i18n="updateLabel">Latest status</strong>
-        <span class="status-dot" aria-hidden="true"></span
-        ><span id="connectionText">Connecting to official-feed relay…</span
-        ><button id="refreshBtn" type="button" data-i18n="refresh">
+        <div id="connectionStatus" class="connection-status" role="status" aria-live="polite" aria-atomic="true">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="connectionText">Connecting to official-feed relay…</span>
+        </div>
+        <button id="refreshBtn" type="button" data-i18n="refresh">
           Refresh
         </button>
       </div>
@@ -114,7 +115,16 @@
           source of truth. District dots are approximate when CAP polygons are
           missing.
         </p>
-        <div id="alertMap" class="alert-map"></div>
+        <p id="mapSummary" class="visually-hidden">
+          The bulletin is the source of truth. An empty map is not an all-clear.
+        </p>
+        <div
+          id="alertMap"
+          class="alert-map"
+          role="group"
+          aria-labelledby="mapTitle"
+          aria-describedby="mapSummary"
+        ></div>
         <p id="mapCaption" class="hint" data-i18n="mapCaption">
           Polygons come from official CAP geometry when available.
         </p>
@@ -160,6 +170,7 @@
               maxlength="80"
               placeholder="Try Pune, Sawantwadi, Chandgad…"
               aria-describedby="placeNote"
+              aria-controls="placeResults"
             /><button type="submit" data-i18n="search">Find place</button>
           </div>
         </form>
@@ -288,8 +299,8 @@
             <div id="sourceList"></div>
             <p id="snapshotTime" class="small"></p>
           </section>
-          <section class="notification-panel">
-            <h2 data-i18n="notificationsTitle">A little more awareness.</h2>
+          <section class="notification-panel" aria-labelledby="notificationsTitle">
+            <h2 id="notificationsTitle" data-i18n="notificationsTitle">A little more awareness.</h2>
             <p class="hint" data-i18n="notificationsNote">
               Opt in to browser notifications for new urgent alerts matching
               your filters, while this page is open and visible. Delivery is not
@@ -300,9 +311,9 @@
             </button>
             <p id="notificationStatus" class="small" role="status"></p>
           </section>
-        <section class="prepare-panel">
+        <section class="prepare-panel" aria-labelledby="prepareTitle">
             <p class="eyebrow" data-i18n="prepareEyebrow">BEFORE YOU NEED IT</p>
-            <h2 data-i18n="prepareTitle">Keep a simple plan.</h2>
+            <h2 id="prepareTitle" data-i18n="prepareTitle">Keep a simple plan.</h2>
             <ol>
               <li data-i18n="prepareOne">
                 Save emergency contacts and your district’s official website.
@@ -326,9 +337,9 @@
           </section>
         </aside>
       </div>
-      <section class="about">
+      <section class="about" aria-labelledby="aboutTitle">
         <div>
-          <h2 data-i18n="aboutTitle">Public information. Clear boundaries.</h2>
+          <h2 id="aboutTitle" data-i18n="aboutTitle">Public information. Clear boundaries.</h2>
           <p data-i18n="aboutNote">
             This independent project relays public government feeds. It does not
             issue official alerts, dispatch help, or send government cell

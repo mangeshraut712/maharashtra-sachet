@@ -26,7 +26,7 @@
       </nav>
     </header>
     <div class="stage">
-      <main id="deck" class="deck">
+      <main id="deck" class="deck" tabindex="-1">
         <section class="slide slide-title is-active" id="s1" aria-labelledby="t1">
           <p class="kicker">Codex Build House · Pune · Briefing</p>
           <h1 id="t1">Maharashtra Civic Alerts</h1>
@@ -413,14 +413,14 @@
         </section>
       </main>
     </div>
-    <div class="controls">
-      <button id="prev" type="button">Previous</button>
+    <nav class="controls" aria-label="Slide controls">
+      <button id="prev" type="button" aria-controls="deck">Previous</button>
       <div class="pager">
         <div class="dots" id="dots"></div>
-        <span class="progress" id="progress">1 / 9</span>
+        <span class="progress" id="progress" role="status" aria-live="polite">1 / 9</span>
       </div>
-      <button id="next" type="button">Next</button>
-    </div>
+      <button id="next" type="button" aria-controls="deck">Next</button>
+    </nav>
     <script src="/pitch.js"></script>
   </body>
 </html>

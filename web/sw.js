@@ -1,4 +1,4 @@
-const CACHE = 'mh-sachet-shell-v9'
+const CACHE = 'mh-sachet-shell-v10'
 const SHELL = [
   '/',
   '/index.html',
@@ -10,13 +10,14 @@ const SHELL = [
   '/region.json',
   '/modules/geo.mjs',
   '/modules/map-model.mjs',
-  '/vendor/maplibre-gl.mjs',
-  '/vendor/maplibre-gl-shared.mjs',
-  '/vendor/maplibre-gl-worker.mjs',
-  '/vendor/maplibre-gl.css',
   '/manifest.webmanifest',
   '/icon.svg',
 ]
+const VENDOR_PREFIX = '/vendor/'
+
+function cacheable(pathname) {
+  return SHELL.includes(pathname) || pathname.startsWith(VENDOR_PREFIX)
+}
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)))
 })
@@ -44,7 +45,7 @@ self.addEventListener('fetch', (event) => {
     event.request.method !== 'GET' ||
     url.origin !== self.location.origin ||
     url.search ||
-    !SHELL.includes(url.pathname)
+    !cacheable(url.pathname)
   )
     return
   event.respondWith(
