@@ -47,6 +47,8 @@ test('source identities stay independent and expiry/status/scope are enforced', 
 test('CAP Update/Cancel retire referenced messages even when cancellation has no geography', () => {
   const update = { ...base, id:'two', msgType:'Update', references:[{sender:'agency',identifier:'one',sent:base.sent}] }
   assert.deepEqual(mergeAlerts([[base, update]], {now}).map(x=>x.id), ['two'])
+  assert.equal(mergeAlerts([[{...base, headlineEn:'old'}, {...base, headlineEn:'replacement'}]], {now})[0].headlineEn, 'replacement')
+  assert.equal(mergeAlerts([[{...base, sent:'not-a-date', headlineEn:'broken'}, {...base, sent:'2026-09-05T11:00:00Z', headlineEn:'fixed'}]], {now})[0].headlineEn, 'fixed')
   const cancel = { ...base, id:'three', msgType:'Cancel', references:[{sender:'agency',identifier:'two',sent:base.sent}] }
   assert.deepEqual(mergeAlerts([[base,update,cancel]], {now}), [])
   assert.equal(mergeAlerts([[base, { ...cancel, references:[{sender:'other',identifier:'one',sent:base.sent}] }]], {now}).length, 1)

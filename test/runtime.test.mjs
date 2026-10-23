@@ -2,11 +2,19 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { once } from 'node:events'
 import { createRelay, createRelayServer, boundedInteger } from '../server/index.mjs'
-import { collectSnapshot, emptyState, handleApi, publicSnapshot, retainLifecycle, snapshotNeedsIngest, SOURCE_IDS, sourceCollectors, STALE_MS, MAX_SOURCE_BYTES, classifySourceError } from '../server/service.mjs'
+import { collectSnapshot, emptyState, handleApi, publicSnapshot, retainLifecycle, snapshotNeedsIngest, SOURCE_IDS, sourceCollectors, STALE_MS, MAX_SOURCE_BYTES, classifySourceError, clientErrorMessage } from '../server/service.mjs'
 
 const NOW = Date.parse('2026-09-05T10:00:00Z')
 const alert = (id, extra = {}) => ({ id, source: 'sachet', sender: 'official', sent: new Date(NOW - 1000).toISOString(), effective: new Date(NOW - 1000).toISOString(), expires: new Date(NOW + 600_000).toISOString(), status: 'Actual', scope: 'Public', msgType: 'Alert', districts: [{ id: 'pune' }], weaClass: 'WEATHER_ADVISORY', kind: 'rain', ...extra })
 const success = records => SOURCE_IDS.map(id => ({ id, collect: async () => id === 'sachet' ? records : [] }))
+
+test('API validation errors stay allowlisted and unexpected failures are not echoed', () => {
+  assert.equal(clientErrorMessage(new Error('Invalid limit')), 'Invalid limit')
+  assert.equal(clientErrorMessage(new Error('Invalid query parameters')), 'Invalid query parameters')
+  assert.equal(clientErrorMessage(new Error('Query must contain 2 to 80 characters')), 'Query must contain 2 to 80 characters')
+  assert.equal(clientErrorMessage(new Error('failed https://firms.example/super-secret-map-key')), 'Invalid request')
+  assert.equal(clientErrorMessage(null), 'Invalid request')
+})
 
 test('source diagnostic codes are allowlisted and safely classify nested causes', () => {
   for (const [error, expected] of [
@@ -109,6 +117,9 @@ test('a replay cannot replace a newer retained lifecycle record', () => {
   const newer = alert('update', { msgType: 'Update', sent: new Date(NOW).toISOString() })
   const older = alert('update', { msgType: 'Update', sent: new Date(NOW - 1000).toISOString() })
   assert.deepEqual(retainLifecycle([newer], [older]), [newer])
+  const broken = alert('update', { msgType: 'Update', sent: 'not-a-date', headlineEn: 'broken' })
+  const fixed = alert('update', { msgType: 'Update', sent: new Date(NOW).toISOString(), headlineEn: 'fixed' })
+  assert.equal(retainLifecycle([broken], [fixed])[0].headlineEn, 'fixed')
 })
 
 test('disabled and misconfigured sources are not healthy empty feeds', async () => {

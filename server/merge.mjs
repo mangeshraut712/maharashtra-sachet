@@ -1,5 +1,10 @@
 import { sortKey } from './wea.mjs'
 
+export function sentTime(alert) {
+  const value = Date.parse(alert?.sent)
+  return Number.isFinite(value) ? value : Number.NEGATIVE_INFINITY
+}
+
 export function mergeAlerts(groups, { now = Date.now(), includeInactive = false } = {}) {
   const byId = new Map()
   for (const list of groups) {
@@ -7,7 +12,7 @@ export function mergeAlerts(groups, { now = Date.now(), includeInactive = false 
       if (!a?.id) continue
       const key = `${a.source || 'unknown'}:${a.id}`
       const previous = byId.get(key)
-      if (!previous || Date.parse(a.sent) > Date.parse(previous.sent)) byId.set(key, a)
+      if (!previous || sentTime(a) >= sentTime(previous)) byId.set(key, a)
     }
   }
   const retired = new Set()

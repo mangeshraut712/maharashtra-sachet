@@ -3,7 +3,7 @@ import { collectImdNowcast } from './imd.mjs'
 import { collectIncois } from './incois.mjs'
 import { collectCpcb } from './cpcb.mjs'
 import { collectCwc } from './cwc.mjs'
-import { mergeAlerts, snapshotStats } from './merge.mjs'
+import { mergeAlerts, sentTime, snapshotStats } from './merge.mjs'
 import { DISTRICTS, HELPLINES, OFFICIAL_LINKS, REGIONS, AQI_CITIES_DEFAULT, coverageFromAlerts, districtsInRegion } from './districts.mjs'
 import { SITUATION_KINDS, WEA_CLASSES } from './wea.mjs'
 import { SERVICE_CATEGORIES, LOCALITY_COVERAGE, searchLocalities } from './coverage-catalog.mjs'
@@ -95,8 +95,8 @@ export function retainLifecycle(previous, incoming) {
   }
   for (const alert of incoming) {
     const key = `${alert.source}:${alert.id}`
-    const previous = records.get(key)
-    if (!previous || Date.parse(alert.sent) >= Date.parse(previous.sent)) records.set(key, alert)
+    const prior = records.get(key)
+    if (!prior || sentTime(alert) >= sentTime(prior)) records.set(key, alert)
   }
   return [...records.values()]
 }
@@ -192,6 +192,12 @@ export function publicSnapshot(state, now = Date.now()) {
  */
 export function jsonResponse(status, body, extraHeaders = {}) {
   return new Response(JSON.stringify(body), { status, headers: { ...SECURITY_HEADERS, 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extraHeaders } })
+}
+
+export function clientErrorMessage(error) {
+  const message = typeof error?.message === 'string' ? error.message : ''
+  if (message === 'Invalid query parameters' || message === 'Query must contain 2 to 80 characters' || /^Invalid [a-z]+$/.test(message)) return message
+  return 'Invalid request'
 }
 
 function integerParam(params, key, fallback, min, max) {
@@ -321,7 +327,7 @@ export async function handleApi(request, state, { now = Date.now(), environment 
       else response = jsonResponse(200, await buildSituationalSnapshot({ enabled: true, firmsKey: firmsMapKey, now }))
     } else response = jsonResponse(404, { error: 'Not found' })
   } catch (error) {
-    response = jsonResponse(400, { error: error.message })
+    response = jsonResponse(400, { error: clientErrorMessage(error) })
   }
   return request.method === 'HEAD' ? new Response(null, response) : response
 }
