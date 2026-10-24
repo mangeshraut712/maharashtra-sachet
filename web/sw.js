@@ -1,4 +1,4 @@
-const CACHE = 'mh-sachet-shell-v11'
+const CACHE = 'mh-sachet-shell-v12'
 const SHELL = [
   '/',
   '/index.html',
@@ -10,9 +10,16 @@ const SHELL = [
   '/region.json',
   '/modules/geo.mjs',
   '/modules/map-model.mjs',
+  '/modules/demo-mode.mjs',
+  '/modules/metro-model.mjs',
+  '/metro',
+  '/metro.html',
+  '/metro.js',
+  '/metro.css',
   '/manifest.webmanifest',
   '/icon.svg',
   '/explain.html',
+  '/explain',
   '/explain.js',
   '/phone-alerts.html',
 ]

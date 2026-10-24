@@ -44,8 +44,8 @@ test.describe('main alert flows', () => {
     await expect(page.locator('#alerts')).toBeFocused()
     await expect(page.locator('#district')).toHaveValue('pune')
     await expect(page.locator('#feed article')).toHaveCount(1)
-    await expect(page.locator('#feed')).toContainText('Agency instructions')
-    const source = page.getByRole('link', { name: /Read official source/i })
+    await expect(page.locator('#feed')).toContainText('Sample instructions')
+    const source = page.getByRole('link', { name: /Official portal \(not the source of this sample\)/i })
     await expect(source).toHaveAttribute('href', 'https://sachet.ndma.gov.in/')
     await expect(source).toHaveAttribute('target', '_blank')
     await expect(source).toHaveAccessibleName(/opens in a new tab/i)
@@ -65,7 +65,7 @@ test.describe('main alert flows', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'mr')
     await expect(page.locator('#langBtn')).toHaveAccessibleName(/English/)
     await expect(page.locator('#feed')).toContainText('मारुंजी')
-    await expect(page.getByRole('link', { name: /अधिकृत स्रोत वाचा/ }).first()).toHaveAccessibleName(/नवीन टॅब/)
+    await expect(page.getByRole('link', { name: /अधिकृत पोर्टल/ }).first()).toHaveAccessibleName(/नवीन टॅब/)
   })
 
   test('place search announces a district match without treating it as a village boundary', async ({ page }) => {

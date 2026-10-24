@@ -23,6 +23,26 @@ Thunderstorm with lightning and gusty winds likely at isolated places in Pune an
 const $ = id => document.getElementById(id)
 const el = (tag, text, cls) => { const n = document.createElement(tag); if (text) n.textContent = text; if (cls) n.className = cls; return n }
 const LANGS = [['english', 'English', 'en'], ['marathi', 'मराठी', 'mr'], ['hindi', 'हिंदी', 'hi']]
+let selectedLanguage = 'en'
+let sampleMode = new URLSearchParams(location.search).get('demo') === '1'
+
+function markSample() {
+  sampleMode = true
+  $('explainDemoBanner').hidden = false
+  $('explainBack').href = '/metro?demo=1'
+  $('explainBack').textContent = '← Metro Sachet DEMO'
+  const url = new URL(location.href)
+  url.searchParams.set('demo', '1')
+  history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
+}
+
+function selectLanguage(lang) {
+  selectedLanguage = lang
+  for (const button of document.querySelectorAll('[data-explain-lang]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.explainLang === lang))
+  }
+  for (const block of $('langBlocks').children) block.hidden = block.lang !== lang
+}
 
 function render(payload) {
   const d = payload.data
@@ -46,11 +66,14 @@ function render(payload) {
     blocks.append(box)
   }
   $('explainResult').hidden = false
+  selectLanguage(selectedLanguage)
 }
 
 async function explain() {
   const alertText = $('alertText').value.trim()
   if (!alertText) { $('explainStatus').textContent = 'Paste an alert first.'; return }
+  if (sampleMode || /\[(?:DEMO|SAMPLE)/i.test(alertText)) markSample()
+  $('explainResult').hidden = true
   $('explainButton').disabled = true; $('explainStatus').textContent = 'Explaining…'
   try {
     const res = await fetch('/api/explain', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ alertText }) })
@@ -63,7 +86,14 @@ async function explain() {
   } finally { $('explainButton').disabled = false }
 }
 
-for (const b of document.querySelectorAll('[data-sample]')) b.addEventListener('click', () => { $('alertText').value = SAMPLES[b.dataset.sample]; explain() })
+for (const b of document.querySelectorAll('[data-sample]')) b.addEventListener('click', () => { markSample(); $('alertText').value = SAMPLES[b.dataset.sample]; explain() })
+for (const button of document.querySelectorAll('[data-explain-lang]')) button.addEventListener('click', () => selectLanguage(button.dataset.explainLang))
 $('explainButton').addEventListener('click', explain)
 const params = new URLSearchParams(location.hash.slice(1))
-if (params.get('alert')) { $('alertText').value = params.get('alert').slice(0, 6000); history.replaceState(null, '', location.pathname) }
+if (sampleMode) markSample()
+if (params.get('alert')) {
+  $('alertText').value = params.get('alert').slice(0, 6000)
+  if (/\[(?:DEMO|SAMPLE)/i.test($('alertText').value)) markSample()
+  history.replaceState(null, '', `${location.pathname}${location.search}`)
+  if (params.get('run') === '1') void explain()
+}

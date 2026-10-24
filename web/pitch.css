@@ -529,3 +529,34 @@ h2 {
     align-items: flex-start;
   }
 }
+
+/* The event deck keeps the same keyboard controls on a phone or a projector. */
+.slide { overflow-y: auto; }
+.slide:not(.slide-title):not(.slide-close) .kicker { color: #84400c; }
+.boundary {
+  margin: 22px 0 10px;
+  padding: 14px 16px;
+  border-left: 4px solid #23847d;
+  background: #e1ebe5;
+  line-height: 1.45;
+}
+.source-note { color: #4c514b; font-size: 0.9rem; line-height: 1.5; }
+.script { display: grid; gap: 12px; padding-left: 22px; margin: 8px 0; }
+.script strong { color: var(--navy); }
+.script p { margin: 4px 0 0; line-height: 1.4; font-size: 0.98rem; }
+.link-card strong, .link-card span { display: block; }
+.local-fallback { line-height: 1.55; overflow-wrap: anywhere; }
+.pitch-safety { text-align: center; color: #d5cdc0; padding: 0 16px 16px; font-size: 0.82rem; line-height: 1.5; }
+@media (max-width: 860px) {
+  .deck { min-height: 0; }
+  .slide { overflow: visible; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .script { gap: 16px; }
+}
+@media print {
+  body { display: block; background: white; color: black; }
+  .mast, .controls, .pitch-safety { display: none; }
+  .stage { display: block; padding: 0; }
+  .deck { width: auto; aspect-ratio: auto; overflow: visible; box-shadow: none; }
+  .slide { display: flex !important; position: relative; break-after: page; min-height: 90vh; overflow: visible; }
+}

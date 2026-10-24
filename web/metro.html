@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#075f69">
+  <meta name="description" content="Metro Sachet connects Pune's Vanaz–Ramwadi ride to Pune district public alerts. Independent civic project; district precision only.">
+  <title>Metro Sachet — Along my Pune Metro ride</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/metro.css">
+</head>
+<body>
+  <a class="skip" href="#metroAlerts">Skip to district alerts</a>
+  <div class="independent"><div class="container"><span>Independent civic project · Not a government or Pune Metro website</span><a href="tel:112">In immediate danger, call 112</a></div></div>
+  <header class="site-header container metro-header">
+    <a class="brand" id="metroHome" href="/">Maharashtra Civic Alerts</a>
+    <div class="header-actions"><a href="/pitch">60-second pitch</a><button id="metroLang" type="button" lang="mr">मराठी</button></div>
+  </header>
+  <main class="container metro-main">
+    <section class="metro-hero" aria-labelledby="metroTitle">
+      <p class="eyebrow">CIVIC + URBAN MOBILITY · CODEX DAYLINE, PUNE</p>
+      <h1 id="metroTitle">Metro Sachet</h1>
+      <p class="metro-tagline" id="metroTagline">Public alerts, along my Metro ride.</p>
+      <p class="metro-route">Vanaz <span aria-label="to and from">↔</span> Ramwadi <span class="metro-line">Line 2 · Aqua Line</span></p>
+      <p id="metroIntro">Choose a station to read Pune district alerts. Every stop maps to the same district; an alert may concern a place far from your station.</p>
+      <div class="metro-actions"><a id="metroDemoLink" class="call-button" href="/metro?demo=1">Try DEMO / sample data</a><a id="metroLiveLink" href="/metro" hidden>Switch to live district feed</a></div>
+    </section>
+    <div id="metroDemoBanner" class="notice demo-banner" role="note" hidden><strong>DEMO / sample data — not live government alerts. This fixture does not report a Metro incident.</strong></div>
+    <div class="metro-layout">
+      <section class="location-panel metro-stations-panel" aria-labelledby="stationsTitle">
+        <p class="eyebrow">16 STATIONS · ONE DISTRICT</p>
+        <h2 id="stationsTitle">Your stop</h2>
+        <p class="hint" id="stationHint">Select a station. This is a station directory, not a live train map.</p>
+        <ol id="metroStations" class="metro-stations" aria-describedby="stationHint"></ol>
+        <p class="small">Station order: <a href="https://punemetrorail.org/project-profile" target="_blank" rel="noopener noreferrer">Pune Metro project profile (opens in a new tab)</a>. Checked 24 October 2026.</p>
+      </section>
+      <section id="metroAlerts" class="location-panel metro-bulletin" aria-labelledby="metroAlertTitle" tabindex="-1">
+        <p class="eyebrow" id="metroSelection">VANAZ → PUNE DISTRICT</p>
+        <h2 id="metroAlertTitle">Pune district bulletin</h2>
+        <p class="metro-precision" id="metroPrecision">District-alias precision only. No station-level incident, disruption or route-safety claim.</p>
+        <div class="metro-status-row"><p id="metroStatus" role="status" aria-live="polite">Checking district feed…</p><button id="metroRefresh" type="button">Refresh</button></div>
+        <div id="metroFeed"></div>
+        <p class="metro-safety" id="metroSafety">An empty, stale or unavailable feed is not an all-clear. Follow the original issuing authority. In immediate danger, call <a href="tel:112">112</a>.</p>
+      </section>
+    </div>
+    <noscript><p class="notice">JavaScript is needed to load district alerts. This static station directory is not an all-clear. Check <a href="https://sachet.ndma.gov.in/">official SACHET</a>; in danger call <a href="tel:112">112</a>.</p></noscript>
+  </main>
+  <footer class="container">Independent project. We relay public feeds and do not originate government alerts, cell broadcast, WEA or IPAWS. No live Metro operations API is connected.</footer>
+  <script type="module" src="/metro.js"></script>
+</body>
+</html>
