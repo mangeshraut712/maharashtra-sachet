@@ -7,11 +7,13 @@
   <title>Alert explainer — Maharashtra Civic Alerts</title>
   <link rel="icon" href="/icon.svg">
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/metro.css">
 </head>
 <body>
   <a class="skip" href="#explainer">Skip to explainer</a>
-  <header class="site-header container"><a class="brand" href="/">Maharashtra Civic Alerts</a><a href="/">← Alert bulletin</a></header>
+  <header class="site-header container"><a class="brand" href="/">Maharashtra Civic Alerts</a><a id="explainBack" href="/">← Alert bulletin</a></header>
   <main id="explainer" class="container" tabindex="-1">
+    <div id="explainDemoBanner" class="notice demo-banner" role="note" hidden><strong>DEMO / sample data — this explanation describes a fixture, not a live government alert. / नमुना माहिती — ही थेट शासकीय सूचना नाही.</strong></div>
     <section class="location-panel">
       <p class="eyebrow">SACHET EXPLAINER · BUILT WITH GOOGLE AI STUDIO + GEMINI</p>
       <h1>Understand a public alert in plain words.</h1>
@@ -33,7 +35,13 @@
       <p><span class="severity-badge" id="severityBadge"></span> <strong id="hazardType"></strong></p>
       <p class="alert-meta" id="explainMeta"></p>
       <p class="language-note" id="fallbackNote" hidden></p>
+      <div class="explain-languages" role="group" aria-label="Explanation language">
+        <button type="button" data-explain-lang="en" aria-pressed="true">English</button>
+        <button type="button" data-explain-lang="mr" lang="mr" aria-pressed="false">मराठी</button>
+        <button type="button" data-explain-lang="hi" lang="hi" aria-pressed="false">हिंदी</button>
+      </div>
       <div id="langBlocks"></div>
+      <p class="small">AI explanations can be wrong. District mentions do not establish an impact at a Metro station. An empty feed is not an all-clear.</p>
     </section>
   </main>
   <footer class="container">Not a government site. Verify with official sources (<a href="https://sachet.ndma.gov.in/" target="_blank" rel="noopener noreferrer">sachet.ndma.gov.in</a>, <a href="https://mausam.imd.gov.in/" target="_blank" rel="noopener noreferrer">IMD</a>). Emergency: call <a href="tel:112">112</a>.</footer>

@@ -13,6 +13,9 @@ import {
   fingerprint,
 } from './ui-model.js'
 import { bindLazyMap, refreshMap, updateSituationalMap } from './map-view.js'
+import { isDemoQuery, demoApiUrl, snapshotKey, snapshotMatchesMode } from './modules/demo-mode.mjs'
+
+const queryDemo = isDemoQuery(location.search)
 
 const $ = (id) => document.getElementById(id)
 const node = (tag, text, className) => {
@@ -75,7 +78,12 @@ const MR = {
     'महाराष्ट्रातील ३६ जिल्हे.\nस्थानिक माहिती. स्पष्ट स्रोत.',
   refresh: 'पुन्हा तपासा',
   demoBanner:
-    'चिन्हांकित डेमो · या नोंदी चाचणी नमुने आहेत, लाइव्ह आपत्कालीन सूचना नाहीत.',
+    'DEMO / नमुना माहिती · या चाचणी नोंदी आहेत, थेट शासकीय सूचना नाहीत.',
+  metroTitle: 'माझ्या मेट्रो प्रवासातील सूचना',
+  metroCopy: 'वनाझ ↔ रामवाडी · पुणे जिल्ह्याच्या सार्वजनिक सूचना, प्रवासात समजून घ्या.',
+  metroEntry: 'Metro Sachet उघडा',
+  demoEntry: '६० सेकंदांचा DEMO / नमुना माहिती',
+  exitDemo: 'थेट फीड पहा',
   demoAdvance: 'पुढील डेमो टप्पा',
   demoReset: 'डेमो पुन्हा सुरू करा',
   locationEyebrow: 'आपल्या परिसरासाठी',
@@ -181,6 +189,7 @@ const state = {
   layerFires: false,
 }
 const tx = (en, mr) => (state.lang === 'mr' ? mr : en)
+const isDemo = () => queryDemo || state.meta?.environment === 'demo'
 const label = (row) =>
   state.lang === 'mr'
     ? row?.mr || row?.en || row?.label || row?.id || ''
@@ -306,7 +315,10 @@ function freshness() {
 }
 function renderStatus() {
   const mode = freshness()
-  const text = {
+  const text = isDemo() ? tx(
+    state.error ? 'DEMO / sample data unavailable · Retry the demo or use npm run demo locally.' : 'DEMO / sample data · Fixtures only. Live source health is not represented here.',
+    state.error ? 'DEMO / नमुना माहिती अनुपलब्ध · पुन्हा प्रयत्न करा.' : 'DEMO / नमुना माहिती · चाचणी नोंदी. येथे थेट स्रोतांची स्थिती दाखवलेली नाही.',
+  ) : {
     offline: tx(
       'Offline · Showing last-known information, if available. Check official channels.',
       'ऑफलाइन · उपलब्ध असल्यास शेवटची माहिती दाखवत आहोत. अधिकृत माध्यमे तपासा.',
@@ -357,13 +369,24 @@ function renderStatus() {
         )
       : '')
   const demoBanner = $('demoBanner')
-  if (demoBanner) demoBanner.hidden = state.meta?.environment !== 'demo'
+  if (demoBanner) demoBanner.hidden = !isDemo()
+  $('demoControls').hidden = state.meta?.demoControls !== true
+  $('exitDemo').hidden = !queryDemo
+  $('metroEntry').href = isDemo() ? '/metro?demo=1' : '/metro'
+  if (isDemo()) {
+    $('notifyBtn').disabled = true
+    $('notificationStatus').textContent = tx('Browser notifications are disabled for sample data.', 'नमुना माहितीसाठी ब्राउझर सूचना बंद आहेत.')
+  }
   $('feed').setAttribute('aria-busy', String(state.busy))
   return mode
 }
 function renderSources() {
   const list = $('sourceList')
   list.replaceChildren()
+  if (isDemo()) {
+    list.append(node('li', tx('DEMO / sample data. No live sources were checked for these fixtures. Open the live bulletin to inspect source health.', 'DEMO / नमुना माहिती. या नमुन्यांसाठी थेट स्रोत तपासलेले नाहीत. स्रोतांची स्थिती पाहण्यासाठी थेट फीड उघडा.'), 'hint'))
+    return
+  }
   const entries = Object.entries(state.sources)
   if (!entries.length)
     list.append(
@@ -424,6 +447,7 @@ function renderSources() {
   }
 }
 function makeCard(alert) {
+  const sample = isDemo() || alert.demo === true
   const content = alertContent(alert, state.lang)
   const card = node(
     'article',
@@ -448,6 +472,7 @@ function makeCard(alert) {
     ),
   )
   const body = node('div', undefined, 'alert-body')
+  if (sample) body.append(node('strong', tx('DEMO / sample data — not a live government alert', 'DEMO / नमुना माहिती — थेट शासकीय सूचना नाही'), 'language-note'))
   const title = node(
     'h3',
     content.headline || tx('Official bulletin', 'अधिकृत सूचना'),
@@ -524,7 +549,7 @@ function makeCard(alert) {
     const text = node('p', content.instruction)
     text.lang = content.language
     instruction.append(
-      node('strong', tx('Agency instructions', 'संस्थेचे निर्देश')),
+      node('strong', sample ? tx('Sample instructions', 'नमुना निर्देश') : tx('Agency instructions', 'संस्थेचे निर्देश')),
       text,
     )
     body.append(instruction)
@@ -540,7 +565,7 @@ function makeCard(alert) {
     )?.href
   const link = officialLink(
     sourceUrl,
-    tx('Read official source ↗', 'अधिकृत स्रोत वाचा ↗'),
+    sample ? tx('Official portal (not the source of this sample) ↗', 'अधिकृत पोर्टल (या नमुन्याचा स्रोत नाही) ↗') : tx('Read official source ↗', 'अधिकृत स्रोत वाचा ↗'),
   )
   if (link) actions.append(link)
   else
@@ -551,9 +576,9 @@ function makeCard(alert) {
         'small',
       ),
     )
-  const explainText = [content.headline, content.description, content.instruction, (alert.districts || []).map(label).join(', ')].filter(Boolean).join('\n').slice(0, 2000)
+  const explainText = [sample ? '[DEMO / SAMPLE DATA — NOT A LIVE GOVERNMENT ALERT]' : '', content.headline, content.description, content.instruction, (alert.districts || []).map(label).join(', ')].filter(Boolean).join('\n').slice(0, 2000)
   const explain = node('a', tx('Explain in plain words', 'सोप्या शब्दांत समजून घ्या'))
-  explain.href = `/explain.html#${new URLSearchParams({ alert: explainText })}`
+  explain.href = `/explain${sample ? '?demo=1' : ''}#${new URLSearchParams({ alert: explainText })}`
   actions.append(explain)
   body.append(actions)
   card.append(bar, body)
@@ -572,7 +597,7 @@ function renderBulletin(mode, alerts = selectedAlerts()) {
   $('scopeLabel').textContent = selected
     ? label(selected)
     : tx('ACROSS MAHARASHTRA', 'संपूर्ण महाराष्ट्र')
-  $('feedNote').textContent = tx(
+  $('feedNote').textContent = isDemo() ? tx('DEMO / sample data · These fixtures do not describe current incidents.', 'DEMO / नमुना माहिती · या नोंदी वर्तमान घटनांची माहिती देत नाहीत.') : tx(
     'Relayed official messages · Expired alerts are excluded · Times shown in your device’s timezone.',
     'अधिकृत संदेशांचे पुनर्प्रसारण · कालबाह्य सूचना वगळल्या आहेत · वेळ आपल्या उपकरणाच्या वेळक्षेत्रानुसार आहे.',
   )
@@ -901,7 +926,7 @@ async function request(url, { method = 'GET' } = {}) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 15_000)
   try {
-    const response = await fetch(url, {
+    const response = await fetch(demoApiUrl(url, queryDemo), {
       method,
       cache: 'no-store',
       signal: controller.signal,
@@ -918,7 +943,7 @@ async function fullSnapshot() {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 15_000)
     try {
-      const response = await fetch(`/api/alerts?${params}`, {
+      const response = await fetch(demoApiUrl(`/api/alerts?${params}`, queryDemo), {
         cache: 'no-store',
         signal: controller.signal,
         headers: { accept: 'application/json' },
@@ -932,6 +957,7 @@ async function fullSnapshot() {
   })
 }
 function notifyNew(alerts) {
+  if (isDemo()) return
   const fresh = new Set(
     alerts.filter((a) => !state.seen.has(alertKey(a))).map(alertKey),
   )
@@ -973,9 +999,10 @@ function notifyNew(alerts) {
 }
 function restoreSnapshot() {
   try {
-    const raw = storage.get('mh-sachet-snapshot')
+    const raw = storage.get(snapshotKey(queryDemo))
     if (!raw || raw.length > 2_000_000) return
     const saved = JSON.parse(raw)
+    if (!snapshotMatchesMode(saved, queryDemo)) return
     if (!validSnapshot(saved?.body) || !validMeta(saved?.meta)) return
     state.meta = saved.meta
     Object.assign(state, {
@@ -1024,7 +1051,7 @@ async function refresh() {
     if (state.meta) {
       const saved = JSON.stringify({ meta: state.meta, body })
       state.saveFailed =
-        saved.length > 2_000_000 || !storage.set('mh-sachet-snapshot', saved)
+        saved.length > 2_000_000 || !storage.set(snapshotKey(isDemo()), saved)
     }
   } catch (error) {
     state.error = error.message
@@ -1122,7 +1149,7 @@ $('langBtn').addEventListener('click', () => {
 })
 $('refreshBtn').addEventListener('click', refresh)
 async function runDemoControl(action) {
-  if (state.meta?.environment !== 'demo') return
+  if (state.meta?.demoControls !== true) return
   const controls = [$('demoAdvance'), $('demoReset')]
   controls.forEach(button => { button.disabled = true })
   try {
@@ -1157,6 +1184,7 @@ for (const id of ['district', 'region', 'kind', 'weaClass'])
     render()
   })
 $('notifyBtn').addEventListener('click', async () => {
+  if (isDemo()) return
   if (state.notify) {
     state.notify = false
     $('notificationStatus').textContent = tx(

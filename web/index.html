@@ -78,6 +78,15 @@
           </p>
         </div>
       </section>
+      <section class="metro-entry location-panel" aria-labelledby="metroTitle">
+        <p class="eyebrow">CIVIC + URBAN MOBILITY · CODEX DAYLINE</p>
+        <h2 id="metroTitle" data-i18n="metroTitle">Along my Metro ride</h2>
+        <p data-i18n="metroCopy">Vanaz ↔ Ramwadi · Understand Pune district public alerts as you travel.</p>
+        <div class="demo-actions">
+          <a id="metroEntry" class="call-button" href="/metro" data-i18n="metroEntry">Open Metro Sachet</a>
+          <a href="/metro?demo=1" data-i18n="demoEntry">60-second DEMO / sample data</a>
+        </div>
+      </section>
       <div id="connection" class="connection">
         <strong class="update-label" data-i18n="updateLabel">Latest status</strong>
         <div id="connectionStatus" class="connection-status" role="status" aria-live="polite" aria-atomic="true">
@@ -89,8 +98,9 @@
         </button>
       </div>
       <div id="demoBanner" class="notice demo-banner" hidden>
-        <strong data-i18n="demoBanner">LABELLED DEMO · These records are test fixtures, not live emergencies.</strong>
-        <div class="demo-actions">
+        <strong data-i18n="demoBanner">DEMO / sample data · These are test fixtures, not live government alerts.</strong>
+        <p><a id="exitDemo" href="/" data-i18n="exitDemo">Return to live feed</a></p>
+        <div id="demoControls" class="demo-actions" hidden>
           <button id="demoAdvance" type="button" data-i18n="demoAdvance">Advance demo step</button>
           <button id="demoReset" type="button" data-i18n="demoReset">Reset demo</button>
         </div>
