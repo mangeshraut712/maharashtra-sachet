@@ -6,7 +6,47 @@ Independent English/Marathi hub for official Maharashtra public alerts, district
 
 **Use it live:** [maharashtra-sachet.mangeshraut712.workers.dev](https://maharashtra-sachet.mangeshraut712.workers.dev)
 
-**Event pitch:** [live slides](https://maharashtra-sachet.mangeshraut712.workers.dev/pitch.html) · [PPTX](https://maharashtra-sachet.mangeshraut712.workers.dev/pitch.pptx) · [submission notes](docs/history/SUBMISSION.md)
+**Metro Hackathon pitch:** [live slides](https://maharashtra-sachet.mangeshraut712.workers.dev/pitch) · [60-second script](https://maharashtra-sachet.mangeshraut712.workers.dev/pitch#s3)
+
+## Hackathon demo
+
+**DevDay Exchange Community Metro Hackathon Pune · Codex Dayline · Civic + Urban Mobility.** Metro Sachet adds a Vanaz ↔ Ramwadi ride view to the civic relay. This corridor is Pune Metro's **Line 2 / Aqua Line** ([official route reference](https://www.punemetrorail.org/download/Pune_Metro_AquaLine.pdf)). Its 16 stations all map to **Pune district**, with `district-alias` precision only. A district notice does not establish an incident at any station, a train delay, or a safe route.
+
+| Entry | URL |
+| --- | --- |
+| Live hub | [maharashtra-sachet.mangeshraut712.workers.dev](https://maharashtra-sachet.mangeshraut712.workers.dev/) |
+| Full judge path, with sample data | [/?demo=1](https://maharashtra-sachet.mangeshraut712.workers.dev/?demo=1) |
+| Direct Metro sample view | [/metro?demo=1](https://maharashtra-sachet.mangeshraut712.workers.dev/metro?demo=1) |
+| Live Metro district view | [/metro](https://maharashtra-sachet.mangeshraut712.workers.dev/metro) |
+| Pitch and 60-second script | [/pitch](https://maharashtra-sachet.mangeshraut712.workers.dev/pitch) (also reachable from `/pitch.html`) |
+
+**Judge path:** home → **Along my Metro ride** → **DEMO / sample data** → labelled Pune notice → **Explain in plain words** → **मराठी**. Starting at `/?demo=1` preserves demo mode into the ride. The fixture path works even when live CAP is empty or unavailable. Demo notices are never inserted into the live bulletin or represented as government alerts. The explainer uses the existing Gemini endpoint and clearly labels its keyword-based offline fallback when Gemini is unavailable.
+
+**60-second script:** “This is Metro Sachet, an independent civic companion for Pune’s Vanaz–Ramwadi ride. From home, open Along my Metro ride. These sixteen stations map to Pune district only, not individual station warnings or train status. Open DEMO / sample data and the labelled Pune notice. The walkthrough works even when live feeds are empty. Explain in plain words uses Gemini; switch to Marathi. A visible offline fallback covers model failure. The original source remains the authority. Samples never become live alerts. Empty does not mean all-clear. In immediate danger, call 112. Built with Codex, Cloudflare Workers, D1, and Gemini.”
+
+For a venue-network fallback, install dependencies before arriving, then run the local fixture server:
+
+```sh
+npm ci
+npm run demo
+# http://127.0.0.1:8799/?demo=1
+# http://127.0.0.1:8799/metro?demo=1
+# The local explainer works without a Gemini key, with a visible offline fallback.
+```
+
+The demo is an independent civic project, not a government site or emergency service. It does not originate cell broadcast, Wireless Emergency Alerts, or IPAWS. Optional Jev, situational, and CPCB layers stay off. Coverage remains exactly 36 Maharashtra districts; Goa is excluded. An empty feed is not an all-clear; in immediate danger, **call 112**.
+
+Deployment uses the existing Wrangler production configuration:
+
+```sh
+npm test
+npm run typecheck
+npm run test:e2e
+npm run deploy:production
+# Equivalent: npx wrangler deploy --env production
+```
+
+Wrangler needs access to the configured Cloudflare account and D1 database. See [operations](docs/OPERATIONS.md) for authentication and secrets; do not place keys in browser code.
 
 ## Screenshots
 
@@ -33,9 +73,9 @@ Framed captures of the live hub (current UI). An empty or partial bulletin is no
 5. Use **Citizen services** for official portals. Directory links are not live incident feeds.
 6. Switch to **मराठी** when needed. Optional notifications only work while the page is open.
 
-Full walkthrough and current live numbers: [How to use](docs/HOW-TO.md) · [Current snapshot](docs/STATUS.md)
+Full walkthrough and dated status notes: [How to use](docs/HOW-TO.md) · [Recorded snapshot](docs/STATUS.md)
 
-## Current live snapshot
+## Historical live snapshot (6 September 2026)
 
 Verified **6 Sept 2026, 00:59 IST** against production version `6645d3eb-b2e0-4070-bc55-81c18fc5f2af`. The one-minute scheduler advanced the healthy generation from `2026-09-05T19:27:58.576Z` to `2026-09-05T19:28:58.319Z`. Feeds and health can change after this snapshot.
 
@@ -61,7 +101,7 @@ npm start
 # http://127.0.0.1:8787  live public sources
 
 npm run demo
-# http://127.0.0.1:8799  labelled fixture alerts for demos; never production
+# http://127.0.0.1:8799  labelled fixture alerts, separate from live data
 ```
 
 ```sh

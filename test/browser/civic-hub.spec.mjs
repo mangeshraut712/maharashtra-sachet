@@ -5,7 +5,7 @@ test('public-service design keeps independent identity and narrow layouts clear'
   await page.goto('/')
   await expect(page.locator('#feed article')).toHaveCount(2)
   await expect(page.locator('#demoBanner')).toBeVisible()
-  await expect(page.locator('#demoBanner')).toContainText('LABELLED DEMO')
+  await expect(page.locator('#demoBanner')).toContainText('DEMO / sample data')
   await expect(page.locator('.independent')).toContainText('Not a government website')
   await expect(page.locator('.brand-marathi')).toContainText('महाराष्ट्र')
   await expect(page.getByRole('navigation', {name:'Main navigation'}).getByRole('link')).toHaveCount(7)
@@ -129,20 +129,21 @@ test('pagination beyond 500 alerts remains complete', async ({ page }) => {
 })
 
 test('event pitch deck is labelled, linked and keyboard reachable', async ({ page }) => {
-  await page.goto('/pitch.html')
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Maharashtra Civic Alerts')
+  await page.goto('/pitch')
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Metro Sachet')
+  await expect(page.locator('#s1')).toContainText('DevDay Exchange Community Metro Hackathon Pune')
   await expect(page.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
     'href',
     'https://github.com/mangeshraut712/maharashtra-sachet',
   )
-  await expect(page.getByRole('link', { name: 'Download PPTX' })).toHaveAttribute('href', '/pitch.pptx')
+  await expect(page.getByRole('link', { name: 'Start judge demo' })).toHaveAttribute('href', '/?demo=1')
   await page.keyboard.press('ArrowRight')
-  await expect(page.locator('#progress')).toContainText('2 / 9')
-  await page.goto('/pitch.html#s9')
-  await expect(page.getByRole('link', { name: 'Live demo — Cloudflare Workers' })).toHaveAttribute(
-    'href',
-    'https://maharashtra-sachet.mangeshraut712.workers.dev',
-  )
+  await expect(page.locator('#progress')).toContainText('2 / 6')
+  await page.goto('/pitch.html#s3')
+  await expect(page.locator('#s3')).toContainText('60-second judge script')
+  await page.goto('/pitch.html#s6')
+  await expect(page.getByRole('link', { name: /Open Metro demo directly/ })).toHaveAttribute('href', '/metro?demo=1')
+  await expect(page.locator('.pitch-safety')).toContainText('Empty ≠ all-clear')
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()
   expect(axe.violations.map((v) => v.id)).toEqual([])
 })

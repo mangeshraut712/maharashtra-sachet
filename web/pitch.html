@@ -4,423 +4,117 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#173c39" />
-    <meta
-      name="description"
-      content="Briefing deck for Maharashtra Civic Alerts: coverage, sources, place resolution and operating limits."
-    />
-    <title>Maharashtra Civic Alerts — Project pitch</title>
+    <meta name="description" content="Metro Sachet: an independent Pune Metro district-alert companion. DevDay Exchange Community Metro Hackathon Pune, Codex Dayline." />
+    <title>Metro Sachet — Pune Metro Hackathon pitch</title>
     <link rel="icon" href="/icon.svg" />
+    <link rel="canonical" href="https://maharashtra-sachet.mangeshraut712.workers.dev/pitch" />
     <link rel="stylesheet" href="/pitch.css" />
   </head>
   <body>
     <a class="skip" href="#deck">Skip to slides</a>
     <header class="mast">
-      <a class="brand" href="/"
-        ><img src="/icon.svg" width="32" height="32" alt="" />Maharashtra Civic
-        Alerts</a
-      >
+      <a class="brand" href="/"><img src="/icon.svg" width="32" height="32" alt="" />Metro Sachet</a>
       <nav class="mast-links" aria-label="Pitch links">
+        <a href="/?demo=1">Start judge demo</a>
         <a href="/">Live hub</a>
         <a href="https://github.com/mangeshraut712/maharashtra-sachet">GitHub</a>
-        <a href="/pitch.pptx">Download PPTX</a>
       </nav>
     </header>
     <div class="stage">
       <main id="deck" class="deck" tabindex="-1">
         <section class="slide slide-title is-active" id="s1" aria-labelledby="t1">
-          <p class="kicker">Codex Build House · Pune · Briefing</p>
-          <h1 id="t1">Maharashtra Civic Alerts</h1>
-          <p class="marathi" lang="mr">महाराष्ट्र नागरी सतर्कता</p>
-          <p class="lede">
-            A bilingual public-information hub that shows official warnings by
-            district, says how fresh each source is, and refuses to treat silence
-            as safety.
-          </p>
-          <div class="stats">
-            <div class="stat"><b>36</b><span>Districts indexed</span></div>
-            <div class="stat"><b>5</b><span>Official sources tracked</span></div>
-            <div class="stat"><b>12</b><span>Citizen-service directories</span></div>
-            <div class="stat"><b>EN + MR</b><span>Original text, no AI rewrite</span></div>
+          <p class="kicker">DevDay Exchange Community Metro Hackathon Pune</p>
+          <h1 id="t1">Metro Sachet</h1>
+          <p class="marathi">Maharashtra Civic Alerts · <span lang="mr">मेट्रो साथी, नागरी माहिती</span></p>
+          <p class="lede">Public district alerts, along a familiar Metro ride. Read the notice, understand it in plain words, switch to Marathi.</p>
+          <div class="chip-row">
+            <span class="chip">Civic + Urban Mobility</span>
+            <span class="chip">Codex Dayline · Vanaz ↔ Ramwadi</span>
+            <span class="chip">Line 2 / Aqua Line</span>
           </div>
-          <ol class="agenda">
-            <li>01 Problem vs today’s tools</li>
-            <li>02 What the hub returns</li>
-            <li>03 Source coverage matrix</li>
-            <li>04 Operating model</li>
-            <li>05 Place-resolution table</li>
-            <li>06 Resident information model</li>
-            <li>07 Public limits</li>
-            <li>08 Review path</li>
-          </ol>
+          <div class="stats">
+            <div class="stat"><b>16</b><span>Stations in the ride view</span></div>
+            <div class="stat"><b>1</b><span>Pune district, shared coverage</span></div>
+            <div class="stat"><b>36</b><span>Maharashtra districts in the hub</span></div>
+            <div class="stat"><b>EN + MR</b><span>Bilingual journey</span></div>
+          </div>
+          <p class="warn">Independent project. DEMO / sample data is visibly labelled and never presented as a live government alert.</p>
         </section>
 
         <section class="slide" id="s2" aria-labelledby="t2">
-          <p class="kicker">Problem</p>
-          <h2 id="t2">Residents should not have to guess which feed is live</h2>
-          <div class="sheet-wrap">
-            <table class="sheet">
-              <caption>Gap analysis</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Resident question</th>
-                  <th scope="col">Typical today</th>
-                  <th scope="col">Failure mode</th>
-                  <th scope="col">What this hub answers</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Is this source live?</td>
-                  <td>Empty map or last screenshot</td>
-                  <td>Stale data looks like all-clear</td>
-                  <td>Per-source freshness and status</td>
-                </tr>
-                <tr>
-                  <td>Where does it apply?</td>
-                  <td>City or village name on a poster</td>
-                  <td>Wrong district, false precision</td>
-                  <td>District alias, dual-candidate when needed</td>
-                </tr>
-                <tr>
-                  <td>What should I do?</td>
-                  <td>Scattered agency pages</td>
-                  <td>Instructions rewritten or dropped</td>
-                  <td>Original CAP text, EN/MR labelled</td>
-                </tr>
-                <tr>
-                  <td>Who issued it?</td>
-                  <td>Reposted WhatsApp card</td>
-                  <td>Lost attribution</td>
-                  <td>Source identity + official directory</td>
-                </tr>
-                <tr>
-                  <td>Is the warning still on?</td>
-                  <td>Old graphic stays in chat</td>
-                  <td>Cancelled alert still believed</td>
-                  <td>Actual / Update / Cancel / expiry</td>
-                </tr>
-              </tbody>
-            </table>
+          <p class="kicker">The commuter question</p>
+          <h2 id="t2">“What public alerts should I read along my ride?”</h2>
+          <div class="grid three">
+            <article class="card"><span class="num">01 · Find</span><h3>A familiar station list</h3><p>Vanaz ↔ Ramwadi gives riders an entry point into Pune district alerts.</p></article>
+            <article class="card"><span class="num">02 · Understand</span><h3>Original text + explanation</h3><p>Read the public notice, then ask the existing Gemini explainer for plain language and Marathi.</p></article>
+            <article class="card"><span class="num">03 · Check</span><h3>Know the limits</h3><p>District aliases do not prove a particular station is affected. Source failures stay visible.</p></article>
           </div>
+          <p class="boundary">Every station maps to <strong>Pune district</strong>. No station geofences, train positions, delay predictions, or safe-route claims.</p>
+          <p class="source-note">Route reference: <a href="https://www.punemetrorail.org/download/Pune_Metro_AquaLine.pdf" target="_blank" rel="noopener noreferrer">Pune Metro’s Aqua Line / Line 2 (opens in a new tab)</a>. Static route reference; no official Metro API integration.</p>
         </section>
 
         <section class="slide" id="s3" aria-labelledby="t3">
-          <p class="kicker">Solution</p>
-          <h2 id="t3">One session returns status, place, bulletin and services</h2>
-          <div class="sheet-wrap">
-            <table class="sheet">
-              <caption>What a resident can finish in one visit</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Step</th>
-                  <th scope="col">Input</th>
-                  <th scope="col">Output</th>
-                  <th scope="col">Honesty rule</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>1. Identify the site</td>
-                  <td>—</td>
-                  <td>Independent banner + NDMA SACHET link</td>
-                  <td>Not a government website</td>
-                </tr>
-                <tr>
-                  <td>2. Read latest status</td>
-                  <td>—</td>
-                  <td>healthy / degraded / stale + source ages</td>
-                  <td>Partial coverage is expected</td>
-                </tr>
-                <tr>
-                  <td>3. Find a place</td>
-                  <td>Pune, Sawantwadi, Navi Mumbai, Marunji</td>
-                  <td>District ID(s), precision = district-alias</td>
-                  <td>No invented village polygons</td>
-                </tr>
-                <tr>
-                  <td>4. Read the bulletin</td>
-                  <td>District filter</td>
-                  <td>Active Actual records only</td>
-                  <td>0 alerts ≠ all-clear</td>
-                </tr>
-                <tr>
-                  <td>5. Open services</td>
-                  <td>Power, water, health, transport…</td>
-                  <td>Official portal + live vs directory label</td>
-                  <td>Directory is not a live incident feed</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <p class="kicker">60-second judge script</p>
+          <h2 id="t3">Home → Metro → sample → Explain → Marathi</h2>
+          <ol class="script">
+            <li><strong>0–12s · Home</strong><p>“This is Metro Sachet, an independent civic companion for Pune’s Vanaz–Ramwadi ride. It brings public district alerts into a familiar station view.”</p></li>
+            <li><strong>12–25s · Along my Metro ride</strong><p>“These sixteen stations map to Pune district only. This is not a station warning or a train-status feed.”</p></li>
+            <li><strong>25–45s · DEMO → Explain → मराठी</strong><p>“Open DEMO / sample data and the labelled Pune notice. The walkthrough works even when live feeds are empty. Explain in plain words uses Gemini; Marathi makes it accessible. A visible offline fallback covers model failure.”</p></li>
+            <li><strong>45–60s · Close</strong><p>“The original source remains the authority. Samples never become live alerts. Empty does not mean all-clear. In immediate danger, call 112. Built with Codex, Cloudflare Workers, D1, and Gemini.”</p></li>
+          </ol>
         </section>
 
         <section class="slide" id="s4" aria-labelledby="t4">
-          <p class="kicker">Coverage matrix</p>
-          <h2 id="t4">Five official sources, two intentionally disconnected</h2>
+          <p class="kicker">Technology</p>
+          <h2 id="t4">A working relay, a small mobility layer</h2>
           <div class="sheet-wrap">
             <table class="sheet">
-              <caption>Production source model</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Source</th>
-                  <th scope="col">Kind</th>
-                  <th scope="col">Runtime</th>
-                  <th scope="col">What is stored</th>
-                  <th scope="col">Resident meaning</th>
-                </tr>
-              </thead>
+              <caption>What runs behind the demo</caption>
+              <thead><tr><th scope="col">Layer</th><th scope="col">Implementation</th><th scope="col">Boundary</th></tr></thead>
               <tbody>
-                <tr>
-                  <td>SACHET / NDMA CAP</td>
-                  <td>Public warnings</td>
-                  <td><span class="tag tag-warn">Connected</span></td>
-                  <td>CAP lifecycle + retained cancels</td>
-                  <td>Primary official bulletin</td>
-                </tr>
-                <tr>
-                  <td>IMD</td>
-                  <td>Weather notices</td>
-                  <td><span class="tag tag-on">Connected</span></td>
-                  <td>Official text only</td>
-                  <td>No invented severity</td>
-                </tr>
-                <tr>
-                  <td>INCOIS</td>
-                  <td>Ocean / quake</td>
-                  <td><span class="tag tag-on">Connected</span></td>
-                  <td>Arabian Sea relevant events</td>
-                  <td>Pacific quakes excluded</td>
-                </tr>
-                <tr>
-                  <td>CWC FloodWatch</td>
-                  <td>Flood</td>
-                  <td><span class="tag tag-off">Disabled</span></td>
-                  <td>No adapter</td>
-                  <td>Use official directory</td>
-                </tr>
-                <tr>
-                  <td>CPCB AQI</td>
-                  <td>Air quality</td>
-                  <td><span class="tag tag-off">Disabled</span></td>
-                  <td>No key / not enabled</td>
-                  <td>Concentration ≠ AQI warning</td>
-                </tr>
+                <tr><td>Public feeds</td><td>CAP adapters, lifecycle updates, cancellation and expiry</td><td>Upstream outages and empty feeds remain visible</td></tr>
+                <tr><td>Relay</td><td>TypeScript · Cloudflare Workers · D1 · scheduled collection</td><td>Public relay APIs remain read-only</td></tr>
+                <tr><td>Ride view</td><td>Vanilla JavaScript · static station catalogue · Pune district filter</td><td>District-alias precision only</td></tr>
+                <tr><td>Explanation</td><td>Existing <code>/explain</code> · Gemini · English / Marathi / Hindi</td><td>Server-side key; AI may be wrong; labelled offline fallback</td></tr>
+                <tr><td>Demo</td><td><code>?demo=1</code> · shared local fixtures · <code>npm run demo</code></td><td>Sample records stay separate from the live bulletin</td></tr>
               </tbody>
             </table>
           </div>
+          <p class="source-note">Built with Codex. Tests cover district mapping, demo isolation, and the browser journey. The original alert remains available when reading an explanation.</p>
         </section>
 
         <section class="slide" id="s5" aria-labelledby="t5">
-          <p class="kicker">Operating model</p>
-          <h2 id="t5">Read-only relay: collect, retain, expire, never invent</h2>
-          <ol class="flow">
-            <li><b>01</b><p>Cron every minute + heal-on-read if stale</p></li>
-            <li><b>02</b><p>Bounded collectors, byte/time limits, lease</p></li>
-            <li><b>03</b><p>CAP Actual / Update / Cancel / expiry</p></li>
-            <li><b>04</b><p>D1 snapshot, token-owned write</p></li>
-            <li><b>05</b><p>Public GET APIs + bilingual UI</p></li>
-          </ol>
-          <div class="sheet-wrap">
-            <table class="sheet">
-              <caption>Runtime constraints</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Control</th>
-                  <th scope="col">Rule</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Host</td>
-                  <td>Cloudflare Workers + D1. No Vercel. No public refresh POST.</td>
-                </tr>
-                <tr>
-                  <td>Recovery</td>
-                  <td>Background ingest when enabled sources are older than 5 minutes, 60s cooldown.</td>
-                </tr>
-                <tr>
-                  <td>Fixtures</td>
-                  <td><code>npm run demo</code> only. Production rejects demo mutation routes.</td>
-                </tr>
-                <tr>
-                  <td>Empty bulletin</td>
-                  <td>UI states it is not an all-clear. Call 112 in danger.</td>
-                </tr>
-              </tbody>
-            </table>
+          <p class="kicker">Safety is part of the product</p>
+          <h2 id="t5">Clear provenance. Honest uncertainty.</h2>
+          <div class="grid two">
+            <article class="card"><h3>Independent civic relay</h3><p>Not a government site or emergency dispatch service. No cell broadcast, Wireless Emergency Alerts, or IPAWS origination.</p></article>
+            <article class="card"><h3>Empty ≠ all-clear</h3><p>An empty, stale, disabled, or unavailable feed cannot establish safety. In immediate danger, call <a href="tel:112">112</a>.</p></article>
+            <article class="card"><h3>Sample data stays sample data</h3><p>The DEMO banner follows the walkthrough. Fixture notices do not describe a real incident or Metro disruption.</p></article>
+            <article class="card"><h3>Limited coverage and AI</h3><p>Exactly 36 Maharashtra districts; Goa excluded. District matches are not station warnings. Gemini explanations may be wrong: verify the original source.</p></article>
           </div>
+          <p class="source-note">Optional Jev shadow, situational layers, and CPCB remain off by default. They are not prerequisites for this demo.</p>
         </section>
 
-        <section class="slide" id="s6" aria-labelledby="t6">
-          <p class="kicker">Place resolution</p>
-          <h2 id="t6">Typed names resolve to districts, not village polygons</h2>
-          <div class="sheet-wrap">
-            <table class="sheet">
-              <caption>Verified production lookups</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Query</th>
-                  <th scope="col">Result</th>
-                  <th scope="col">Precision</th>
-                  <th scope="col">Why it matters</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Pune</td>
-                  <td>Pune</td>
-                  <td>district</td>
-                  <td>Direct district match</td>
-                </tr>
-                <tr>
-                  <td>Navi Mumbai</td>
-                  <td>Raigad and Thane</td>
-                  <td>district-alias</td>
-                  <td>Resident must pick one</td>
-                </tr>
-                <tr>
-                  <td>Sawantwadi</td>
-                  <td>Sindhudurg</td>
-                  <td>district-alias</td>
-                  <td>Town ≠ verified ward</td>
-                </tr>
-                <tr>
-                  <td>Marunji</td>
-                  <td>Pune</td>
-                  <td>district-alias</td>
-                  <td>Place maps to district only</td>
-                </tr>
-                <tr>
-                  <td>Panaji</td>
-                  <td>No Maharashtra match</td>
-                  <td>—</td>
-                  <td>Goa is excluded on purpose</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="slide" id="s7" aria-labelledby="t7">
-          <p class="kicker">Information model</p>
-          <h2 id="t7">What the resident can actually know</h2>
-          <div class="sheet-wrap">
-            <table class="sheet">
-              <caption>Surfaces and data, not screenshots</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Surface</th>
-                  <th scope="col">Fields shown</th>
-                  <th scope="col">Not shown</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Latest status</td>
-                  <td>Overall mode, generation time, polling interval</td>
-                  <td>Guarantee that the area is safe</td>
-                </tr>
-                <tr>
-                  <td>Source health</td>
-                  <td>ok/stale/disabled, last success, error class, record count</td>
-                  <td>Raw upstream bodies or keys</td>
-                </tr>
-                <tr>
-                  <td>Bulletin</td>
-                  <td>Issuer, area, class, original instructions, expiry</td>
-                  <td>AI paraphrase, village polygons</td>
-                </tr>
-                <tr>
-                  <td>Citizen services</td>
-                  <td>12 categories, official URL, live vs directory</td>
-                  <td>Statewide live power/water/AQI feeds</td>
-                </tr>
-                <tr>
-                  <td>Phone guide</td>
-                  <td>How to check device government-alert settings</td>
-                  <td>A button that sends a cell broadcast</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="slide" id="s8" aria-labelledby="t8">
-          <p class="kicker">Limits</p>
-          <h2 id="t8">Public “does / does not” so the demo cannot overclaim</h2>
-          <div class="sheet-wrap">
-            <table class="sheet">
-              <caption>Scope control</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Does</th>
-                  <th scope="col">Does not</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Relay official public feeds with attribution</td>
-                  <td>Speak as government or dispatch 112</td>
-                </tr>
-                <tr>
-                  <td>Keep cancel/expiry so old warnings die</td>
-                  <td>Send carrier cell broadcast / WEA</td>
-                </tr>
-                <tr>
-                  <td>Map places to 36 Maharashtra districts</td>
-                  <td>Claim complete village or ward coverage</td>
-                </tr>
-                <tr>
-                  <td>Label CWC/CPCB as disconnected</td>
-                  <td>Invent flood or AQI alerts</td>
-                </tr>
-                <tr>
-                  <td>Offer a labelled local fixture demo</td>
-                  <td>Seed production with test alerts</td>
-                </tr>
-                <tr>
-                  <td>Preserve original EN/MR wording</td>
-                  <td>Rewrite emergency instructions with a model</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="slide slide-close" id="s9" aria-labelledby="t9">
-          <p class="kicker">Review path</p>
-          <h2 id="t9">Open these in the review</h2>
+        <section class="slide slide-close" id="s6" aria-labelledby="t6">
+          <p class="kicker">Ready for the judge</p>
+          <h2 id="t6">Start the ride.</h2>
           <div class="links">
-            <a class="link-card" href="https://maharashtra-sachet.mangeshraut712.workers.dev"
-              ><strong>Live demo — Cloudflare Workers</strong
-              ><span>Status → place search → source matrix → services</span></a
-            >
-            <a class="link-card" href="https://github.com/mangeshraut712/maharashtra-sachet"
-              ><strong>GitHub repository</strong><span>Collectors, CAP lifecycle, tests, operations</span></a
-            >
-            <a class="link-card" href="/pitch.pptx"
-              ><strong>PowerPoint download</strong><span>Same tables in 16:9 PPTX</span></a
-            >
-            <a class="link-card" href="/"
-              ><strong>Back to the hub</strong><span>Independent banner first</span></a
-            >
+            <a class="link-card" href="/?demo=1"><strong>Home → Metro judge path</strong><span>DEMO / sample data · follow the full journey</span></a>
+            <a class="link-card" href="/metro?demo=1"><strong>Open Metro demo directly</strong><span>Vanaz ↔ Ramwadi → Pune sample → Explain → Marathi</span></a>
+            <a class="link-card" href="/"><strong>Live public-feed hub</strong><span>Read source health; an empty bulletin is not an all-clear</span></a>
+            <a class="link-card" href="https://github.com/mangeshraut712/maharashtra-sachet"><strong>Code and setup</strong><span>README → Hackathon demo · tests · deployment</span></a>
           </div>
-          <p class="note">
-            Judge sequence: identity banner → latest status → Navi Mumbai dual
-            district → Marathi → source health → <code>npm run demo</code> only if
-            live feeds are empty.
-          </p>
+          <p class="local-fallback">Venue network fallback: run <code>npm run demo</code>, then open <code>http://127.0.0.1:8799/metro?demo=1</code>. The local explainer shows its offline fallback when Gemini is unavailable.</p>
+          <p class="note">Independent civic project · Civic + Urban Mobility · Codex Dayline, Pune</p>
         </section>
       </main>
     </div>
     <nav class="controls" aria-label="Slide controls">
       <button id="prev" type="button" aria-controls="deck">Previous</button>
-      <div class="pager">
-        <div class="dots" id="dots"></div>
-        <span class="progress" id="progress" role="status" aria-live="polite">1 / 9</span>
-      </div>
+      <div class="pager"><div class="dots" id="dots"></div><span class="progress" id="progress" role="status" aria-live="polite">1 / 6</span></div>
       <button id="next" type="button" aria-controls="deck">Next</button>
     </nav>
+    <footer class="pitch-safety">Independent project · Not a government site · Empty ≠ all-clear · In immediate danger, call <a href="tel:112">112</a>.</footer>
     <script src="/pitch.js"></script>
   </body>
 </html>

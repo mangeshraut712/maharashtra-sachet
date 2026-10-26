@@ -47,12 +47,11 @@ test('deployed civic hub renders, filters and reports actual source coverage', a
   expect(errors).toEqual([])
 })
 
-test('hosted pitch and PPTX are public on the live Worker', async ({ page, request }) => {
+test('hosted Metro pitch and judge links are public on the live Worker', async ({ page }) => {
   const pageResponse = await page.goto('/pitch.html')
   expect(pageResponse.status()).toBe(200)
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Maharashtra Civic Alerts')
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Metro Sachet')
   await expect(page.locator('#demoBanner')).toHaveCount(0)
-  const pptx = await request.get('/pitch.pptx')
-  expect(pptx.status()).toBe(200)
-  expect(pptx.headers()['content-type'] || '').toMatch(/presentation|officedocument|octet-stream/)
+  await expect(page.getByRole('link', { name: 'Start judge demo' })).toHaveAttribute('href', '/?demo=1')
+  await expect(page.locator('.pitch-safety')).toContainText('Empty ≠ all-clear')
 })

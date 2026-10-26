@@ -4,6 +4,7 @@ import { extname, resolve, sep } from 'node:path'
 import { Readable } from 'node:stream'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { handleExplainRequest } from './explain.mjs'
+import { handleDemoApi, isDemoRequest } from './demo.mjs'
 import { collectSnapshot, emptyState, handleApi, jsonResponse, SECURITY_HEADERS, sourceCollectors } from './service.mjs'
 
 const WEB = fileURLToPath(new URL('../web', import.meta.url))
@@ -59,7 +60,9 @@ export function createRelayServer({ relay = createRelay(), webRoot = WEB, enviro
       const request = new Request(requestUrl, { method })
       let response = controlHandler ? await controlHandler(request) : null
       if (!response) {
-        response = await handleApi(request, relay.getState(), {
+        response = isDemoRequest(request) || environment === 'demo'
+          ? await handleDemoApi(request, { now: now(), relay: environment === 'demo' ? relay : null, controls: environment === 'demo' && Boolean(controlHandler) })
+          : await handleApi(request, relay.getState(), {
           environment,
           now: now(),
           situationalEnabled,
@@ -74,6 +77,7 @@ export function createRelayServer({ relay = createRelay(), webRoot = WEB, enviro
           try { pathname = decodeURIComponent(new URL(request.url).pathname) } catch { response = jsonResponse(400, { error: 'Invalid path' }) }
           if (!response) {
             const root = resolve(webRoot)
+            if (['/metro', '/explain', '/pitch'].includes(pathname)) pathname += '.html'
             const path = resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname))
             if (!path.startsWith(root + sep) || pathname.includes('\0') || pathname.includes('\\')) response = jsonResponse(400, { error: 'Invalid path' })
             else {

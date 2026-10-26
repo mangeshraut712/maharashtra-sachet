@@ -1,6 +1,7 @@
 import { collectSnapshot, emptyState, handleApi, jsonResponse, publicSnapshot, SECURITY_HEADERS, snapshotNeedsIngest, sourceCollectors } from '../server/service.mjs'
 import { acquireLease, appendJevShadowEntries, readRecentJevShadowEntries, readState, releaseLease, saveState } from './storage'
 import { explainClientKey, handleExplainRequest } from '../server/explain.mjs'
+import { handleDemoApi, isDemoRequest } from '../server/demo.mjs'
 import { jevShadowEnabled, shadowOpsEnvelope, triageAlertShadow } from '../server/jev-shadow.mjs'
 import type { JevShadowEntry } from './relay-types'
 
@@ -58,6 +59,11 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     try {
       const path = new URL(request.url).pathname
+      if (isDemoRequest(request)) {
+        const response = await handleDemoApi(request) || jsonResponse(404, { error: 'Not found' })
+        if (new URL(request.url).protocol === 'https:') response.headers.set('strict-transport-security', 'max-age=31536000')
+        return response
+      }
       if (path === '/api/jev/shadow') {
         if (!jevShadowEnabled(env)) return jsonResponse(404, { error: 'Jev shadow triage is disabled.' })
         const secure: Record<string, string> = new URL(request.url).protocol === 'https:'
