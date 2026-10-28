@@ -316,8 +316,16 @@ function freshness() {
 function renderStatus() {
   const mode = freshness()
   const text = isDemo() ? tx(
-    state.error ? 'DEMO / sample data unavailable · Retry the demo or use npm run demo locally.' : 'DEMO / sample data · Fixtures only. Live source health is not represented here.',
-    state.error ? 'DEMO / नमुना माहिती अनुपलब्ध · पुन्हा प्रयत्न करा.' : 'DEMO / नमुना माहिती · चाचणी नोंदी. येथे थेट स्रोतांची स्थिती दाखवलेली नाही.',
+    state.offline
+      ? 'DEMO / sample data offline · Showing labelled cached fixtures, if available. Do not treat them as current alerts.'
+      : state.error
+        ? 'DEMO / sample data unavailable · Retry the demo or use npm run demo locally.'
+        : 'DEMO / sample data · Fixtures only. Live source health is not represented here.',
+    state.offline
+      ? 'DEMO / नमुना माहिती ऑफलाइन · उपलब्ध असल्यास लेबल असलेल्या जतन केलेल्या नोंदी दाखवत आहोत. या वर्तमान सूचना समजू नका.'
+      : state.error
+        ? 'DEMO / नमुना माहिती अनुपलब्ध · पुन्हा प्रयत्न करा.'
+        : 'DEMO / नमुना माहिती · चाचणी नोंदी. येथे थेट स्रोतांची स्थिती दाखवलेली नाही.',
   ) : {
     offline: tx(
       'Offline · Showing last-known information, if available. Check official channels.',

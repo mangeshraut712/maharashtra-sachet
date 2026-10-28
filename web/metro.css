@@ -8,7 +8,7 @@
 .metro-route { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 1.15rem; font-weight: 700; }
 .metro-line { padding: 6px 10px; font-size: .8rem; border-radius: 4px; background: #075f69; color: white; }
 .metro-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin-top: 22px; }
-.metro-actions .call-button { margin: 0; background: #075f69; border-color: #075f69; }
+.metro-actions .call-button { margin: 0; background: #075f69; border-color: #075f69; color: #fff; }
 .metro-layout { display: grid; grid-template-columns: minmax(240px, .8fr) minmax(0, 1.45fr); gap: 24px; align-items: start; }
 .metro-layout .location-panel { margin-top: 0; }
 .metro-stations { padding: 0; margin: 20px 0; list-style: none; position: relative; }
