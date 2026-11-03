@@ -84,15 +84,16 @@ test('keyboard, narrow layout and automated accessibility', async ({ page }) => 
   }
 })
 
-test('network failure retains a labelled cached snapshot', async ({ page, context }) => {
-  await page.goto('/')
+test('explicit demo mode retains a labelled cached snapshot after network failure', async ({ page, context }) => {
+  await page.goto('/?demo=1')
   await expect(page.locator('#feed article')).toHaveCount(2)
   await page.evaluate(() => navigator.serviceWorker.ready)
   await page.reload()
   await expect(page.locator('#feed article')).toHaveCount(2)
   await context.setOffline(true)
   await page.reload()
-  await expect(page.locator('#connection')).toContainText(/offline|cached|last known/i)
+  await expect(page.locator('#connection')).toContainText(/offline.*cached fixtures/i)
+  await expect(page.locator('#demoBanner')).toBeVisible()
   await expect(page.locator('#feed article')).toHaveCount(2)
   await context.setOffline(false)
 })
@@ -106,8 +107,13 @@ test('denied storage and notifications do not block the bulletin', async ({ page
       static requestPermission() { return Promise.resolve('denied') }
     } })
   })
+  const meta = await (await page.request.get('/api/meta')).json()
+  await page.route('**/api/meta', route => route.fulfill({
+    json: { ...meta, environment: 'production', demo: false, demoControls: false },
+  }))
   await page.goto('/')
   await expect(page.locator('#feed article')).toHaveCount(2)
+  await expect(page.locator('#notifyBtn')).toBeEnabled()
   await page.locator('#notifyBtn').click()
   await expect(page.locator('#notificationStatus')).toContainText('Permission was not granted')
   await page.locator('#langBtn').click()

@@ -7,6 +7,7 @@ const code = await readFile(new URL('../web/sw.js', import.meta.url), 'utf8')
 function runtime({
   fetchImpl = async () => new Response('online'),
   put = async () => {},
+  match = async () => new Response('offline'),
 } = {}) {
   const handlers = {}
   const deleted = []
@@ -14,7 +15,7 @@ function runtime({
   const cache = {
     addAll: async (urls) => cached.push(...urls),
     put,
-    match: async () => new Response('offline'),
+    match,
   }
   vm.runInNewContext(code, {
     self: {
@@ -75,6 +76,45 @@ test('service worker leaves APIs, foreign origins and arbitrary same-origin path
     })
     assert.equal(intercepted, false, url)
   }
+  let arbitraryQueryIntercepted = false
+  handlers.fetch({
+    request: { url: 'https://relay.test/?demo=1&preview=1', method: 'GET', mode: 'navigate' },
+    respondWith: () => {
+      arbitraryQueryIntercepted = true
+    },
+  })
+  assert.equal(arbitraryQueryIntercepted, false)
+  let vendorQueryIntercepted = false
+  handlers.fetch({
+    request: { url: 'https://relay.test/vendor/maplibre-gl.mjs?demo=1', method: 'GET', mode: 'navigate' },
+    respondWith: () => {
+      vendorQueryIntercepted = true
+    },
+  })
+  assert.equal(vendorQueryIntercepted, false)
+})
+test('service worker serves the exact explicit-demo shell navigation from cache when offline', async () => {
+  const matches = []
+  const { handlers } = runtime({
+    fetchImpl: async () => {
+      throw new Error('offline')
+    },
+    match: async (request) => {
+      const url = typeof request === 'string' ? request : request.url
+      matches.push(url)
+      return url === 'https://relay.test/' ? new Response('cached demo shell') : undefined
+    },
+  })
+  let pending
+  handlers.fetch({
+    request: { url: 'https://relay.test/?demo=1', method: 'GET', mode: 'navigate' },
+    respondWith: (promise) => {
+      pending = promise
+    },
+  })
+  assert.ok(pending)
+  assert.equal(await (await pending).text(), 'cached demo shell')
+  assert.deepEqual(matches, ['https://relay.test/?demo=1', 'https://relay.test/'])
 })
 test('install precache omits the map library until a map view requests it', async () => {
   const { handlers, cached } = runtime()

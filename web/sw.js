@@ -51,10 +51,14 @@ self.addEventListener('activate', (event) => {
 })
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
+  const explicitDemoShell =
+    event.request.mode === 'navigate' &&
+    url.search === '?demo=1' &&
+    SHELL.includes(url.pathname)
   if (
     event.request.method !== 'GET' ||
     url.origin !== self.location.origin ||
-    url.search ||
+    (url.search && !explicitDemoShell) ||
     !cacheable(url.pathname)
   )
     return
@@ -74,6 +78,7 @@ self.addEventListener('fetch', (event) => {
       } catch {
         return (
           (await cache.match(event.request)) ||
+          (explicitDemoShell && (await cache.match(`${url.origin}${url.pathname}`))) ||
           new Response('Offline shell unavailable', {
             status: 503,
             headers: { 'content-type': 'text/plain' },
