@@ -19,7 +19,7 @@ export function mergeAlerts(groups, { now = Date.now(), includeInactive = false 
   for (const a of byId.values()) {
     if (a.status !== 'Actual' || a.scope !== 'Public' || !['Update','Cancel'].includes(a.msgType) || !(Date.parse(a.sent) <= now)) continue
     for (const ref of a.references || []) {
-      const key = `${a.source}:${ref.identifier}`
+      const key = `${a.source || 'unknown'}:${ref.identifier}`
       const original = byId.get(key)
       if (original && a.sender === ref.sender && original.sender === ref.sender && Date.parse(original.sent) === Date.parse(ref.sent) && Date.parse(a.sent) >= Date.parse(original.sent)) retired.add(key)
     }
