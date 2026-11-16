@@ -313,3 +313,9 @@ test('malformed or partial upstream feeds fail visibly rather than replacing sna
   const fetch=async(url)=>{count++;if(String(url).includes('rss_'))return new Response('<rss><channel><item><link>https://sachet.ndma.gov.in/cap_public_website/FetchXMLFile?identifier=x</link></item></channel></rss>',{headers:{'content-type':'application/xml'}});return new Response('failed',{status:503})}
   await assert.rejects(collectSachet({fetch}),/HTTP 503/)
 })
+
+test('a Cancel with no source still retires the original alert', () => {
+  const unsourced = { ...base, source: undefined }
+  const cancel = { ...unsourced, id: 'two', msgType: 'Cancel', references: [{ sender: 'agency', identifier: 'one', sent: base.sent }] }
+  assert.deepEqual(mergeAlerts([[unsourced, cancel]], { now }), [])
+})
