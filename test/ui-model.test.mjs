@@ -7,6 +7,7 @@ import {
   matchingAlerts,
   alertContent,
   snapshotFresh,
+  situationalNeedsFetch,
   nextPollMs,
   alertKey,
   validSnapshot,
@@ -206,4 +207,11 @@ test('alert pagination restarts when the snapshot token expires', async () => {
     }),
     /Snapshot changed during pagination/,
   )
+})
+
+test('situational layers are refetched once the 5-minute window passes', () => {
+  const fetchedAt = Date.parse('2026-09-05T12:00:00Z')
+  assert.equal(situationalNeedsFetch(null, fetchedAt), true)
+  assert.equal(situationalNeedsFetch(fetchedAt, fetchedAt + 4 * 60_000), false)
+  assert.equal(situationalNeedsFetch(fetchedAt, fetchedAt + 5 * 60_000), true)
 })

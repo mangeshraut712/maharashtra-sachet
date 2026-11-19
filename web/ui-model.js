@@ -137,6 +137,14 @@ export function snapshotFresh(generatedAt, now = Date.now()) {
   )
 }
 
+// Situational layers (USGS quakes, FIRMS fires) are rolling feeds; refetch
+// after the server's 5-minute cache window instead of keeping the first copy.
+export const SITUATIONAL_MAX_AGE_MS = 5 * 60_000
+
+export function situationalNeedsFetch(fetchedAt, now = Date.now()) {
+  return !Number.isFinite(fetchedAt) || now - fetchedAt >= SITUATIONAL_MAX_AGE_MS
+}
+
 export function nextPollMs(mode) {
   switch (mode) {
     case 'healthy':

@@ -4,6 +4,7 @@ import {
   matchingAlerts,
   alertContent,
   snapshotFresh,
+  situationalNeedsFetch,
   nextPollMs,
   alertKey,
   isCurrent,
@@ -185,6 +186,7 @@ const state = {
   saveFailed: false,
   situational: null,
   situationalBusy: false,
+  situationalFetchedAt: null,
   layerQuakes: false,
   layerFires: false,
 }
@@ -884,11 +886,12 @@ function renderSituationalControls() {
 async function ensureSituational() {
   const feature = state.meta?.features?.situationalLayers
   if (!feature?.enabled || (!state.layerQuakes && !state.layerFires)) return
-  if (state.situational || state.situationalBusy) return
+  if (state.situationalBusy || !situationalNeedsFetch(state.situationalFetchedAt)) return
   state.situationalBusy = true
   renderSituationalControls()
   try {
     state.situational = await request(feature.endpoint || '/api/situational')
+    state.situationalFetchedAt = Date.now()
   } catch {
     $('situationalStatus').textContent = tx(
       'Situational layers unavailable.',
@@ -1068,6 +1071,7 @@ async function refresh() {
     state.busy = false
     $('refreshBtn').disabled = false
     render()
+    void ensureSituational()
     refreshTimer = setTimeout(refresh, nextPollMs(freshness()))
   }
 }
