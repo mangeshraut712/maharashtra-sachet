@@ -320,4 +320,7 @@ test('fallback hazard keywords match whole words, not substrings', () => {
   assert.equal(fallbackExplanation('Drainage work and wheat auction in Nashik').hazardType, 'Public alert')
   assert.equal(fallbackExplanation('Rainfall likely in Pune').hazardType, 'Heavy rain / flood')
   assert.equal(fallbackExplanation('Heatwave in Nagpur').hazardType, 'Heatwave')
+  assert.equal(fallbackExplanation('#HeavyRain warning for Mumbai').hazardType, 'Heavy rain / flood')
+  assert.equal(fallbackExplanation('#FlashFlood alert in Kolhapur').hazardType, 'Heavy rain / flood')
+  assert.equal(fallbackExplanation('#ExtremeHeat in Akola').hazardType, 'Heatwave')
 })

@@ -59,8 +59,8 @@ export function fallbackExplanation(text) {
   const up = text.toUpperCase()
   const districts = DISTRICTS.filter(d => new RegExp(`\\b${d}\\b`, 'i').test(text))
   let hazard = 'Public alert'
-  if (/\b(?:RAIN|FLOOD)|पाऊस|पूर/.test(up)) hazard = 'Heavy rain / flood'
-  else if (/\bHEAT|TEMPERATURE|\bLOO\b|उष्ण/.test(up)) hazard = 'Heatwave'
+  if (/(?<![TDGB])RAIN|FLOOD|पाऊस|पूर/.test(up)) hazard = 'Heavy rain / flood'
+  else if (/(?<![WCT])HEAT|TEMPERATURE|\bLOO\b|उष्ण/.test(up)) hazard = 'Heatwave'
   else if (/AQI|AIR QUALITY|POLLUTION|SMOG/.test(up)) hazard = 'Air quality'
   else if (/LIGHTNING|THUNDER|HAIL|वीज/.test(up)) hazard = 'Thunderstorm / lightning'
   else if (/\bGALE|CYCLONE|CYCLONIC STORM/.test(up)) hazard = 'Cyclone / high winds'
