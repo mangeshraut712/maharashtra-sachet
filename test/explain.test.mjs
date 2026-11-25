@@ -314,3 +314,10 @@ test('local and demo servers explain offline and surface Gemini failures', async
   assert.equal(demoBody.data.severity, 'Orange')
   assert.equal(demoBody.data.hazardType, 'Heatwave')
 })
+
+test('fallback hazard keywords match whole words, not substrings', () => {
+  assert.equal(fallbackExplanation('Metro train service may be delayed in Pune').hazardType, 'Public alert')
+  assert.equal(fallbackExplanation('Drainage work and wheat auction in Nashik').hazardType, 'Public alert')
+  assert.equal(fallbackExplanation('Rainfall likely in Pune').hazardType, 'Heavy rain / flood')
+  assert.equal(fallbackExplanation('Heatwave in Nagpur').hazardType, 'Heatwave')
+})
