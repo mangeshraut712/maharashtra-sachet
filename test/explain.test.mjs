@@ -323,4 +323,8 @@ test('fallback hazard keywords match whole words, not substrings', () => {
   assert.equal(fallbackExplanation('#HeavyRain warning for Mumbai').hazardType, 'Heavy rain / flood')
   assert.equal(fallbackExplanation('#FlashFlood alert in Kolhapur').hazardType, 'Heavy rain / flood')
   assert.equal(fallbackExplanation('#ExtremeHeat in Akola').hazardType, 'Heatwave')
+  assert.equal(fallbackExplanation('Landslide risk on hilly terrain near Satara').hazardType, 'Public alert')
+  assert.equal(fallbackExplanation('Muscle strain clinic and cheat sheet in Pune').hazardType, 'Public alert')
+  assert.equal(fallbackExplanation('Waterflood pump test in Thane').hazardType, 'Public alert')
+  assert.equal(fallbackExplanation('HEAVY RAINFALL WARNING FOR RAIGAD').hazardType, 'Heavy rain / flood')
 })
