@@ -81,3 +81,16 @@ test('situational cache is keyed by bbox and does not echo upstream secrets', as
   assert.doesNotMatch(JSON.stringify(parsed), /super-secret-map-key/)
   assert.equal(situationalFailure(Object.assign(new Error('USGS HTTP 503'), {}), []), 'USGS HTTP 503')
 })
+
+test('USGS query window is derived from the supplied clock, not the wall clock', async () => {
+  let query
+  await fetchMaharashtraQuakes({
+    now: Date.parse('2026-01-15T12:00:00Z'),
+    fetch: async (url) => {
+      query = new URL(url).searchParams
+      return new Response(JSON.stringify({ features: [] }), { headers: { 'content-type': 'application/json' } })
+    },
+  })
+  assert.equal(query.get('starttime'), '2026-01-08')
+  assert.equal(query.get('endtime'), '2026-01-15')
+})

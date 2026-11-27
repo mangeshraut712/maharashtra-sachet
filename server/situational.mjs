@@ -33,8 +33,8 @@ export function situationalDisclaimer() {
   return 'Supplementary situational context only — not official CAP or meteorological alerts. Do not treat as government warnings. The public bulletin remains authoritative.'
 }
 
-function startTime(days = 7) {
-  const d = new Date(Date.now() - days * 86_400_000)
+function startTime(days = 7, now = Date.now()) {
+  const d = new Date(now - days * 86_400_000)
   return d.toISOString().slice(0, 10)
 }
 
@@ -45,7 +45,7 @@ export async function fetchQuakesInBbox({
 } = {}) {
   const params = new URLSearchParams({
     format: 'geojson',
-    starttime: startTime(7),
+    starttime: startTime(7, now),
     endtime: new Date(now).toISOString().slice(0, 10),
     minlatitude: String(bbox.south),
     maxlatitude: String(bbox.north),
